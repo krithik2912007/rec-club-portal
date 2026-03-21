@@ -1,0 +1,1468 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>REC Club Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@700;800;900&family=Barlow:ital,wght@0,400;0,500;0,600;1,400;1,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    :root {
+      --purple: #6b1fd1;
+      --purple-dark: #4a0fa0;
+      --gold: #f0c040;
+      --white: #ffffff;
+      --ink: #0e0e0e;
+      --muted: rgba(255,255,255,0.5);
+      --border: rgba(255,255,255,0.15);
+    }
+
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    html, body { width:100%; height:100%; overflow:hidden; }
+
+    body {
+      background: #ffffff;
+      font-family: 'Barlow', sans-serif;
+      position: relative;
+      cursor: none;
+    }
+
+
+    /* ════════════════════════════════════
+       ① CUSTOM CURSOR + TRAIL
+    ════════════════════════════════════ */
+    .cursor-dot {
+      position: fixed;
+      width: 10px; height: 10px;
+      background: var(--purple);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9999;
+      transform: translate(-50%, -50%);
+      transition: transform .08s ease, background .2s;
+      mix-blend-mode: multiply;
+    }
+    .cursor-ring {
+      position: fixed;
+      width: 36px; height: 36px;
+      border: 1.5px solid rgba(107,31,209,0.5);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9998;
+      transform: translate(-50%, -50%);
+      transition: transform .18s cubic-bezier(.22,1,.36,1),
+                  width .2s ease, height .2s ease,
+                  border-color .2s ease;
+    }
+    /* Expand ring on hover over interactive elements */
+    body.cursor-hover .cursor-ring {
+      width: 56px; height: 56px;
+      border-color: rgba(107,31,209,0.3);
+    }
+    body.cursor-hover .cursor-dot {
+      transform: translate(-50%, -50%) scale(0.4);
+    }
+
+    /* ════════════════════════════════════
+       FULL-BLEED STAGE
+    ════════════════════════════════════ */
+    .stage {
+      position: relative;
+      width: 100%;
+      height: 100vh;
+      /* ③ Slow breathing gradient — page feels alive */
+      background: #ffffff;
+      animation: bgBreathe 8s ease-in-out infinite;
+      overflow: visible;
+    }
+    @keyframes bgBreathe {
+      0%,100% { background: #ffffff; }
+      50%      { background: #faf8ff; }
+    }
+
+    /* Grain overlay — premium texture */
+    .stage::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 20;
+      pointer-events: none;
+      opacity: 0.04;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      background-repeat: repeat;
+      background-size: 180px 180px;
+    }
+
+    /* ── BIG TEXT BACK LAYER ── */
+    .text-back {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 0;
+      z-index: 1;
+      pointer-events: none;
+      line-height: 0.85;
+      text-align: center;
+    }
+    .text-back .word {
+      font-family: 'Bebas Neue', 'Barlow Condensed', sans-serif;
+      font-size: clamp(100px, 17vw, 240px);
+      font-weight: 400;
+      background: linear-gradient(
+        to bottom,
+        rgba(107,31,209,0.22) 0%,
+        rgba(107,31,209,0.14) 50%,
+        rgba(107,31,209,0.05) 100%
+      );
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-transform: uppercase;
+      letter-spacing: -0.01em;
+      display: block;
+      white-space: nowrap;
+      line-height: 0.9;
+      /* ⑥ Clip-path wipe reveal instead of fade */
+      opacity: 0;
+      clip-path: inset(0 100% 0 0);
+      animation: wipeReveal 0.9s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    .text-back .word:nth-child(1) { animation-delay: 0.05s; }
+    .text-back .word:nth-child(2) { animation-delay: 0.18s; }
+    .text-back .word:nth-child(3) { animation-delay: 0.31s; }
+
+    @keyframes wipeReveal {
+      to { opacity: 1; clip-path: inset(0 0% 0 0); }
+    }
+
+    /* Spotlight glow */
+    .spotlight {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+      background:
+        radial-gradient(
+          ellipse 55% 65% at 50% 58%,
+          rgba(138,60,255,0.28) 0%,
+          rgba(107,31,209,0.10) 40%,
+          transparent 72%
+        );
+    }
+
+    /* ── MASCOT LAYER ── */
+    .mascot-layer {
+      position: absolute;
+      inset: 0;
+      z-index: 5;
+      pointer-events: none;
+      /* ② Parallax — updated by JS on mousemove */
+      will-change: transform;
+      transition: transform 0.06s linear;
+    }
+    .mascot-layer img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center top;
+      mix-blend-mode: normal;
+      opacity: 0;
+      transform: scale(0.97) translateY(30px);
+      /* ⑦ Walk-on entrance — slides up from below */
+      animation: walkOn 1.1s cubic-bezier(0.22,1,0.36,1) 0.2s both;
+    }
+    @keyframes walkOn {
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    /* ── TOP TEXT OVERLAY ── */
+    .text-front {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 0;
+      z-index: 1;
+      pointer-events: none;
+      line-height: 0.85;
+      text-align: center;
+    }
+    .text-front .word {
+      font-family: 'Bebas Neue', 'Barlow Condensed', sans-serif;
+      font-size: clamp(100px, 17vw, 240px);
+      font-weight: 400;
+      color: transparent;
+      -webkit-text-stroke: 2.5px rgba(107,31,209,0.18);
+      text-transform: uppercase;
+      letter-spacing: -0.01em;
+      display: block;
+      white-space: nowrap;
+      line-height: 0.9;
+      opacity: 0;
+      clip-path: inset(0 100% 0 0);
+      animation: wipeReveal 0.9s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    .text-front .word:nth-child(1) { animation-delay: 0.5s; }
+    .text-front .word:nth-child(2) { animation-delay: 0.63s; }
+    .text-front .word:nth-child(3) { animation-delay: 0.76s; }
+
+    /* ════════════════════════════════════
+       NAV
+    ════════════════════════════════════ */
+    .nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 36px 20px 20px;
+      background: linear-gradient(to bottom, rgba(255,255,255,0.95) 60%, transparent);
+    }
+    .nav-logo img { height: 52px; width: auto; }
+    .nav-right { display: flex; align-items: center; gap: 10px; }
+    .nav-tagline {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 13px; font-weight: 700;
+      color: var(--ink); letter-spacing: .08em;
+      text-transform: uppercase; opacity: 0.45; margin-right: 20px;
+    }
+    .nav-btn {
+      padding: 10px 26px; border-radius: 4px;
+      font-family: 'Barlow', sans-serif;
+      font-size: 14px; font-weight: 600;
+      cursor: none; /* use custom cursor */
+      transition: all .18s; letter-spacing: .02em; border: none;
+    }
+    .btn-login {
+      background: transparent; border: 1.5px solid #1a1a1a; color: #1a1a1a;
+    }
+    .btn-login:hover { background: #1a1a1a; color: #fff; }
+    .btn-signup {
+      background: var(--purple); color: #fff;
+      box-shadow: 0 4px 20px rgba(107,31,209,0.35);
+    }
+    .btn-signup:hover {
+      background: var(--purple-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 28px rgba(107,31,209,0.45);
+    }
+
+    /* ════════════════════════════════════
+       BOTTOM INFO BAR
+    ════════════════════════════════════ */
+    .bottom-bar {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      z-index: 50;
+      display: flex; align-items: flex-end;
+      justify-content: space-between;
+      padding: 0 36px 32px;
+      pointer-events: none;
+    }
+    .tagline-block {
+      max-width: 320px; pointer-events: all;
+      opacity: 0;
+      animation: fadeUp2 0.8s ease 1s both;
+    }
+    @keyframes fadeUp2 {
+      from { opacity:0; transform: translateY(16px); }
+      to   { opacity:1; transform: translateY(0); }
+    }
+    .tagline-label {
+      font-family: 'DM Mono', monospace; font-size: 10px; font-weight: 500;
+      color: var(--purple); letter-spacing: .15em; text-transform: uppercase; margin-bottom: 6px;
+    }
+    .tagline-text {
+      font-family: 'Barlow', sans-serif; font-style: italic;
+      font-size: 14px; font-weight: 600; line-height: 1.55; color: #1a1a1a;
+    }
+
+    /* ④ Stats — count up from 0 */
+    .stats-block {
+      display: flex; gap: 32px; pointer-events: all;
+      opacity: 0;
+      animation: fadeUp2 0.8s ease 1.1s both;
+    }
+    .stat-item { text-align: right; }
+    .stat-num {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 36px; color: var(--purple); line-height: 1;
+    }
+    .stat-lbl {
+      font-family: 'DM Mono', monospace; font-size: 9px; font-weight: 500;
+      color: #888; letter-spacing: .1em; text-transform: uppercase; margin-top: 2px;
+    }
+
+    /* Decorations */
+    .number-deco {
+      position: absolute; top: 90px; right: 36px; z-index: 5;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(80px, 10vw, 140px);
+      color: transparent; -webkit-text-stroke: 2px rgba(107,31,209,0.12);
+      letter-spacing: -0.04em; line-height: 1;
+      pointer-events: none; opacity: 0;
+      animation: fadeUp2 1s ease 0.8s both; user-select: none;
+    }
+    .quote-block {
+      position: absolute; top: 110px; left: 36px; z-index: 5;
+      max-width: 280px; opacity: 0;
+      animation: fadeUp2 0.8s ease 0.9s both; pointer-events: none;
+    }
+    .quote-mark {
+      font-family: 'Bebas Neue', sans-serif; font-size: 32px;
+      color: var(--purple); opacity: 0.4; line-height: 1; margin-bottom: 4px;
+    }
+    .quote-text {
+      font-family: 'Barlow', sans-serif; font-size: 13px; font-weight: 600;
+      color: #222; line-height: 1.5; text-transform: uppercase; letter-spacing: .04em;
+    }
+    .quote-author {
+      font-family: 'DM Mono', monospace; font-size: 10px;
+      color: #888; margin-top: 6px; letter-spacing: .08em;
+    }
+
+    /* ════════════════════════════════════
+       ⑤ MAGNETIC BUTTONS — handled in JS
+    ════════════════════════════════════ */
+    .mag-btn { transition: transform .25s cubic-bezier(.22,1,.36,1), box-shadow .25s; }
+
+    /* ════════════════════════════════════
+       MODAL
+    ════════════════════════════════════ */
+    .overlay {
+      position: fixed; inset: 0;
+      background: rgba(10,5,20,0.6);
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      z-index: 500; display: none;
+      align-items: center; justify-content: center;
+    }
+    .overlay.open { display: flex; }
+
+    .modal {
+      background: #fff; border-radius: 20px;
+      width: 440px; max-width: 95vw; max-height: 92vh;
+      overflow-y: auto; padding: 40px; position: relative;
+      box-shadow: 0 40px 100px rgba(0,0,0,0.3), 0 0 0 1px rgba(107,31,209,0.08);
+      /* ⑤ Modal spring entrance */
+      animation: modalSpring .5s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+    @keyframes modalSpring {
+      from { opacity:0; transform: scale(0.88) translateY(40px); }
+      to   { opacity:1; transform: scale(1) translateY(0); }
+    }
+    .modal-close {
+      position: absolute; top:16px; right:16px;
+      width:34px; height:34px; border-radius:50%;
+      background:#f4f4f4; border:none; cursor:none;
+      font-size:14px; color:#666;
+      display:flex; align-items:center; justify-content:center;
+      transition: background .15s, color .15s, transform .2s;
+    }
+    .modal-close:hover { background:#e8e8e8; color:#111; transform: rotate(90deg); }
+    .modal-logo { margin-bottom: 20px; }
+    .modal-logo img { height: 32px; }
+    .modal-tabs {
+      display: flex; border-bottom: 2px solid #f0f0f0; margin-bottom: 28px;
+    }
+    .mtab {
+      flex: 1; text-align:center; padding: 10px 0;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 16px; font-weight: 700; letter-spacing: .06em;
+      text-transform: uppercase; color: #aaa; cursor: none;
+      border-bottom: 2.5px solid transparent; margin-bottom: -2px;
+      transition: color .15s, border-color .15s;
+    }
+    .mtab.active { color: var(--purple); border-color: var(--purple); }
+    .mform { display:none; }
+    .mform.active { display:block; }
+    .mform h2 {
+      font-family: 'Bebas Neue', sans-serif; font-size: 34px;
+      color: #111; letter-spacing: .03em; margin-bottom: 22px;
+    }
+    .fgroup { margin-bottom: 14px; }
+    .fgroup label {
+      display: block; font-family: 'DM Mono', monospace;
+      font-size: 10px; font-weight: 500; color: #999;
+      text-transform: uppercase; letter-spacing: .1em; margin-bottom: 6px;
+    }
+    .field {
+      width: 100%; padding: 12px 14px;
+      border: 1.5px solid #e8e8e8; border-radius: 8px;
+      font-size: 14px; font-family: 'Barlow', sans-serif;
+      color: #111; background: #fff; outline: none;
+      transition: border-color .15s, box-shadow .15s; appearance: none;
+    }
+    .field:focus { border-color: var(--purple); box-shadow: 0 0 0 3px rgba(107,31,209,.1); }
+    select.field { cursor: none; }
+    .pw-wrap { position: relative; }
+    .pw-wrap .field { padding-right: 44px; }
+    .pw-eye {
+      position: absolute; right:12px; top:50%; transform:translateY(-50%);
+      background:none; border:none; cursor:none;
+      color:#bbb; font-size:14px; padding:0; transition: color .15s;
+    }
+    .pw-eye:hover { color:#555; }
+    .forgot {
+      display: block; text-align: right; font-size: 12px;
+      font-family: 'DM Mono', monospace; color: var(--purple);
+      cursor: none; text-decoration: none; margin-top: 5px;
+    }
+    .forgot:hover { text-decoration: underline; }
+    .note {
+      font-family: 'DM Mono', monospace; font-size: 10px; color: #bbb;
+      line-height: 1.6; margin-top: -6px; margin-bottom: 14px;
+    }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .submit-btn {
+      width: 100%; padding: 14px; background: var(--purple); color: #fff; border: none;
+      border-radius: 8px; font-family: 'Bebas Neue', sans-serif;
+      font-size: 20px; letter-spacing: .1em; cursor: none; margin-top: 8px;
+      transition: background .18s, transform .18s, box-shadow .18s;
+      box-shadow: 0 6px 24px rgba(107,31,209,.3);
+    }
+    .submit-btn:hover {
+      background: var(--purple-dark); transform: translateY(-1px);
+      box-shadow: 0 10px 32px rgba(107,31,209,.4);
+    }
+
+  </style>
+</head>
+<body>
+
+<!-- ① Custom cursor elements -->
+<div class="cursor-dot"  id="cursorDot"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<!-- ══ NAV ══ -->
+<nav class="nav">
+  <div class="nav-logo">
+    <img src="{% static 'images/rec-logo.png' %}" alt="REC">
+  </div>
+  <div class="nav-right">
+    <span class="nav-tagline">Est. 2026</span>
+    <button class="nav-btn btn-login mag-btn"  onclick="openModal('signin')">Login</button>
+    <button class="nav-btn btn-signup mag-btn" onclick="openModal('signup')">Sign Up</button>
+  </div>
+</nav>
+
+<!-- ══ DECORATIONS ══ -->
+<div class="quote-block">
+  <div class="quote-mark">"</div>
+  <div class="quote-text">More than clubs.<br>A community where<br>students rise together.</div>
+  <div class="quote-author">— Aadhi, REC Mascot</div>
+</div>
+<div class="number-deco">26</div>
+
+<!-- ══ STAGE ══ -->
+<div class="stage">
+
+  <!-- Text behind mascot -->
+  <div class="text-back" aria-hidden="true">
+    <span class="word">Centralized</span>
+    <span class="word">Club&nbsp;&nbsp;&nbsp;Portal</span>
+  </div>
+
+  <!-- Spotlight glow -->
+  <div class="spotlight"></div>
+
+  <!-- Mascot — transparent PNG -->
+  <div class="mascot-layer" id="mascotLayer">
+    <img src="{% static 'images/aadhi_full.png' %}" alt="Aadhi">
+  </div>
+
+  <!-- Ghost text on top -->
+  <div class="text-front" aria-hidden="true">
+    <span class="word">Centralized</span>
+    <span class="word">Club&nbsp;&nbsp;&nbsp;Portal</span>
+  </div>
+
+  <!-- ══ BOTTOM BAR ══ -->
+  <div class="bottom-bar">
+    <div class="tagline-block">
+      <div class="tagline-label">✦ Rajalakshmi Engineering College</div>
+      <p class="tagline-text">
+        Discover clubs, register for events,<br>
+        and connect with every student<br>
+        organization on campus.
+      </p>
+    </div>
+    <div class="stats-block">
+      <div class="stat-item">
+        <div class="stat-num" id="sClubs">0</div>
+        <div class="stat-lbl">Active Clubs</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num" id="sEvents">0</div>
+        <div class="stat-lbl">Events</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num" id="sMembers">0</div>
+        <div class="stat-lbl">Members</div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /stage -->
+
+<!-- ══ MODAL ══ -->
+<div class="overlay" id="overlay" onclick="closeOnBack(event)">
+  <div class="modal" id="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="modal-logo">
+      <img src="{% static 'images/rec-logo.png' %}" alt="REC">
+    </div>
+    <div class="modal-tabs">
+      <div class="mtab active" id="tabSI" onclick="switchTab('signin')">Sign In</div>
+      <div class="mtab"        id="tabSU" onclick="switchTab('signup')">Sign Up</div>
+    </div>
+    <!-- SIGN IN -->
+    <div class="mform active" id="fSignin">
+      <h2>Welcome Back</h2>
+      <div class="fgroup">
+        <label>Role</label>
+        <select id="loginRole" class="field">
+          <option value="student">Student</option>
+          <option value="club">Club Member</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+      <div class="fgroup">
+        <label>Email</label>
+        <input id="loginEmail" class="field" type="email" placeholder="your@email.com">
+      </div>
+      <div class="fgroup">
+        <label>Password</label>
+        <div class="pw-wrap">
+          <input id="loginPassword" class="field password-input" type="password" placeholder="••••••••">
+          <button class="pw-eye" onclick="togglePassword()" tabindex="-1"><i class="fa fa-eye"></i></button>
+        </div>
+        <a class="forgot" onclick="forgotPassword()">Forgot password?</a>
+      </div>
+      <button class="submit-btn" onclick="login()">Sign In →</button>
+    </div>
+    <!-- SIGN UP -->
+    <div class="mform" id="fSignup">
+      <h2>Create Account</h2>
+      <div class="fgroup">
+        <label>Full Name</label>
+        <input id="signupName" class="field" type="text" placeholder="Your full name">
+      </div>
+      <div class="two-col">
+        <div class="fgroup">
+          <label>Reg. Number</label>
+          <input id="signupRegNo" class="field" type="text" placeholder="240701276">
+        </div>
+        <div class="fgroup">
+          <label>Department</label>
+          <select id="signupDept" class="field">
+            <option value="CSE">CSE</option>
+            <option value="ECE">ECE</option>
+            <option value="IT">IT</option>
+            <option value="MECH">MECH</option>
+          </select>
+        </div>
+      </div>
+      <div class="two-col">
+        <div class="fgroup">
+          <label>Year</label>
+          <select id="signupYear" class="field">
+            <option value="1">1st Year</option>
+            <option value="2">2nd Year</option>
+            <option value="3">3rd Year</option>
+            <option value="4">4th Year</option>
+          </select>
+        </div>
+        <div class="fgroup">
+          <label>Role</label>
+          <select id="signupRole" class="field">
+            <option value="student">Student</option>
+            <option value="club">Club Member</option>
+          </select>
+        </div>
+      </div>
+      <div class="fgroup">
+        <label>Email</label>
+        <input id="signupEmail" class="field" type="email" placeholder="your@email.com">
+      </div>
+      <div class="two-col">
+        <div class="fgroup">
+          <label>Password</label>
+          <input id="pass" class="field" type="password" placeholder="••••••••">
+        </div>
+        <div class="fgroup">
+          <label>Confirm</label>
+          <input id="repass" class="field" type="password" placeholder="••••••••">
+        </div>
+      </div>
+      <p class="note">Min 6 chars · 1 uppercase · 1 lowercase · 1 special char</p>
+      <button class="submit-btn" onclick="signup()">Create Account →</button>
+    </div>
+  </div>
+</div>
+
+<script src="{% static 'js/script.js' %}"></script>
+<script>
+/* ════════════════════════════════════════════
+   ① CUSTOM CURSOR
+════════════════════════════════════════════ */
+(function() {
+  var dot  = document.getElementById('cursorDot');
+  var ring = document.getElementById('cursorRing');
+  var mx = window.innerWidth/2, my = window.innerHeight/2;
+  var rx = mx, ry = my;
+
+  document.addEventListener('mousemove', function(e) {
+    mx = e.clientX; my = e.clientY;
+    dot.style.left  = mx + 'px';
+    dot.style.top   = my + 'px';
+  });
+
+  // Ring follows with slight lag (lerp)
+  (function lerpRing() {
+    rx += (mx - rx) * 0.12;
+    ry += (my - ry) * 0.12;
+    ring.style.left = rx + 'px';
+    ring.style.top  = ry + 'px';
+    requestAnimationFrame(lerpRing);
+  })();
+
+  // Expand ring on interactive elements
+  var interactives = document.querySelectorAll('button, a, input, select, .nav-btn, .mtab, .forgot');
+  interactives.forEach(function(el) {
+    el.addEventListener('mouseenter', function() { document.body.classList.add('cursor-hover'); });
+    el.addEventListener('mouseleave', function() { document.body.classList.remove('cursor-hover'); });
+  });
+})();
+
+/* ════════════════════════════════════════════
+   ② PARALLAX — Aadhi moves opposite to mouse
+════════════════════════════════════════════ */
+(function() {
+  var mascot = document.getElementById('mascotLayer');
+  var cx = window.innerWidth / 2;
+  var cy = window.innerHeight / 2;
+
+  document.addEventListener('mousemove', function(e) {
+    var dx = (e.clientX - cx) / cx;  // -1 to 1
+    var dy = (e.clientY - cy) / cy;
+    // Aadhi moves opposite direction, subtle 12px max
+    mascot.style.transform = 'translate(' + (-dx * 12) + 'px, ' + (-dy * 8) + 'px)';
+  });
+})();
+
+/* ════════════════════════════════════════════
+   ④ STAT COUNTER — counts up from 0
+════════════════════════════════════════════ */
+function countUp(el, target, duration) {
+  var start = 0;
+  var step  = target / (duration / 16);
+  var timer = setInterval(function() {
+    start += step;
+    if (start >= target) { el.textContent = target; clearInterval(timer); return; }
+    el.textContent = Math.floor(start);
+  }, 16);
+}
+
+/* ════════════════════════════════════════════
+   ⑤ MAGNETIC BUTTONS
+════════════════════════════════════════════ */
+(function() {
+  var btns = document.querySelectorAll('.mag-btn');
+  btns.forEach(function(btn) {
+    btn.addEventListener('mousemove', function(e) {
+      var r   = btn.getBoundingClientRect();
+      var bx  = r.left + r.width  / 2;
+      var by  = r.top  + r.height / 2;
+      var dx  = (e.clientX - bx) * 0.3;
+      var dy  = (e.clientY - by) * 0.3;
+      btn.style.transform = 'translate(' + dx + 'px, ' + dy + 'px)';
+    });
+    btn.addEventListener('mouseleave', function() {
+      btn.style.transform = 'translate(0,0)';
+    });
+  });
+})();
+
+/* ════════════════════════════════════════════
+   MODAL
+════════════════════════════════════════════ */
+function openModal(tab) {
+  document.getElementById('overlay').classList.add('open');
+  switchTab(tab);
+}
+function closeModal() {
+  document.getElementById('overlay').classList.remove('open');
+}
+function closeOnBack(e) {
+  if (e.target === document.getElementById('overlay')) closeModal();
+}
+function switchTab(t) {
+  ['signin','signup'].forEach(function(s) {
+    document.getElementById('fSign' + (s==='signin'?'in':'up')).classList.toggle('active', s===t);
+    document.getElementById('tab'  + (s==='signin'?'SI':'SU')).classList.toggle('active', s===t);
+  });
+}
+document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeModal(); });
+
+/* ════════════════════════════════════════════
+   FETCH STATS + COUNT UP
+════════════════════════════════════════════ */
+fetch('/api/stats')
+  .then(function(r){ return r.ok ? r.json() : null; })
+  .then(function(d) {
+    if (!d) return;
+    var clubs   = parseInt(d.clubs   || 0);
+    var events  = parseInt(d.events  || 0);
+    var members = parseInt(d.members || 0);
+    // Delay counters until bottom bar animation finishes (~1.1s)
+    setTimeout(function() {
+      countUp(document.getElementById('sClubs'),   clubs,   1200);
+      countUp(document.getElementById('sEvents'),  events,  1200);
+      countUp(document.getElementById('sMembers'), members, 1400);
+    }, 1200);
+  })
+  .catch(function(){});
+</script>E html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>REC Club Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@700;800;900&family=Barlow:ital,wght@0,400;0,500;0,600;1,400;1,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    :root {
+      --purple: #6b1fd1;
+      --purple-dark: #4a0fa0;
+      --gold: #f0c040;
+      --white: #ffffff;
+      --ink: #0e0e0e;
+      --muted: rgba(255,255,255,0.5);
+      --border: rgba(255,255,255,0.15);
+    }
+
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    html, body { width:100%; height:100%; overflow:hidden; }
+
+    body {
+      background: #ffffff;
+      font-family: 'Barlow', sans-serif;
+      position: relative;
+      cursor: none;
+    }
+
+
+    /* ════════════════════════════════════
+       ① CUSTOM CURSOR + TRAIL
+    ════════════════════════════════════ */
+    .cursor-dot {
+      position: fixed;
+      width: 10px; height: 10px;
+      background: var(--purple);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9999;
+      transform: translate(-50%, -50%);
+      transition: transform .08s ease, background .2s;
+      mix-blend-mode: multiply;
+    }
+    .cursor-ring {
+      position: fixed;
+      width: 36px; height: 36px;
+      border: 1.5px solid rgba(107,31,209,0.5);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9998;
+      transform: translate(-50%, -50%);
+      transition: transform .18s cubic-bezier(.22,1,.36,1),
+                  width .2s ease, height .2s ease,
+                  border-color .2s ease;
+    }
+    /* Expand ring on hover over interactive elements */
+    body.cursor-hover .cursor-ring {
+      width: 56px; height: 56px;
+      border-color: rgba(107,31,209,0.3);
+    }
+    body.cursor-hover .cursor-dot {
+      transform: translate(-50%, -50%) scale(0.4);
+    }
+
+    /* ════════════════════════════════════
+       FULL-BLEED STAGE
+    ════════════════════════════════════ */
+    .stage {
+      position: relative;
+      width: 100%;
+      height: 100vh;
+      /* ③ Slow breathing gradient — page feels alive */
+      background: #ffffff;
+      animation: bgBreathe 8s ease-in-out infinite;
+      overflow: visible;
+    }
+    @keyframes bgBreathe {
+      0%,100% { background: #ffffff; }
+      50%      { background: #faf8ff; }
+    }
+
+    /* Grain overlay — premium texture */
+    .stage::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 20;
+      pointer-events: none;
+      opacity: 0.04;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      background-repeat: repeat;
+      background-size: 180px 180px;
+    }
+
+    /* ── BIG TEXT BACK LAYER ── */
+    .text-back {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 0;
+      z-index: 1;
+      pointer-events: none;
+      line-height: 0.85;
+      text-align: center;
+    }
+    .text-back .word {
+      font-family: 'Bebas Neue', 'Barlow Condensed', sans-serif;
+      font-size: clamp(100px, 17vw, 240px);
+      font-weight: 400;
+      background: linear-gradient(
+        to bottom,
+        rgba(107,31,209,0.22) 0%,
+        rgba(107,31,209,0.14) 50%,
+        rgba(107,31,209,0.05) 100%
+      );
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-transform: uppercase;
+      letter-spacing: -0.01em;
+      display: block;
+      white-space: nowrap;
+      line-height: 0.9;
+      /* ⑥ Clip-path wipe reveal instead of fade */
+      opacity: 0;
+      clip-path: inset(0 100% 0 0);
+      animation: wipeReveal 0.9s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    .text-back .word:nth-child(1) { animation-delay: 0.05s; }
+    .text-back .word:nth-child(2) { animation-delay: 0.18s; }
+    .text-back .word:nth-child(3) { animation-delay: 0.31s; }
+
+    @keyframes wipeReveal {
+      to { opacity: 1; clip-path: inset(0 0% 0 0); }
+    }
+
+    /* Spotlight glow */
+    .spotlight {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+      background:
+        radial-gradient(
+          ellipse 55% 65% at 50% 58%,
+          rgba(138,60,255,0.28) 0%,
+          rgba(107,31,209,0.10) 40%,
+          transparent 72%
+        );
+    }
+
+    /* ── MASCOT LAYER ── */
+    .mascot-layer {
+      position: absolute;
+      inset: 0;
+      z-index: 5;
+      pointer-events: none;
+      /* ② Parallax — updated by JS on mousemove */
+      will-change: transform;
+      transition: transform 0.06s linear;
+    }
+    .mascot-layer img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center top;
+      mix-blend-mode: normal;
+      opacity: 0;
+      transform: scale(0.97) translateY(30px);
+      /* ⑦ Walk-on entrance — slides up from below */
+      animation: walkOn 1.1s cubic-bezier(0.22,1,0.36,1) 0.2s both;
+    }
+    @keyframes walkOn {
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    /* ── TOP TEXT OVERLAY ── */
+    .text-front {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 0;
+      z-index: 1;
+      pointer-events: none;
+      line-height: 0.85;
+      text-align: center;
+    }
+    .text-front .word {
+      font-family: 'Bebas Neue', 'Barlow Condensed', sans-serif;
+      font-size: clamp(100px, 17vw, 240px);
+      font-weight: 400;
+      color: transparent;
+      -webkit-text-stroke: 2.5px rgba(107,31,209,0.18);
+      text-transform: uppercase;
+      letter-spacing: -0.01em;
+      display: block;
+      white-space: nowrap;
+      line-height: 0.9;
+      opacity: 0;
+      clip-path: inset(0 100% 0 0);
+      animation: wipeReveal 0.9s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    .text-front .word:nth-child(1) { animation-delay: 0.5s; }
+    .text-front .word:nth-child(2) { animation-delay: 0.63s; }
+    .text-front .word:nth-child(3) { animation-delay: 0.76s; }
+
+    /* ════════════════════════════════════
+       NAV
+    ════════════════════════════════════ */
+    .nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 36px 20px 20px;
+      background: linear-gradient(to bottom, rgba(255,255,255,0.95) 60%, transparent);
+    }
+    .nav-logo img { height: 52px; width: auto; }
+    .nav-right { display: flex; align-items: center; gap: 10px; }
+    .nav-tagline {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 13px; font-weight: 700;
+      color: var(--ink); letter-spacing: .08em;
+      text-transform: uppercase; opacity: 0.45; margin-right: 20px;
+    }
+    .nav-btn {
+      padding: 10px 26px; border-radius: 4px;
+      font-family: 'Barlow', sans-serif;
+      font-size: 14px; font-weight: 600;
+      cursor: none; /* use custom cursor */
+      transition: all .18s; letter-spacing: .02em; border: none;
+    }
+    .btn-login {
+      background: transparent; border: 1.5px solid #1a1a1a; color: #1a1a1a;
+    }
+    .btn-login:hover { background: #1a1a1a; color: #fff; }
+    .btn-signup {
+      background: var(--purple); color: #fff;
+      box-shadow: 0 4px 20px rgba(107,31,209,0.35);
+    }
+    .btn-signup:hover {
+      background: var(--purple-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 28px rgba(107,31,209,0.45);
+    }
+
+    /* ════════════════════════════════════
+       BOTTOM INFO BAR
+    ════════════════════════════════════ */
+    .bottom-bar {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      z-index: 50;
+      display: flex; align-items: flex-end;
+      justify-content: space-between;
+      padding: 0 36px 32px;
+      pointer-events: none;
+    }
+    .tagline-block {
+      max-width: 320px; pointer-events: all;
+      opacity: 0;
+      animation: fadeUp2 0.8s ease 1s both;
+    }
+    @keyframes fadeUp2 {
+      from { opacity:0; transform: translateY(16px); }
+      to   { opacity:1; transform: translateY(0); }
+    }
+    .tagline-label {
+      font-family: 'DM Mono', monospace; font-size: 10px; font-weight: 500;
+      color: var(--purple); letter-spacing: .15em; text-transform: uppercase; margin-bottom: 6px;
+    }
+    .tagline-text {
+      font-family: 'Barlow', sans-serif; font-style: italic;
+      font-size: 14px; font-weight: 600; line-height: 1.55; color: #1a1a1a;
+    }
+
+    /* ④ Stats — count up from 0 */
+    .stats-block {
+      display: flex; gap: 32px; pointer-events: all;
+      opacity: 0;
+      animation: fadeUp2 0.8s ease 1.1s both;
+    }
+    .stat-item { text-align: right; }
+    .stat-num {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 36px; color: var(--purple); line-height: 1;
+    }
+    .stat-lbl {
+      font-family: 'DM Mono', monospace; font-size: 9px; font-weight: 500;
+      color: #888; letter-spacing: .1em; text-transform: uppercase; margin-top: 2px;
+    }
+
+    /* Decorations */
+    .number-deco {
+      position: absolute; top: 90px; right: 36px; z-index: 5;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(80px, 10vw, 140px);
+      color: transparent; -webkit-text-stroke: 2px rgba(107,31,209,0.12);
+      letter-spacing: -0.04em; line-height: 1;
+      pointer-events: none; opacity: 0;
+      animation: fadeUp2 1s ease 0.8s both; user-select: none;
+    }
+    .quote-block {
+      position: absolute; top: 110px; left: 36px; z-index: 5;
+      max-width: 280px; opacity: 0;
+      animation: fadeUp2 0.8s ease 0.9s both; pointer-events: none;
+    }
+    .quote-mark {
+      font-family: 'Bebas Neue', sans-serif; font-size: 32px;
+      color: var(--purple); opacity: 0.4; line-height: 1; margin-bottom: 4px;
+    }
+    .quote-text {
+      font-family: 'Barlow', sans-serif; font-size: 13px; font-weight: 600;
+      color: #222; line-height: 1.5; text-transform: uppercase; letter-spacing: .04em;
+    }
+    .quote-author {
+      font-family: 'DM Mono', monospace; font-size: 10px;
+      color: #888; margin-top: 6px; letter-spacing: .08em;
+    }
+
+    /* ════════════════════════════════════
+       ⑤ MAGNETIC BUTTONS — handled in JS
+    ════════════════════════════════════ */
+    .mag-btn { transition: transform .25s cubic-bezier(.22,1,.36,1), box-shadow .25s; }
+
+    /* ════════════════════════════════════
+       MODAL
+    ════════════════════════════════════ */
+    .overlay {
+      position: fixed; inset: 0;
+      background: rgba(10,5,20,0.6);
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      z-index: 500; display: none;
+      align-items: center; justify-content: center;
+    }
+    .overlay.open { display: flex; }
+
+    .modal {
+      background: #fff; border-radius: 20px;
+      width: 440px; max-width: 95vw; max-height: 92vh;
+      overflow-y: auto; padding: 40px; position: relative;
+      box-shadow: 0 40px 100px rgba(0,0,0,0.3), 0 0 0 1px rgba(107,31,209,0.08);
+      /* ⑤ Modal spring entrance */
+      animation: modalSpring .5s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+    @keyframes modalSpring {
+      from { opacity:0; transform: scale(0.88) translateY(40px); }
+      to   { opacity:1; transform: scale(1) translateY(0); }
+    }
+    .modal-close {
+      position: absolute; top:16px; right:16px;
+      width:34px; height:34px; border-radius:50%;
+      background:#f4f4f4; border:none; cursor:none;
+      font-size:14px; color:#666;
+      display:flex; align-items:center; justify-content:center;
+      transition: background .15s, color .15s, transform .2s;
+    }
+    .modal-close:hover { background:#e8e8e8; color:#111; transform: rotate(90deg); }
+    .modal-logo { margin-bottom: 20px; }
+    .modal-logo img { height: 32px; }
+    .modal-tabs {
+      display: flex; border-bottom: 2px solid #f0f0f0; margin-bottom: 28px;
+    }
+    .mtab {
+      flex: 1; text-align:center; padding: 10px 0;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 16px; font-weight: 700; letter-spacing: .06em;
+      text-transform: uppercase; color: #aaa; cursor: none;
+      border-bottom: 2.5px solid transparent; margin-bottom: -2px;
+      transition: color .15s, border-color .15s;
+    }
+    .mtab.active { color: var(--purple); border-color: var(--purple); }
+    .mform { display:none; }
+    .mform.active { display:block; }
+    .mform h2 {
+      font-family: 'Bebas Neue', sans-serif; font-size: 34px;
+      color: #111; letter-spacing: .03em; margin-bottom: 22px;
+    }
+    .fgroup { margin-bottom: 14px; }
+    .fgroup label {
+      display: block; font-family: 'DM Mono', monospace;
+      font-size: 10px; font-weight: 500; color: #999;
+      text-transform: uppercase; letter-spacing: .1em; margin-bottom: 6px;
+    }
+    .field {
+      width: 100%; padding: 12px 14px;
+      border: 1.5px solid #e8e8e8; border-radius: 8px;
+      font-size: 14px; font-family: 'Barlow', sans-serif;
+      color: #111; background: #fff; outline: none;
+      transition: border-color .15s, box-shadow .15s; appearance: none;
+    }
+    .field:focus { border-color: var(--purple); box-shadow: 0 0 0 3px rgba(107,31,209,.1); }
+    select.field { cursor: none; }
+    .pw-wrap { position: relative; }
+    .pw-wrap .field { padding-right: 44px; }
+    .pw-eye {
+      position: absolute; right:12px; top:50%; transform:translateY(-50%);
+      background:none; border:none; cursor:none;
+      color:#bbb; font-size:14px; padding:0; transition: color .15s;
+    }
+    .pw-eye:hover { color:#555; }
+    .forgot {
+      display: block; text-align: right; font-size: 12px;
+      font-family: 'DM Mono', monospace; color: var(--purple);
+      cursor: none; text-decoration: none; margin-top: 5px;
+    }
+    .forgot:hover { text-decoration: underline; }
+    .note {
+      font-family: 'DM Mono', monospace; font-size: 10px; color: #bbb;
+      line-height: 1.6; margin-top: -6px; margin-bottom: 14px;
+    }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .submit-btn {
+      width: 100%; padding: 14px; background: var(--purple); color: #fff; border: none;
+      border-radius: 8px; font-family: 'Bebas Neue', sans-serif;
+      font-size: 20px; letter-spacing: .1em; cursor: none; margin-top: 8px;
+      transition: background .18s, transform .18s, box-shadow .18s;
+      box-shadow: 0 6px 24px rgba(107,31,209,.3);
+    }
+    .submit-btn:hover {
+      background: var(--purple-dark); transform: translateY(-1px);
+      box-shadow: 0 10px 32px rgba(107,31,209,.4);
+    }
+
+  </style>
+</head>
+<body>
+
+<!-- ① Custom cursor elements -->
+<div class="cursor-dot"  id="cursorDot"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<!-- ══ NAV ══ -->
+<nav class="nav">
+  <div class="nav-logo">
+    <img src="{% static 'images/rec-logo.png' %}" alt="REC">
+  </div>
+  <div class="nav-right">
+    <span class="nav-tagline">Est. 2026</span>
+    <button class="nav-btn btn-login mag-btn"  onclick="openModal('signin')">Login</button>
+    <button class="nav-btn btn-signup mag-btn" onclick="openModal('signup')">Sign Up</button>
+  </div>
+</nav>
+
+<!-- ══ DECORATIONS ══ -->
+<div class="quote-block">
+  <div class="quote-mark">"</div>
+  <div class="quote-text">More than clubs.<br>A community where<br>students rise together.</div>
+  <div class="quote-author">— Aadhi, REC Mascot</div>
+</div>
+<div class="number-deco">26</div>
+
+<!-- ══ STAGE ══ -->
+<div class="stage">
+
+  <!-- Text behind mascot -->
+  <div class="text-back" aria-hidden="true">
+    <span class="word">Centralized</span>
+    <span class="word">Club&nbsp;&nbsp;&nbsp;Portal</span>
+  </div>
+
+  <!-- Spotlight glow -->
+  <div class="spotlight"></div>
+
+  <!-- Mascot — transparent PNG -->
+  <div class="mascot-layer" id="mascotLayer">
+    <img src="{% static 'images/aadhi_full.png' %}" alt="Aadhi">
+  </div>
+
+  <!-- Ghost text on top -->
+  <div class="text-front" aria-hidden="true">
+    <span class="word">Centralized</span>
+    <span class="word">Club&nbsp;&nbsp;&nbsp;Portal</span>
+  </div>
+
+  <!-- ══ BOTTOM BAR ══ -->
+  <div class="bottom-bar">
+    <div class="tagline-block">
+      <div class="tagline-label">✦ Rajalakshmi Engineering College</div>
+      <p class="tagline-text">
+        Discover clubs, register for events,<br>
+        and connect with every student<br>
+        organization on campus.
+      </p>
+    </div>
+    <div class="stats-block">
+      <div class="stat-item">
+        <div class="stat-num" id="sClubs">0</div>
+        <div class="stat-lbl">Active Clubs</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num" id="sEvents">0</div>
+        <div class="stat-lbl">Events</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num" id="sMembers">0</div>
+        <div class="stat-lbl">Members</div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /stage -->
+
+<!-- ══ MODAL ══ -->
+<div class="overlay" id="overlay" onclick="closeOnBack(event)">
+  <div class="modal" id="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="modal-logo">
+      <img src="{% static 'images/rec-logo.png' %}" alt="REC">
+    </div>
+    <div class="modal-tabs">
+      <div class="mtab active" id="tabSI" onclick="switchTab('signin')">Sign In</div>
+      <div class="mtab"        id="tabSU" onclick="switchTab('signup')">Sign Up</div>
+    </div>
+    <!-- SIGN IN -->
+    <div class="mform active" id="fSignin">
+      <h2>Welcome Back</h2>
+      <div class="fgroup">
+        <label>Role</label>
+        <select id="loginRole" class="field">
+          <option value="student">Student</option>
+          <option value="club">Club Member</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+      <div class="fgroup">
+        <label>Email</label>
+        <input id="loginEmail" class="field" type="email" placeholder="your@email.com">
+      </div>
+      <div class="fgroup">
+        <label>Password</label>
+        <div class="pw-wrap">
+          <input id="loginPassword" class="field password-input" type="password" placeholder="••••••••">
+          <button class="pw-eye" onclick="togglePassword()" tabindex="-1"><i class="fa fa-eye"></i></button>
+        </div>
+        <a class="forgot" onclick="forgotPassword()">Forgot password?</a>
+      </div>
+      <button class="submit-btn" onclick="login()">Sign In →</button>
+    </div>
+    <!-- SIGN UP -->
+    <div class="mform" id="fSignup">
+      <h2>Create Account</h2>
+      <div class="fgroup">
+        <label>Full Name</label>
+        <input id="signupName" class="field" type="text" placeholder="Your full name">
+      </div>
+      <div class="two-col">
+        <div class="fgroup">
+          <label>Reg. Number</label>
+          <input id="signupRegNo" class="field" type="text" placeholder="240701276">
+        </div>
+        <div class="fgroup">
+          <label>Department</label>
+          <select id="signupDept" class="field">
+            <option value="CSE">CSE</option>
+            <option value="ECE">ECE</option>
+            <option value="IT">IT</option>
+            <option value="MECH">MECH</option>
+          </select>
+        </div>
+      </div>
+      <div class="two-col">
+        <div class="fgroup">
+          <label>Year</label>
+          <select id="signupYear" class="field">
+            <option value="1">1st Year</option>
+            <option value="2">2nd Year</option>
+            <option value="3">3rd Year</option>
+            <option value="4">4th Year</option>
+          </select>
+        </div>
+        <div class="fgroup">
+          <label>Role</label>
+          <select id="signupRole" class="field">
+            <option value="student">Student</option>
+            <option value="club">Club Member</option>
+          </select>
+        </div>
+      </div>
+      <div class="fgroup">
+        <label>Email</label>
+        <input id="signupEmail" class="field" type="email" placeholder="your@email.com">
+      </div>
+      <div class="two-col">
+        <div class="fgroup">
+          <label>Password</label>
+          <input id="pass" class="field" type="password" placeholder="••••••••">
+        </div>
+        <div class="fgroup">
+          <label>Confirm</label>
+          <input id="repass" class="field" type="password" placeholder="••••••••">
+        </div>
+      </div>
+      <p class="note">Min 6 chars · 1 uppercase · 1 lowercase · 1 special char</p>
+      <button class="submit-btn" onclick="signup()">Create Account →</button>
+    </div>
+  </div>
+</div>
+
+<script src="{% static 'js/script.js' %}"></script>
+<script>
+/* ════════════════════════════════════════════
+   ① CUSTOM CURSOR
+════════════════════════════════════════════ */
+(function() {
+  var dot  = document.getElementById('cursorDot');
+  var ring = document.getElementById('cursorRing');
+  var mx = window.innerWidth/2, my = window.innerHeight/2;
+  var rx = mx, ry = my;
+
+  document.addEventListener('mousemove', function(e) {
+    mx = e.clientX; my = e.clientY;
+    dot.style.left  = mx + 'px';
+    dot.style.top   = my + 'px';
+  });
+
+  // Ring follows with slight lag (lerp)
+  (function lerpRing() {
+    rx += (mx - rx) * 0.12;
+    ry += (my - ry) * 0.12;
+    ring.style.left = rx + 'px';
+    ring.style.top  = ry + 'px';
+    requestAnimationFrame(lerpRing);
+  })();
+
+  // Expand ring on interactive elements
+  var interactives = document.querySelectorAll('button, a, input, select, .nav-btn, .mtab, .forgot');
+  interactives.forEach(function(el) {
+    el.addEventListener('mouseenter', function() { document.body.classList.add('cursor-hover'); });
+    el.addEventListener('mouseleave', function() { document.body.classList.remove('cursor-hover'); });
+  });
+})();
+
+/* ════════════════════════════════════════════
+   ② PARALLAX — Aadhi moves opposite to mouse
+════════════════════════════════════════════ */
+(function() {
+  var mascot = document.getElementById('mascotLayer');
+  var cx = window.innerWidth / 2;
+  var cy = window.innerHeight / 2;
+
+  document.addEventListener('mousemove', function(e) {
+    var dx = (e.clientX - cx) / cx;  // -1 to 1
+    var dy = (e.clientY - cy) / cy;
+    // Aadhi moves opposite direction, subtle 12px max
+    mascot.style.transform = 'translate(' + (-dx * 12) + 'px, ' + (-dy * 8) + 'px)';
+  });
+})();
+
+/* ════════════════════════════════════════════
+   ④ STAT COUNTER — counts up from 0
+════════════════════════════════════════════ */
+function countUp(el, target, duration) {
+  var start = 0;
+  var step  = target / (duration / 16);
+  var timer = setInterval(function() {
+    start += step;
+    if (start >= target) { el.textContent = target; clearInterval(timer); return; }
+    el.textContent = Math.floor(start);
+  }, 16);
+}
+
+/* ════════════════════════════════════════════
+   ⑤ MAGNETIC BUTTONS
+════════════════════════════════════════════ */
+(function() {
+  var btns = document.querySelectorAll('.mag-btn');
+  btns.forEach(function(btn) {
+    btn.addEventListener('mousemove', function(e) {
+      var r   = btn.getBoundingClientRect();
+      var bx  = r.left + r.width  / 2;
+      var by  = r.top  + r.height / 2;
+      var dx  = (e.clientX - bx) * 0.3;
+      var dy  = (e.clientY - by) * 0.3;
+      btn.style.transform = 'translate(' + dx + 'px, ' + dy + 'px)';
+    });
+    btn.addEventListener('mouseleave', function() {
+      btn.style.transform = 'translate(0,0)';
+    });
+  });
+})();
+
+/* ════════════════════════════════════════════
+   MODAL
+════════════════════════════════════════════ */
+function openModal(tab) {
+  document.getElementById('overlay').classList.add('open');
+  switchTab(tab);
+}
+function closeModal() {
+  document.getElementById('overlay').classList.remove('open');
+}
+function closeOnBack(e) {
+  if (e.target === document.getElementById('overlay')) closeModal();
+}
+function switchTab(t) {
+  ['signin','signup'].forEach(function(s) {
+    document.getElementById('fSign' + (s==='signin'?'in':'up')).classList.toggle('active', s===t);
+    document.getElementById('tab'  + (s==='signin'?'SI':'SU')).classList.toggle('active', s===t);
+  });
+}
+document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeModal(); });
+
+/* ════════════════════════════════════════════
+   FETCH STATS + COUNT UP
+════════════════════════════════════════════ */
+fetch('/api/stats')
+  .then(function(r){ return r.ok ? r.json() : null; })
+  .then(function(d) {
+    if (!d) return;
+    var clubs   = parseInt(d.clubs   || 0);
+    var events  = parseInt(d.events  || 0);
+    var members = parseInt(d.members || 0);
+    // Delay counters until bottom bar animation finishes (~1.1s)
+    setTimeout(function() {
+      countUp(document.getElementById('sClubs'),   clubs,   1200);
+      countUp(document.getElementById('sEvents'),  events,  1200);
+      countUp(document.getElementById('sMembers'), members, 1400);
+    }, 1200);
+  })
+  .catch(function(){});
+</script>
+</body>
+</html>

@@ -1,0 +1,226 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Scan QR — Attendance</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:#0f0f13;color:#fff;min-height:100vh;display:flex;flex-direction:column;align-items:center;}
+
+.top-bar{width:100%;background:rgba(255,255,255,.05);backdrop-filter:blur(10px);padding:14px 20px;display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(255,255,255,.08);}
+.top-bar .logo{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:.9rem;font-weight:700;}
+.top-bar h1{font-size:.95rem;font-weight:600;color:#e2e8f0;}
+.back-btn{margin-left:auto;background:rgba(255,255,255,.1);border:none;color:#e2e8f0;padding:6px 14px;border-radius:8px;font-size:.8rem;cursor:pointer;font-family:inherit;}
+
+.main{flex:1;width:100%;max-width:480px;padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:16px;}
+
+.event-card{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:16px 18px;width:100%;text-align:center;}
+.event-card h2{font-size:1rem;font-weight:700;color:#e2e8f0;margin-bottom:4px;}
+.event-card p{font-size:.8rem;color:#94a3b8;}
+
+/* Camera viewfinder */
+.scanner-wrap{position:relative;width:100%;max-width:320px;aspect-ratio:1;border-radius:18px;overflow:hidden;background:#000;box-shadow:0 8px 32px rgba(99,102,241,.3);}
+#scanner-video{width:100%;height:100%;object-fit:cover;}
+.scan-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;}
+.scan-frame{width:65%;aspect-ratio:1;border:3px solid #6366f1;border-radius:12px;box-shadow:0 0 0 9999px rgba(0,0,0,.5);position:relative;}
+.scan-frame::before,.scan-frame::after{content:'';position:absolute;width:18px;height:18px;border-color:#a5b4fc;border-style:solid;}
+.scan-frame::before{top:-3px;left:-3px;border-width:3px 0 0 3px;border-radius:4px 0 0 4px;}
+.scan-frame::after{bottom:-3px;right:-3px;border-width:0 3px 3px 0;border-radius:0 0 4px 0;}
+.scan-line{position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#6366f1,transparent);animation:scanAnim 2s linear infinite;}
+@keyframes scanAnim{0%{top:10%}100%{top:90%}}
+#scanner-canvas{display:none;}
+
+/* Status card */
+.status-card{width:100%;border-radius:14px;padding:18px;text-align:center;display:none;animation:fadeIn .3s ease;}
+.status-card.success{background:rgba(52,211,153,.1);border:1.5px solid #34d399;display:block;}
+.status-card.error{background:rgba(239,68,68,.1);border:1.5px solid #ef4444;display:block;}
+.status-card.loading{background:rgba(99,102,241,.1);border:1.5px solid #6366f1;display:block;}
+.status-icon{font-size:2.5rem;margin-bottom:8px;}
+.status-msg{font-size:.95rem;font-weight:600;color:#e2e8f0;}
+.status-sub{font-size:.8rem;color:#94a3b8;margin-top:4px;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* Manual entry fallback */
+.manual-section{width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:16px;}
+.manual-section h3{font-size:.85rem;font-weight:600;color:#94a3b8;margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em;}
+.token-input{width:100%;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.12);border-radius:10px;padding:12px 14px;color:#e2e8f0;font-size:1rem;font-family:'Inter',monospace;letter-spacing:.08em;outline:none;}
+.token-input:focus{border-color:#6366f1;}
+.submit-btn{width:100%;margin-top:10px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none;color:#fff;border-radius:10px;padding:13px;font-size:.95rem;font-weight:600;cursor:pointer;font-family:inherit;transition:opacity .2s;}
+.submit-btn:active{opacity:.85;}
+.submit-btn:disabled{opacity:.5;cursor:not-allowed;}
+
+/* Camera error */
+.cam-error{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:12px;padding:14px;text-align:center;font-size:.82rem;color:#fca5a5;display:none;}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div class="logo">R</div>
+  <h1>Mark Attendance</h1>
+  <button class="back-btn" onclick="history.back()">← Back</button>
+</div>
+
+<div class="main">
+
+  <div class="event-card">
+    <h2 id="eventTitle">Loading event…</h2>
+    <p id="eventMeta">—</p>
+  </div>
+
+  <!-- Status display -->
+  <div class="status-card" id="statusCard">
+    <div class="status-icon" id="statusIcon">⏳</div>
+    <div class="status-msg"  id="statusMsg">Processing…</div>
+    <div class="status-sub"  id="statusSub"></div>
+  </div>
+
+  <!-- Camera scanner -->
+  <div class="scanner-wrap" id="scannerWrap">
+    <video id="scanner-video" autoplay playsinline muted></video>
+    <canvas id="scanner-canvas"></canvas>
+    <div class="scan-overlay">
+      <div class="scan-frame">
+        <div class="scan-line"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cam-error" id="camError">
+    📷 Camera not available. Use the manual entry below.
+  </div>
+
+  <!-- Manual token entry fallback -->
+  <div class="manual-section">
+    <h3>Manual Entry</h3>
+    <input id="manualToken" class="token-input" placeholder="Enter 16-char token shown on screen" maxlength="16" autocomplete="off" autocorrect="off" spellcheck="false">
+    <button class="submit-btn" id="submitBtn" onclick="submitManual()">Mark My Attendance</button>
+  </div>
+
+</div>
+
+<script>
+const API       = window.location.origin;
+const pathParts = window.location.pathname.split('/');
+// URL: /attendance/<event_id>/scan
+const EVENT_ID  = pathParts[pathParts.indexOf('attendance') + 1] || '';
+let   scanning  = true;
+let   submitted = false;
+
+// Load event info
+fetch(API + '/api/events/' + EVENT_ID)
+  .then(r => r.json())
+  .then(d => {
+    document.getElementById('eventTitle').textContent = d.title || 'Event #' + EVENT_ID;
+    document.getElementById('eventMeta').textContent =
+      (d.date || '') + ' · ' + (d.time || '') + (d.location ? ' · ' + d.location : '');
+  })
+  .catch(() => {});
+
+// Start camera
+const video  = document.getElementById('scanner-video');
+const canvas = document.getElementById('scanner-canvas');
+const ctx    = canvas.getContext('2d');
+
+navigator.mediaDevices && navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+  .then(stream => {
+    video.srcObject = stream;
+    video.play();
+    requestAnimationFrame(tick);
+  })
+  .catch(() => {
+    document.getElementById('scannerWrap').style.display = 'none';
+    document.getElementById('camError').style.display   = 'block';
+  });
+
+function tick() {
+  if (!scanning) return;
+  if (video.readyState === video.HAVE_ENOUGH_DATA) {
+    canvas.width  = video.videoWidth;
+    canvas.height = video.videoHeight;
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const code = jsQR(imageData.data, imageData.width, imageData.height, {
+      inversionAttempts: 'dontInvert'
+    });
+    if (code && code.data) {
+      // Expected format: RECQR:<event_id>:<token>
+      const parts = code.data.split(':');
+      if (parts.length === 3 && parts[0] === 'RECQR' && parts[1] === EVENT_ID) {
+        const token = parts[2];
+        submitToken(token);
+        return;
+      } else if (parts.length === 3 && parts[0] === 'RECQR') {
+        showStatus('error', '❌', 'Wrong Event', 'This QR code is for a different event.');
+        scanning = false;
+        setTimeout(() => { scanning = true; clearStatus(); requestAnimationFrame(tick); }, 3000);
+        return;
+      }
+    }
+  }
+  requestAnimationFrame(tick);
+}
+
+function submitManual() {
+  const token = document.getElementById('manualToken').value.trim();
+  if (!token) { alert('Please enter the token.'); return; }
+  submitToken(token);
+}
+
+function submitToken(token) {
+  if (submitted) return;
+  submitted = true;
+  scanning  = false;
+  document.getElementById('submitBtn').disabled = true;
+
+  showStatus('loading', '⏳', 'Submitting…', 'Please wait.');
+
+  fetch(API + '/api/events/' + EVENT_ID + '/qr/scan', {
+    method:      'POST',
+    credentials: 'include',
+    headers:     { 'Content-Type': 'application/json' },
+    body:         JSON.stringify({ token })
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (d.success) {
+      showStatus('success', '✅', d.message, 'Your attendance has been recorded.');
+      // Stop camera
+      if (video.srcObject) {
+        video.srcObject.getTracks().forEach(t => t.stop());
+        document.getElementById('scannerWrap').style.display = 'none';
+      }
+    } else {
+      showStatus('error', '❌', d.message || 'Failed', 'Please try again.');
+      submitted = false;
+      document.getElementById('submitBtn').disabled = false;
+      setTimeout(() => { scanning = true; clearStatus(); requestAnimationFrame(tick); }, 4000);
+    }
+  })
+  .catch(() => {
+    showStatus('error', '❌', 'Network error', 'Please check your connection and try again.');
+    submitted = false;
+    document.getElementById('submitBtn').disabled = false;
+    setTimeout(() => { scanning = true; clearStatus(); requestAnimationFrame(tick); }, 3000);
+  });
+}
+
+function showStatus(type, icon, msg, sub) {
+  const card = document.getElementById('statusCard');
+  card.className   = 'status-card ' + type;
+  document.getElementById('statusIcon').textContent = icon;
+  document.getElementById('statusMsg').textContent  = msg;
+  document.getElementById('statusSub').textContent  = sub || '';
+}
+
+function clearStatus() {
+  document.getElementById('statusCard').className = 'status-card';
+  document.getElementById('statusCard').style.display = 'none';
+}
+</script>
+</body>
+</html>

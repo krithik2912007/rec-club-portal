@@ -1,0 +1,315 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Club Details</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        .past-events-gallery { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:16px; margin-top:20px; }
+        .past-event-card { background:#fff; border-radius:12px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,.08); cursor:pointer; transition:transform .2s; text-decoration:none; color:inherit; display:block; }
+        .past-event-card:hover { transform:translateY(-4px); }
+        .past-event-card .thumb { width:100%; height:140px; background:#e8e8e8; display:flex; align-items:center; justify-content:center; font-size:2rem; }
+        .past-event-card .thumb img { width:100%; height:140px; object-fit:cover; }
+        .past-event-card .pec-body { padding:12px; }
+        .past-event-card .pec-body h4 { margin:0 0 6px; font-size:.95rem; }
+        .past-event-card .pec-meta { font-size:.78rem; color:#666; }
+        .past-event-card .pec-rating { font-size:.8rem; margin-top:4px; color:#e6a817; }
+        .gallery-section-title { font-size:1.1rem; font-weight:600; margin:24px 0 8px; color:#1e1b4b; }
+        .members-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:24px; margin-top:20px; }
+        .member-card { background:#f0f0ff; border-radius:16px; padding:28px 20px 20px; text-align:center; box-shadow:0 2px 10px rgba(79,70,229,.08); transition:transform .2s; }
+        .member-card:hover { transform:translateY(-4px); }
+        .member-avatar { width:110px; height:110px; border-radius:50%; object-fit:cover; border:3px solid #fff; box-shadow:0 4px 14px rgba(79,70,229,.18); margin:0 auto 12px; display:block; }
+        .member-avatar-placeholder { width:110px; height:110px; border-radius:50%; background:linear-gradient(135deg,#6366f1,#8b5cf6); display:flex; align-items:center; justify-content:center; font-size:2.2rem; color:#fff; margin:0 auto 12px; box-shadow:0 4px 14px rgba(79,70,229,.18); }
+        .member-role-label { font-size:.72rem; font-weight:700; color:#6366f1; letter-spacing:.08em; text-transform:uppercase; margin-bottom:4px; }
+        .member-name { font-size:1.05rem; font-weight:700; color:#1e1b4b; margin:0 0 4px; }
+        .member-dept { font-size:.8rem; color:#718096; margin-bottom:12px; }
+        .member-bio { font-size:.78rem; color:#4b5563; margin-bottom:12px; font-style:italic; line-height:1.5; }
+        .member-socials { display:flex; gap:10px; justify-content:center; }
+        .social-icon { width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.85rem; text-decoration:none; transition:transform .15s; }
+        .social-icon:hover { transform:scale(1.15); }
+        .social-github   { background:#24292e; color:#fff; }
+        .social-linkedin { background:#0077b5; color:#fff; }
+        .social-instagram { background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888); color:#fff; }
+        .role-section-title { font-size:.82rem; font-weight:700; color:#6366f1; letter-spacing:.08em; text-transform:uppercase; margin:24px 0 10px; padding-bottom:6px; border-bottom:2px solid #e8e8ff; }
+    </style>
+</head>
+<body>
+
+<div id="page-loader"></div>
+
+<header>
+    <div class="logo-title">
+        <img src="{% static 'images/r-logo.png' %}" class="site-logo">
+        <h3>Centralized Club Portal</h3>
+    </div>
+    <nav>
+        <a href="/home">Home</a>
+        <a href="/clubs">Clubs</a>
+        <a href="/events">Events</a>
+        <a href="/calendar">Calendar</a>
+        <div class="profile-btn-wrap" id="profileBtnWrap"></div>
+    </nav>
+</header>
+
+<div class="container">
+
+<a id="clubBackBtn" href="/clubs" class="back-link">&#8592; Back to Clubs</a>
+
+<div class="club-hero">
+    <div class="club-hero-left">
+        <div class="club-title-row">
+            <h1 id="clubName"></h1>
+            <span class="badge" id="clubCategory"></span>
+        </div>
+        <p id="clubDesc"></p>
+        <div class="club-hero-meta">
+            <span id="clubMembers"></span>
+        </div>
+    </div>
+    <div class="club-hero-right">
+        <span id="clubEventCount"></span>
+    </div>
+</div>
+
+<div class="tabs">
+    <div class="tab active" id="about-tab"   onclick="switchTab('about')">About</div>
+    <div class="tab"        id="events-tab"  onclick="switchTab('events')">Events</div>
+    <div class="tab"        id="contact-tab" onclick="switchTab('contact')">Contact &amp; Info</div>
+</div>
+
+<div id="about" class="tab-content active">
+    <div class="info-card">
+        <h3>About <span id="clubName2"></span></h3>
+        <p id="clubAboutText" style="color:#4b5563;line-height:1.7;white-space:pre-wrap;"></p>
+
+        <div id="clubVisionSec" style="display:none;margin-top:22px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                <span style="font-size:1.3rem;">🎯</span>
+                <h4 style="margin:0;color:#1e1b4b;font-size:.95rem;">Our Vision</h4>
+            </div>
+            <p id="clubVisionText" style="color:#4b5563;line-height:1.7;margin:0;padding-left:30px;white-space:pre-wrap;"></p>
+        </div>
+
+        <div id="clubMissionSec" style="display:none;margin-top:18px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                <span style="font-size:1.3rem;">🚀</span>
+                <h4 style="margin:0;color:#1e1b4b;font-size:.95rem;">Our Mission</h4>
+            </div>
+            <p id="clubMissionText" style="color:#4b5563;line-height:1.7;margin:0;padding-left:30px;white-space:pre-wrap;"></p>
+        </div>
+    </div>
+    <p class="gallery-section-title">&#128248; Past Events Gallery</p>
+    <div id="pastEventsGallery" class="past-events-gallery">
+        <p id="noGallery" style="color:#888;">No past events yet.</p>
+    </div>
+</div>
+
+<div id="events" class="tab-content">
+    <div id="clubEvents"></div>
+    <p id="noUpcoming" style="color:#888;display:none;">No upcoming events for this club.</p>
+</div>
+
+<div id="contact" class="tab-content">
+    <div class="info-card" style="margin-bottom:20px;">
+        <h3>Meet the Team</h3>
+        <p style="color:#718096;font-size:.88rem;">The people who run this club.</p>
+    </div>
+    <div id="presidentSection" style="display:none;"><div class="role-section-title">&#127942; President</div><div class="members-grid" id="presidentGrid"></div></div>
+    <div id="vpSection"        style="display:none;"><div class="role-section-title">&#11088; Vice President</div><div class="members-grid" id="vpGrid"></div></div>
+    <div id="secretarySection" style="display:none;"><div class="role-section-title">&#128203; Secretary</div><div class="members-grid" id="secretaryGrid"></div></div>
+    <div id="jtsecSection"     style="display:none;"><div class="role-section-title">&#128203; Joint Secretary</div><div class="members-grid" id="jtsecGrid"></div></div>
+    <div id="treasurerSection" style="display:none;"><div class="role-section-title">&#128176; Treasurer</div><div class="members-grid" id="treasurerGrid"></div></div>
+    <div id="hrSection"        style="display:none;"><div class="role-section-title">&#129309; HR</div><div class="members-grid" id="hrGrid"></div></div>
+    <div id="coordSection"     style="display:none;"><div class="role-section-title">&#127919; Event Coordinator</div><div class="members-grid" id="coordGrid"></div></div>
+    <div id="emHeadSection"    style="display:none;"><div class="role-section-title">&#127919; Event Management Head</div><div class="members-grid" id="emHeadGrid"></div></div>
+    <div id="emAssocSection"   style="display:none;"><div class="role-section-title">&#127919; Event Management Associate</div><div class="members-grid" id="emAssocGrid"></div></div>
+    <div id="prHeadSection"    style="display:none;"><div class="role-section-title">&#128226; PR Head</div><div class="members-grid" id="prHeadGrid"></div></div>
+    <div id="prAssocSection"   style="display:none;"><div class="role-section-title">&#128226; PR Associate</div><div class="members-grid" id="prAssocGrid"></div></div>
+    <div id="photoSection"     style="display:none;"><div class="role-section-title">&#128247; Photography</div><div class="members-grid" id="photoGrid"></div></div>
+    <p id="noMembers" style="color:#888;display:none;">No member information available yet.</p>
+</div>
+
+</div>
+
+<footer><p>&#169; 2026 Centralized Club Portal</p></footer>
+
+<script src="{% static 'js/script.js' %}"></script>
+
+<script>
+/* ============================================================
+   club.html — fully self-contained, no conflicts with script.js
+============================================================ */
+
+var clubPageId = window.location.pathname.split("/").pop();
+var clubToday  = new Date(); clubToday.setHours(0,0,0,0);
+
+/* --- back button --- */
+(function(){
+    var p    = new URLSearchParams(window.location.search);
+    var from = p.get("from");
+    var btn  = document.getElementById("clubBackBtn");
+    if(from === "dashboard")       { btn.href = "/dashboard";       btn.textContent = "\u2190 Back to Dashboard"; }
+    else if(from === "club-dashboard") { btn.href = "/club-dashboard"; btn.textContent = "\u2190 Back to Club Dashboard"; }
+})();
+
+/* --- tab switch --- */
+function switchTab(name){
+    document.querySelectorAll(".tab-content").forEach(function(t){ t.classList.remove("active"); });
+    document.querySelectorAll(".tab").forEach(function(b){ b.classList.remove("active"); });
+    document.getElementById(name).classList.add("active");
+    document.getElementById(name + "-tab").classList.add("active");
+    if(name === "contact") loadMembersTab();
+}
+
+/* --- load club on DOM ready --- */
+document.addEventListener("DOMContentLoaded", function(){
+    initProfileDropdown();
+
+    /* club detail */
+    apiFetch("/api/club/" + clubPageId)
+    .then(function(res){
+        if(!res.ok){ throw new Error("Server error " + res.status); }
+        return res.json();
+    })
+    .then(function(data){
+        var club    = data.club;
+        var events  = data.events || [];
+        var members = data.members || [];
+
+        document.getElementById("clubName").textContent        = club.name;
+        document.getElementById("clubName2").textContent       = club.name;
+        document.getElementById("clubDesc").textContent        = club.description || "";
+        document.getElementById("clubCategory").textContent    = club.category    || "";
+        document.getElementById("clubAboutText").textContent   = club.about || club.description || "";
+        document.getElementById("clubMembers").textContent     = "👥 " + members.length + " Members";
+        document.getElementById("clubEventCount").textContent  = "⏱ " + events.length + " Events";
+
+        // Vision & Mission
+        var visionEl  = document.getElementById("clubVisionSec");
+        var missionEl = document.getElementById("clubMissionSec");
+        if(club.vision  && visionEl){ visionEl.style.display  = ""; document.getElementById("clubVisionText").textContent  = club.vision; }
+        if(club.mission && missionEl){ missionEl.style.display = ""; document.getElementById("clubMissionText").textContent = club.mission; }
+
+        // Club President shown in Contact & Info tab
+
+        /* upcoming events tab */
+        var upcoming = events.filter(function(e){ return new Date(e.date) >= clubToday; });
+        if(!upcoming.length){
+            document.getElementById("noUpcoming").style.display = "block";
+        } else {
+            var html = "";
+            upcoming.forEach(function(e){
+                html += '<a href="/event/' + e.id + '?from=club&clubId=' + clubPageId + '" class="card" style="text-decoration:none;color:inherit;display:block;margin-bottom:15px;">'
+                    + "<h4>" + e.title + "</h4>"
+                    + "<small>\uD83D\uDCC5 " + e.date + " | \u23F0 " + e.time + "</small><br>"
+                    + "<small>\uD83D\uDCCD " + (e.location || "\u2014") + "</small><br>"
+                    + "<small>\u2B50 " + (e.avg_rating || 0) + " / 5 (" + (e.total_reviews || 0) + " reviews)</small>"
+                    + "</a>";
+            });
+            document.getElementById("clubEvents").innerHTML = html;
+        }
+    })
+    .catch(function(err){
+        console.error("Club load error:", err);
+        document.getElementById("clubName").textContent = "Error loading club";
+        document.getElementById("clubDesc").textContent = "Could not load club details. Error: " + err.message;
+    });
+
+    /* past events gallery */
+    apiFetch("/api/club/" + clubPageId + "/past-events-gallery")
+    .then(function(res){ return res.json(); })
+    .then(function(events){
+        var container = document.getElementById("pastEventsGallery");
+        var noMsg     = document.getElementById("noGallery");
+        if(!events || !events.length){ noMsg.style.display = "block"; return; }
+        noMsg.style.display = "none";
+        var html = "";
+        events.forEach(function(e){
+            var thumb = e.thumbnail
+                ? '<div class="thumb"><img src="' + API + "/" + e.thumbnail + '" alt="' + e.title + '"></div>'
+                : '<div class="thumb" style="background:#f0f0f0;height:140px;display:flex;align-items:center;justify-content:center;">\uD83D\uDDBC\uFE0F</div>';
+            var stars = e.avg_rating ? "\u2B50".repeat(Math.round(e.avg_rating)) : "No reviews";
+            html += '<a href="/event/' + e.id + '?from=club&clubId=' + clubPageId + '" class="past-event-card">'
+                + thumb
+                + '<div class="pec-body">'
+                + "<h4>" + e.title + "</h4>"
+                + '<div class="pec-meta">\uD83D\uDCC5 ' + e.date + ' &nbsp;|&nbsp; \uD83D\uDCCD ' + (e.location || "\u2014") + "</div>"
+                + '<div class="pec-rating">' + stars + " (" + (e.total_reviews || 0) + " reviews)</div>"
+                + '<div class="pec-meta">\uD83D\uDC65 ' + (e.registered_count || 0) + " attended</div>"
+                + "</div></a>";
+        });
+        container.innerHTML = html;
+    })
+    .catch(function(err){ console.error("Gallery error:", err); });
+
+});
+
+/* --- contact tab members --- */
+function loadMembersTab(){
+    apiFetch("/api/club/" + clubPageId + "/members-public")
+    .then(function(r){ return r.json(); })
+    .then(function(members){
+        if(!members || !members.length){
+            document.getElementById("noMembers").style.display = "block";
+            return;
+        }
+        function g(role){ return members.filter(function(m){ return m.role === role; }); }
+        showGroup("presidentSection",  "presidentGrid",  g("president"));
+        showGroup("vpSection",         "vpGrid",         g("vice_president"));
+        showGroup("secretarySection",  "secretaryGrid",  g("secretary"));
+        showGroup("jtsecSection",      "jtsecGrid",      g("joint_secretary"));
+        showGroup("treasurerSection",  "treasurerGrid",  g("treasurer"));
+        showGroup("hrSection",         "hrGrid",         g("hr"));
+        showGroup("coordSection",      "coordGrid",      g("event_coordinator"));
+        showGroup("emHeadSection",     "emHeadGrid",     g("event_management_head"));
+        showGroup("emAssocSection",    "emAssocGrid",    g("event_management_associate"));
+        showGroup("prHeadSection",     "prHeadGrid",     g("pr_head"));
+        showGroup("prAssocSection",    "prAssocGrid",    g("pr_associate"));
+        showGroup("photoSection",      "photoGrid",      g("photography"));
+    })
+    .catch(function(err){ console.error("Members error:", err); });
+}
+
+function showGroup(secId, gridId, members){
+    if(!members.length) return;
+    document.getElementById(secId).style.display = "block";
+    var html = "";
+    members.forEach(function(m){ html += buildMemberCard(m); });
+    document.getElementById(gridId).innerHTML = html;
+}
+
+function buildMemberCard(m){
+    var ROLE_LABELS = {
+        president:"President", vice_president:"Vice-President",
+        secretary:"Secretary", joint_secretary:"Joint Secretary",
+        treasurer:"Treasurer", hr:"HR",
+        event_coordinator:"Event Coordinator",
+        event_management_head:"Event Management Head",
+        event_management_associate:"Event Management Associate",
+        pr_head:"PR Head", pr_associate:"PR Associate",
+        photography:"Photography"
+    };
+    var avatar = m.profile_pic
+        ? '<img src="' + API + "/" + m.profile_pic + '" class="member-avatar" alt="' + m.name + '">'
+        : '<div class="member-avatar-placeholder">' + m.name.charAt(0).toUpperCase() + "</div>";
+    var roleText = ROLE_LABELS[m.role] || m.role;
+    var dept     = m.department ? m.department + (m.year ? " \u00B7 Year " + m.year : "") : "";
+    var bio      = m.bio ? '<p class="member-bio">"' + m.bio + '"</p>' : "";
+    var socials  = "";
+    if(m.github)    socials += '<a href="' + m.github    + '" target="_blank" class="social-icon social-github"   title="GitHub"><i class="fab fa-github"></i></a>';
+    if(m.linkedin)  socials += '<a href="' + m.linkedin  + '" target="_blank" class="social-icon social-linkedin" title="LinkedIn"><i class="fab fa-linkedin-in"></i></a>';
+    if(m.instagram) socials += '<a href="' + m.instagram + '" target="_blank" class="social-icon social-instagram" title="Instagram"><i class="fab fa-instagram"></i></a>';
+    return '<div class="member-card">'
+        + avatar
+        + '<div class="member-role-label">'  + roleText + "</div>"
+        + '<div class="member-name">'         + m.name   + "</div>"
+        + (dept    ? '<div class="member-dept">'    + dept    + "</div>" : "")
+        + bio
+        + (socials ? '<div class="member-socials">' + socials + "</div>" : "")
+        + "</div>";
+}
+</script>
+
+</body>
+</html>

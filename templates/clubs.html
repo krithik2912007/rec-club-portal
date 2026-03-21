@@ -1,0 +1,93 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clubs</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <style>
+        .sort-row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
+        .sort-label { font-weight:600; font-size:.88rem; color:#555; }
+        .sort-pill { padding:5px 16px; border-radius:20px; border:1.5px solid #ccc; background:#fff; cursor:pointer; font-size:.83rem; transition:all .2s; }
+        .sort-pill.active { background:var(--primary,#4f46e5); color:#fff; border-color:var(--primary,#4f46e5); }
+    </style>
+</head>
+<body>
+
+<div id="page-loader"></div>
+
+<header>
+    <div class="logo-title">
+        <img src="{% static 'images/r-logo.png' %}" class="site-logo">
+        <h3>Centralized Club Portal</h3>
+    </div>
+    <nav>
+        <a href="/home">Home</a>
+        <a href="/clubs" class="active">Clubs</a>
+        <a href="/events">Events</a>
+        <a href="/calendar">Calendar</a>
+        <div class="profile-btn-wrap" id="profileBtnWrap"></div>
+    </nav>
+</header>
+
+<section class="events-container">
+    <h1>All Clubs</h1>
+    <p class="subtitle">Explore clubs and join the community</p>
+
+    <input type="text" class="search-bar" id="search" placeholder="Search clubs..." onkeyup="searchClubs()">
+
+    <!-- Category filters -->
+    <div class="event-filters" id="filters">
+        <button class="filter active" onclick="filterClubs('all', this)">All</button>
+        <button class="filter" onclick="filterClubs('Technology', this)">Technology</button>
+        <button class="filter" onclick="filterClubs('Arts', this)">Arts</button>
+        <button class="filter" onclick="filterClubs('Sports', this)">Sports</button>
+        <button class="filter" onclick="filterClubs('Academic', this)">Academic</button>
+        <button class="filter" onclick="filterClubs('Cultural', this)">Cultural</button>
+        <button class="filter" onclick="filterClubs('Social Service', this)">Social Service</button>
+        <button class="filter" onclick="filterClubs('Business', this)">Business</button>
+        <button class="filter" onclick="filterClubs('Lifestyle', this)">Lifestyle</button>
+        <button class="filter" onclick="filterClubs('Health', this)">Health</button>
+        <button class="filter" onclick="filterClubs('Sustainability', this)">Sustainability</button>
+    </div>
+
+    <!-- (viii) Sort clubs -->
+    <div class="sort-row">
+        <span class="sort-label">Sort by:</span>
+        <button class="sort-pill active" onclick="setClubSortMode('default', this)">Default</button>
+        <button class="sort-pill" onclick="setClubSortMode('popular', this)">🔥 Most Popular</button>
+        <button class="sort-pill" onclick="setClubSortMode('favourited', this)">❤️ Most Favourited</button>
+    </div>
+
+    <div class="event-grid" id="clubGrid"></div>
+</section>
+
+<footer><p>© 2026 Centralized Club Portal</p></footer>
+
+<script src="{% static 'js/script.js' %}"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    initProfileDropdown();
+    loadClubs();
+});
+
+// (viii) Club sort mode
+function setClubSortMode(mode, el){
+    document.querySelectorAll(".sort-pill").forEach(p => p.classList.remove("active"));
+    el.classList.add("active");
+
+    if(mode === "popular"){
+        apiFetch("/api/clubs/popular")
+        .then(r => r.json())
+        .then(data => { clubs = data; renderClubs("clubGrid", clubs); });
+    } else if(mode === "favourited"){
+        apiFetch("/api/clubs/favourited")
+        .then(r => r.json())
+        .then(data => { clubs = data; renderClubs("clubGrid", clubs); });
+    } else {
+        loadClubs();
+    }
+}
+</script>
+
+</body>
+</html>

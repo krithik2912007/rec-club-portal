@@ -1,0 +1,2410 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+<title>Club Dashboard</title>
+<link rel="stylesheet" href="{% static 'css/styles.css' %}">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+:root{--primary:#4f46e5;--danger:#e53e3e;--success:#38a169;--warn:#d97706}
+.dash-layout{display:flex;min-height:calc(100vh - 64px)}
+.dash-sidebar{width:220px;min-width:220px;background:#1e1b4b;padding:20px 0;position:sticky;top:64px;height:calc(100vh - 64px);overflow-y:auto}
+.dash-sidebar .brand{color:#a5b4fc;font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:0 18px 10px}
+.sidebar-item{display:flex;align-items:center;gap:10px;padding:10px 18px;color:#c7d2fe;font-size:.87rem;cursor:pointer;border-left:3px solid transparent;transition:all .18s}
+.sidebar-item:hover,.sidebar-item.active{background:rgba(99,102,241,.2);color:#fff;border-left-color:#818cf8}
+.sidebar-item .ico{font-size:1rem;width:20px;text-align:center}
+.sidebar-divider{border:none;border-top:1px solid rgba(255,255,255,.08);margin:8px 14px}
+.active-club-badge{background:rgba(99,102,241,.25);border:1px solid rgba(129,140,248,.4);border-radius:10px;padding:10px 12px;margin:0 14px 10px}
+.club-switcher{padding:0 14px 4px}
+.club-btn{display:block;width:100%;text-align:left;background:rgba(255,255,255,.07);border:none;color:#c7d2fe;padding:8px 12px;border-radius:8px;font-size:.82rem;cursor:pointer;margin-bottom:6px;transition:all .15s}
+.club-btn:hover,.club-btn.active{background:rgba(99,102,241,.3);color:#fff}
+.club-btn .role-tag{font-size:.7rem;color:#a5b4fc;display:block;margin-top:2px}
+.dash-main{flex:1;padding:24px 28px;background:#f8faff;overflow-y:auto}
+.dash-section{display:none}.dash-section.active{display:block}
+.stats-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;margin-bottom:24px}
+.scard{background:#fff;border-radius:12px;padding:18px;box-shadow:0 1px 4px rgba(0,0,0,.06);border-left:4px solid var(--primary)}
+.scard h2{font-size:1.8rem;font-weight:700;margin:0;color:#1e1b4b}
+.scard p{margin:4px 0 0;font-size:.8rem;color:#718096}
+.scard.green{border-left-color:var(--success)}.scard.amber{border-left-color:var(--warn)}.scard.red{border-left-color:var(--danger)}
+.sec-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.sec-header h2{font-size:1.15rem;font-weight:700;color:#1e1b4b;margin:0}
+.dash-table{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.dash-table th{background:#f1f5f9;font-size:.77rem;color:#64748b;font-weight:700;padding:10px 14px;text-align:left;text-transform:uppercase;letter-spacing:.04em}
+.dash-table td{padding:11px 14px;border-bottom:1px solid #f1f5f9;font-size:.85rem;color:#374151;vertical-align:middle}
+.dash-table tr:last-child td{border-bottom:none}.dash-table tr:hover td{background:#f8faff}
+.pill{display:inline-block;border-radius:20px;padding:3px 10px;font-size:.72rem;font-weight:600}
+.pill-green{background:#d1fae5;color:#065f46}.pill-amber{background:#fef3c7;color:#92400e}
+.pill-red{background:#fee2e2;color:#991b1b}.pill-blue{background:#dbeafe;color:#1e40af}.pill-gray{background:#f1f5f9;color:#475569}
+.btn-xs{border:none;border-radius:6px;padding:4px 10px;font-size:.74rem;cursor:pointer;font-weight:600;transition:opacity .15s}
+.btn-xs:hover{opacity:.8}
+.btn-approve{background:#d1fae5;color:#065f46}.btn-reject{background:#fee2e2;color:#991b1b}
+.btn-edit{background:#dbeafe;color:#1e40af}.btn-export{background:#d1fae5;color:#065f46}
+.btn-primary{background:var(--primary);color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:.87rem;cursor:pointer;font-weight:600}
+.btn-danger{background:var(--danger);color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:.87rem;cursor:pointer;font-weight:600}
+.dash-form{background:#fff;border-radius:14px;padding:22px;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-bottom:20px}
+.dash-form h3{margin:0 0 14px;font-size:.98rem;font-weight:700;color:#1e1b4b}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.form-grid .full{grid-column:1/-1}
+.finput{width:100%;border:1.5px solid #e2e8f0;border-radius:8px;padding:8px 11px;font-size:.85rem;box-sizing:border-box;outline:none;font-family:inherit}
+.finput:focus{border-color:var(--primary)}
+.flabel{font-size:.76rem;font-weight:600;color:#64748b;margin-bottom:3px;display:block}
+.conflict-box{background:#fffbeb;border:1.5px solid #f6ad55;border-radius:8px;padding:9px 13px;margin:8px 0;font-size:.82rem;color:#744210;display:none}
+.rejected-banner{background:#fff5f5;border:1.5px solid #fc8181;border-radius:12px;padding:14px 18px;margin-bottom:14px}
+.rej-head{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.rej-badge{background:#fed7d7;color:#c53030;border-radius:20px;padding:2px 10px;font-size:.72rem;font-weight:700}
+.rej-reason{font-size:.82rem;color:#c53030;margin:4px 0}
+.rej-expires{font-size:.74rem;color:#a0aec0}
+.drop-zone{border:2px dashed #a0aec0;border-radius:10px;padding:20px;text-align:center;cursor:pointer;background:#f8faff;transition:all .2s;margin-top:8px;font-size:.83rem;color:#718096}
+.drop-zone.dragover{border-color:var(--primary);background:#eef2ff}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal-box{background:#fff;border-radius:16px;padding:26px;width:460px;max-width:95vw;box-shadow:0 8px 32px rgba(0,0,0,.15)}
+.modal-box h3{margin:0 0 16px;font-size:1rem;font-weight:700}
+.modal-actions{display:flex;gap:10px;margin-top:16px;justify-content:flex-end}
+.pbar{background:#e2e8f0;border-radius:4px;height:5px;margin:4px 0}
+.pbar-fill{background:var(--primary);height:100%;border-radius:4px}
+.chart-box{background:#fff;border-radius:12px;padding:18px;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-bottom:16px}
+.chart-box h3{font-size:.9rem;font-weight:700;color:#1e1b4b;margin:0 0 12px}
+
+/* ════ MOBILE RESPONSIVE ════ */
+@media (max-width: 768px) {
+  header { padding: 10px 14px; }
+  header nav a { display: none; }
+  .dash-layout { flex-direction: column; }
+  .dash-sidebar {
+    width: 100%; min-width: unset; height: auto;
+    position: relative; top: 0;
+    flex-direction: row; overflow-x: auto;
+    padding: 10px 0 6px;
+    display: flex; flex-wrap: nowrap;
+  }
+  .dash-sidebar .brand { display: none; }
+  .active-club-badge { display: none; }
+  .club-switcher { display: none; }
+  .sidebar-divider { display: none; }
+  .sidebar-item {
+    flex-shrink: 0; flex-direction: column;
+    padding: 8px 12px; font-size: .7rem; gap: 3px;
+    border-left: none; border-bottom: 3px solid transparent;
+  }
+  .sidebar-item.active { border-left: none; border-bottom-color: #818cf8; }
+  .sidebar-item .ico { font-size: .85rem; }
+  .dash-main { padding: 14px 12px; }
+  .stats-row { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .form-grid { grid-template-columns: 1fr; }
+  .form-grid .full { grid-column: 1; }
+  .dash-table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .dash-table th, .dash-table td { white-space: nowrap; padding: 8px 10px; font-size: .78rem; }
+  .modal-box { padding: 18px; }
+  .sec-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .sec-header h2 { font-size: 1rem; }
+  .sec-header > div { width: 100%; }
+  .sec-header input.finput { width: 100% !important; }
+  .btn-primary, .btn-danger { padding: 8px 14px; font-size: .82rem; }
+}
+@media (max-width: 480px) {
+  .stats-row { grid-template-columns: 1fr; }
+  .scard h2 { font-size: 1.5rem; }
+}
+
+/* ════ QR MODAL ════ */
+.qr-modal-overlay { display:none; position:fixed; inset:0; background:rgba(10,5,30,.75);
+  backdrop-filter:blur(8px); z-index:2000; align-items:center; justify-content:center; }
+.qr-modal-overlay.open { display:flex; }
+.qr-modal-box {
+  background:#1a1730; border:1px solid rgba(99,102,241,.3); border-radius:20px;
+  padding:28px 24px; width:380px; max-width:95vw;
+  box-shadow:0 20px 60px rgba(0,0,0,.5); text-align:center;
+  animation: qrPop .35s cubic-bezier(.22,1,.36,1);
+}
+@keyframes qrPop { from{opacity:0;transform:scale(.92)} to{opacity:1;transform:scale(1)} }
+.qr-modal-box h3 { color:#e2e8f0; font-size:1rem; margin-bottom:4px; }
+.qr-modal-box .qr-event-name { color:#a5b4fc; font-size:.82rem; margin-bottom:16px; }
+#qrCanvas { border-radius:12px; box-shadow:0 4px 20px rgba(99,102,241,.4); margin:0 auto 14px; display:block; }
+.qr-timer {
+  font-family: monospace; font-size:1.4rem; font-weight:700; letter-spacing:.08em;
+  color:#e2e8f0; margin-bottom:4px;
+}
+.qr-token-display {
+  font-family:monospace; font-size:.78rem; color:#94a3b8;
+  background:rgba(255,255,255,.06); border-radius:8px; padding:6px 10px;
+  margin-bottom:12px; letter-spacing:.12em;
+}
+.qr-session-timer {
+  font-size:.78rem; color:#94a3b8; margin-bottom:14px;
+}
+.qr-session-timer span { color:#f59e0b; font-weight:600; }
+.qr-progress {
+  height:4px; background:rgba(255,255,255,.1); border-radius:4px; margin-bottom:16px;
+}
+.qr-progress-fill {
+  height:100%; border-radius:4px;
+  background:linear-gradient(90deg,#6366f1,#8b5cf6);
+  transition: width 1s linear;
+}
+.qr-attendance-count {
+  background:rgba(52,211,153,.1); border:1px solid rgba(52,211,153,.25);
+  border-radius:10px; padding:10px; margin-bottom:14px; font-size:.85rem; color:#6ee7b7;
+}
+.qr-scan-link {
+  background:rgba(99,102,241,.15); border:1px solid rgba(99,102,241,.25);
+  border-radius:10px; padding:10px; margin-bottom:14px;
+  font-size:.78rem; color:#a5b4fc; word-break:break-all;
+}
+.qr-actions { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+.qr-btn { border:none; border-radius:10px; padding:9px 18px; font-size:.84rem; font-weight:600; cursor:pointer; font-family:inherit; transition:opacity .15s; }
+.qr-btn:active { opacity:.8; }
+.qr-btn-primary { background:linear-gradient(135deg,#6366f1,#8b5cf6); color:#fff; }
+.qr-btn-ghost   { background:rgba(255,255,255,.1); color:#e2e8f0; }
+.qr-btn-danger  { background:rgba(239,68,68,.15); color:#fca5a5; }
+
+/* Attendance list in modal */
+.att-list { max-height:200px; overflow-y:auto; text-align:left; margin-top:12px; }
+.att-row { display:flex; justify-content:space-between; align-items:center;
+  padding:7px 10px; border-bottom:1px solid rgba(255,255,255,.06); font-size:.8rem; color:#cbd5e1; }
+.att-row:last-child { border-bottom:none; }
+.att-row strong { color:#e2e8f0; }
+</style>
+</head>
+<body>
+
+<div id="page-loader"></div>
+
+<header>
+  <div class="logo-title">
+    <img src="{% static 'images/r-logo.png' %}" class="site-logo">
+    <h3>Centralized Club Portal</h3>
+  </div>
+  <nav>
+    <a href="/home">Home</a>
+    <a href="/events">Events</a>
+    <a href="/clubs">Clubs</a>
+    <span id="memberName" style="color:#a5b4fc;font-weight:600;font-size:.87rem;margin-right:8px;"></span>
+    <button class="logout-btn" onclick="logout()">Logout</button>
+  </nav>
+</header>
+
+<div class="dash-layout">
+
+<!-- SIDEBAR -->
+<aside class="dash-sidebar">
+  <div class="brand">My Clubs</div>
+
+  <div class="active-club-badge">
+    <div id="badgeName" style="font-weight:700;color:#fff;font-size:.88rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">—</div>
+    <div id="badgeRole" style="font-size:.7rem;color:#a5b4fc;margin-top:2px;text-transform:uppercase;letter-spacing:.06em;"></div>
+  </div>
+
+  <div class="club-switcher" id="clubSwitcher"></div>
+
+  <hr class="sidebar-divider">
+  <div class="brand" style="margin-top:6px;">Dashboard</div>
+
+  <div class="sidebar-item active" id="nav-overview"       onclick="showSection('overview',this)">      <span class="ico">📊</span> Overview</div>
+  <div class="sidebar-item"        id="nav-pending"         onclick="showSection('pending',this)"  style="display:none;"><span class="ico">⏳</span> Pending Approvals <span id="pendingBadge" style="margin-left:auto;background:#e53e3e;color:#fff;border-radius:20px;padding:1px 7px;font-size:.68rem;"></span></div>
+  <div class="sidebar-item"        id="nav-rejected"        onclick="showSection('rejected',this)">     <span class="ico">❌</span> Rejected Events</div>
+  <div class="sidebar-item"        id="nav-events"          onclick="showSection('events',this)">       <span class="ico">📅</span> All Club Events</div>
+  <div class="sidebar-item"        id="nav-manage-events"   onclick="showSection('manage-events',this)" style="display:none;"><span class="ico">✏️</span> Manage Events</div>
+  <div class="sidebar-item"        id="nav-create"          onclick="showSection('create',this)">       <span class="ico">➕</span> Create Event</div>
+  <div class="sidebar-item"        id="nav-members"         onclick="showSection('members',this)">      <span class="ico">👥</span> Club Members</div>
+  <div class="sidebar-item"        id="nav-manage-members"  onclick="showSection('manage-members',this)" style="display:none;"><span class="ico">👤</span> Manage Members</div>
+  <div class="sidebar-item"        id="nav-club-details"    onclick="showSection('club-details',this)" style="display:none;"><span class="ico">🏛️</span> Club Details</div>
+  <div class="sidebar-item"        id="nav-vp-changes"      onclick="showSection('vp-changes',this)" style="display:none;"><span class="ico">🔔</span> Pending Changes <span id="vpChangeBadge" style="margin-left:auto;background:#e53e3e;color:#fff;border-radius:20px;padding:1px 7px;font-size:.68rem;"></span></div>
+  <div class="sidebar-item"        id="nav-my-submissions"  onclick="showSection('my-submissions',this)" style="display:none;"><span class="ico">📋</span> My Submissions</div>
+  <div class="sidebar-item"        id="nav-my-events"       onclick="showSection('my-events',this)" style="display:none;"><span class="ico">🗂️</span> My Events</div>
+  <div class="sidebar-item"        id="nav-analytics"       onclick="showSection('analytics',this)">    <span class="ico">📈</span> Analytics</div>
+  <div class="sidebar-item"        id="nav-myregistrations" onclick="showSection('myregistrations',this)"><span class="ico">🎟️</span> My Registrations</div>
+  <div class="sidebar-item"        id="nav-profile"         onclick="showSection('profile',this)">      <span class="ico">👤</span> My Profile</div>
+</aside>
+
+<!-- MAIN -->
+<main class="dash-main">
+
+<!-- OVERVIEW -->
+<section class="dash-section active" id="sec-overview">
+  <div class="sec-header">
+    <h2>📊 Club Overview</h2>
+    <span id="overviewClubName" style="font-weight:600;color:#6366f1;"></span>
+  </div>
+  <div class="stats-row">
+    <div class="scard">          <h2 id="ovTotal">0</h2>         <p>Total Events</p></div>
+    <div class="scard green">   <h2 id="ovUpcoming">0</h2>      <p>Upcoming Events</p></div>
+    <div class="scard amber">   <h2 id="ovPending">0</h2>       <p>Pending Approval</p></div>
+    <div class="scard">          <h2 id="ovRegistrations">0</h2> <p>Total Registrations</p></div>
+    <div class="scard">          <h2 id="ovMembers">0</h2>       <p>Club Members</p></div>
+  </div>
+  <div class="chart-box"><h3>Registrations per Event</h3><canvas id="ovChart" height="160"></canvas></div>
+  <div id="upcomingEventsList"></div>
+</section>
+
+<!-- PENDING APPROVALS -->
+<section class="dash-section" id="sec-pending">
+  <div class="sec-header">
+    <h2>⏳ Pending Approvals</h2>
+    <button class="btn-primary" onclick="loadPendingEvents()">🔄 Refresh</button>
+  </div>
+  <p id="noPending" style="color:#718096;display:none;">No events pending approval.</p>
+  <table class="dash-table" id="pendingTable">
+    <thead><tr><th>Event</th><th>Date</th><th>Venue</th><th>Stage</th><th>Regs</th><th>Actions</th></tr></thead>
+    <tbody id="pendingTbody"></tbody>
+  </table>
+</section>
+
+<!-- REJECTED EVENTS (24h) -->
+<section class="dash-section" id="sec-rejected">
+  <div class="sec-header"><h2>❌ Recently Rejected Events</h2></div>
+  <p style="font-size:.83rem;color:#718096;margin-bottom:12px;">Rejected events are shown for 24 hours, then removed automatically.</p>
+  <div id="rejectedContainer"><p style="color:#999;">No rejected events in the last 24 hours.</p></div>
+</section>
+
+<!-- ALL CLUB EVENTS -->
+<section class="dash-section" id="sec-events">
+  <div class="sec-header">
+    <h2>📅 All Club Events</h2>
+    <input class="finput" style="width:200px;" placeholder="🔍 Search…" oninput="filterClubEventsTable(this.value)">
+  </div>
+  <table class="dash-table">
+    <thead><tr><th>Title</th><th>Date</th><th>Status</th><th>Registered</th><th>Actions</th></tr></thead>
+    <tbody id="allEventsTbody"></tbody>
+  </table>
+</section>
+
+<!-- CREATE EVENT -->
+<section class="dash-section" id="sec-create">
+  <div class="sec-header"><h2>➕ Create New Event</h2></div>
+  <div class="dash-form">
+    <div class="form-grid">
+      <div><label class="flabel">Title *</label><input id="ceTitle" class="finput" placeholder="Event title"></div>
+      <div><label class="flabel">Venue</label><input id="ceLocation" class="finput" placeholder="Location" oninput="checkConflictLive()"></div>
+      <div><label class="flabel">Date *</label><input id="ceDate" type="date" class="finput" onchange="checkConflictLive()"></div>
+      <div><label class="flabel">Time *</label><input id="ceTime" type="time" class="finput" onchange="checkConflictLive()"></div>
+      <div>
+        <label class="flabel">Type</label>
+        <select id="ceType" class="finput">
+          <option value="workshop">Workshop</option>
+          <option value="seminar">Seminar</option>
+          <option value="competition">Competition</option>
+          <option value="social">Social</option>
+          <option value="recruitment">Recruitment</option>
+        </select>
+      </div>
+      <div><label class="flabel">Capacity</label><input id="ceCapacity" type="number" class="finput" placeholder="Max attendees"></div>
+      <div class="full"><label class="flabel">Description</label><textarea id="ceDesc" class="finput" rows="3" placeholder="About this event…"></textarea></div>
+      <div>
+        <label class="flabel">Event Category</label>
+        <select id="ceCategory" class="finput" onchange="toggleTeamFields()">
+          <option value="individual">👤 Individual</option>
+          <option value="team">👥 Team Event</option>
+        </select>
+      </div>
+      <div>
+        <label class="flabel">Paid / Free</label>
+        <select id="cePaid" class="finput" onchange="togglePriceField()">
+          <option value="0">🆓 Free</option>
+          <option value="1">💰 Paid</option>
+        </select>
+      </div>
+      <div id="cePriceDiv" style="display:none;"><label class="flabel">Price (₹)</label><input id="cePrice" type="number" class="finput" placeholder="e.g. 150"></div>
+      <div id="ceTeamDiv" style="display:none;grid-column:1/-1;">
+        <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:10px;">
+          <div><label class="flabel">Min Members</label><input id="ceMinMembers" type="number" class="finput" placeholder="e.g. 2" min="2"></div>
+          <div><label class="flabel">Max Members</label><input id="ceMaxMembers" type="number" class="finput" placeholder="e.g. 4"></div>
+        </div>
+      </div>
+      <div class="full"><label class="flabel">Prize Pool <span style="color:#a0aec0;font-weight:400;">(optional)</span></label><input id="cePrizePool" class="finput" placeholder="e.g. ₹10,000 cash prize"></div>
+      <div class="full"><label class="flabel">What is this event about? <span style="color:#a0aec0;font-weight:400;">(optional)</span></label><textarea id="ceAbout" class="finput" rows="3" placeholder="Describe the event in detail…"></textarea></div>
+      <div class="full"><label class="flabel">Rules <span style="color:#a0aec0;font-weight:400;">(optional)</span></label><textarea id="ceRules" class="finput" rows="3" placeholder="Event rules…"></textarea></div>
+      <div class="full"><label class="flabel">Instructions <span style="color:#a0aec0;font-weight:400;">(optional)</span></label><textarea id="ceInstructions" class="finput" rows="2" placeholder="Instructions for participants…"></textarea></div>
+      <div class="full">
+        <label class="flabel">Appoint Event Manager(s) <span style="color:#a0aec0;font-weight:400;">(optional)</span></label>
+        <div id="ceManagerPickerList" style="display:flex;flex-wrap:wrap;gap:8px;min-height:42px;padding:8px;border:1px solid #e2e8f0;border-radius:8px;background:#f8faff;">
+          <span style="color:#a0aec0;font-size:.82rem;align-self:center;" id="ceManagerPlaceholder">Club members will appear here…</span>
+        </div>
+        <div id="ceManagerSelected" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;"></div>
+      </div>
+    </div>
+    <div class="conflict-box" id="conflictWarning">⚠️ <strong>Venue Conflict:</strong> <span id="conflictDetail"></span></div>
+    <br>
+    <button class="btn-primary" onclick="createClubEvent()" id="createEventBtn">🚀 Submit for Approval</button>
+  </div>
+
+  <!-- President coordinator assignment panel (shown after creating) -->
+  <div id="assignCoordSection" style="display:none;">
+    <div class="dash-form" style="border:2px solid #6366f1;">
+      <h3 style="color:#4f46e5;">🎯 Assign Coordinator</h3>
+      <p style="font-size:.84rem;color:#718096;margin-bottom:14px;">Select club members to coordinate this event.</p>
+      <div id="coordMembersList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:16px;"></div>
+      <label class="flabel">Currently Assigned</label>
+      <div id="assignedCoordsContainer" style="margin-top:6px;"></div>
+      <br>
+      <button class="btn-primary" onclick="doneAssigning()" style="background:#38a169;">✅ Done — View Events</button>
+    </div>
+  </div>
+</section>
+
+<!-- MEMBERS (view only for basic members) -->
+<section class="dash-section" id="sec-members">
+  <div class="sec-header"><h2>👥 Club Members</h2></div>
+  <table class="dash-table">
+    <thead><tr><th>Member</th><th>Reg No</th><th>Contact</th><th>Dept / Year</th><th>Role</th></tr></thead>
+    <tbody id="membersTbody"></tbody>
+  </table>
+</section>
+
+<!-- MY SUBMISSIONS (VP sees status of their submitted changes) -->
+<section class="dash-section" id="sec-my-submissions">
+  <div class="sec-header">
+    <h2>📋 My Submissions</h2>
+    <button class="btn-primary" onclick="loadMySubmissions()">🔄 Refresh</button>
+  </div>
+  <p style="font-size:.82rem;color:#718096;margin-bottom:12px;">
+    Changes you submitted for president approval — and their current status.
+  </p>
+  <div id="mySubmissionsContainer"><p style="color:#999;">Loading…</p></div>
+</section>
+
+<!-- MY EVENTS (feature A — coordinator sees their assigned events) -->
+<section class="dash-section" id="sec-my-events">
+  <div class="sec-header">
+    <h2>🗂️ My Assigned Events</h2>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <input id="myEventsSearch" class="finput" style="width:200px;" placeholder="🔍 Search events…" oninput="filterMyEvents(this.value)">
+      <button class="btn-primary" onclick="loadMyCoordinatorEvents()">🔄 Refresh</button>
+    </div>
+  </div>
+  <p id="myEventsCount" style="font-size:.82rem;color:#718096;margin-bottom:12px;">Events assigned to you as coordinator.</p>
+  <table class="dash-table">
+    <thead><tr><th>EVENT</th><th>REGISTRATION TYPE</th><th>DATE</th><th>STATUS</th><th>REGISTERED</th><th>ACTIONS</th></tr></thead>
+    <tbody id="myCoordEventsTbody"></tbody>
+  </table>
+</section>
+
+<!-- MANAGE EVENTS (feature ii — event management roles) -->
+<section class="dash-section" id="sec-manage-events">
+  <div class="sec-header">
+    <h2>✏️ Manage Events</h2>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <input id="manageEventsSearch" class="finput" style="width:200px;" placeholder="🔍 Search events…" oninput="filterManageEvents(this.value)">
+      <button class="btn-primary" onclick="loadManageEvents()">🔄 Refresh</button>
+    </div>
+  </div>
+  <p id="manageEventsCount" style="font-size:.82rem;color:#718096;margin-bottom:12px;"></p>
+  <table class="dash-table">
+    <thead><tr><th>EVENT</th><th>REGISTRATION TYPE</th><th>DATE</th><th>STATUS</th><th>REGISTERED</th><th>ACTIONS</th></tr></thead>
+    <tbody id="manageEventsTbody"></tbody>
+  </table>
+</section>
+
+<!-- MANAGE MEMBERS (feature iii — president/VP only) -->
+<section class="dash-section" id="sec-manage-members">
+  <div class="sec-header">
+    <h2>👤 Manage Members</h2>
+    <button class="btn-primary" onclick="loadManageMembers()">🔄 Refresh</button>
+  </div>
+  <p id="manageVpNote" style="display:none;font-size:.82rem;color:#d97706;background:#fef3c7;padding:8px 12px;border-radius:8px;margin-bottom:12px;">
+    ⚠️ As Vice President, your changes will need president approval before taking effect.
+  </p>
+
+  <!-- Add Member form — president only -->
+  <div id="presAddMemberForm" style="display:none;background:#f8faff;border:1.5px solid #e2e8f0;border-radius:12px;padding:16px;margin-bottom:18px;">
+    <h4 style="margin:0 0 12px;color:#1e1b4b;font-size:.92rem;">➕ Add Member to Club</h4>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div>
+        <label class="flabel">Find User by Email or Reg No</label>
+        <div style="display:flex;gap:6px;">
+          <input id="presAddEmail" class="finput" placeholder="Email or Reg No (e.g. CS2021001)" oninput="presLookupUser()" style="flex:1;">
+          <button onclick="presLookupUser(true)" class="btn-xs btn-approve" style="white-space:nowrap;padding:0 10px;">🔍</button>
+        </div>
+        <div id="presUserLookupResult" style="font-size:.78rem;margin-top:4px;min-height:16px;"></div>
+        <input type="hidden" id="presAddUserId">
+      </div>
+      <div>
+        <label class="flabel">Role</label>
+        <select id="presAddRole" class="finput">
+          <option value="">Select club first…</option>
+        </select>
+        <div id="presNewRoleDiv" style="display:none;margin-top:6px;display:none;">
+          <div style="display:flex;gap:6px;">
+            <input id="presNewRoleName" class="finput" placeholder="e.g. Media Head" style="flex:1;">
+            <button onclick="presAddNewRole()" class="btn-xs btn-approve" style="white-space:nowrap;">+ Add</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <br>
+    <button class="btn-primary" onclick="presAddMemberToClub()" style="font-size:.85rem;">➕ Add Member</button>
+    <span id="presAddMsg" style="display:none;margin-left:10px;font-size:.82rem;color:#38a169;"></span>
+  </div>
+
+  <table class="dash-table">
+    <thead><tr><th>Member</th><th>Reg No</th><th>Contact</th><th>Dept / Year</th><th>Role</th><th>Actions</th></tr></thead>
+    <tbody id="manageMembersTbody"></tbody>
+  </table>
+</section>
+
+<!-- CLUB DETAILS (feature iii — president/VP) -->
+<section class="dash-section" id="sec-club-details">
+  <div class="sec-header"><h2>🏛️ Edit Club Details</h2></div>
+  <p id="clubDetailsVpNote" style="display:none;font-size:.82rem;color:#d97706;background:#fef3c7;padding:8px 12px;border-radius:8px;margin-bottom:12px;">
+    ⚠️ As Vice President, changes need president approval.
+  </p>
+  <div class="dash-form">
+    <div class="form-grid">
+      <div><label class="flabel">Club Name</label><input id="cdName" class="finput"></div>
+      <div>
+        <label class="flabel">Category</label>
+        <select id="cdCategory" class="finput">
+          <option value="Technology">Technology</option>
+          <option value="Arts">Arts</option>
+          <option value="Sports">Sports</option>
+          <option value="Academic">Academic</option>
+          <option value="Cultural">Cultural</option>
+          <option value="Social Service">Social Service</option>
+          <option value="Business">Business</option>
+          <option value="Lifestyle">Lifestyle</option>
+          <option value="Health">Health</option>
+          <option value="Sustainability">Sustainability</option>
+        </select>
+      </div>
+      <div class="full">
+        <label class="flabel">Description <span style="color:#a0aec0;font-weight:400;font-size:.78rem;">— short text shown on club cards</span></label>
+        <input id="cdDescription" class="finput" placeholder="e.g. Programming and software development community">
+      </div>
+      <div class="full">
+        <label class="flabel">About <span style="color:#a0aec0;font-weight:400;font-size:.78rem;">(optional) — full text shown in About tab</span></label>
+        <textarea id="cdAbout" class="finput" rows="3" placeholder="Detailed description shown in the club's About section…"></textarea>
+      </div>
+      <div class="full">
+        <label class="flabel">Vision <span style="color:#a0aec0;font-weight:400;">(optional)</span></label>
+        <textarea id="cdVision" class="finput" rows="2" placeholder="e.g. To be the leading tech community in the college…"></textarea>
+      </div>
+      <div class="full">
+        <label class="flabel">Mission <span style="color:#a0aec0;font-weight:400;">(optional)</span></label>
+        <textarea id="cdMission" class="finput" rows="2" placeholder="e.g. To empower students through hands-on experiences…"></textarea>
+      </div>
+      <div class="full"><label class="flabel">Club Image</label><input id="cdImage" type="file" accept="image/*" class="finput"></div>
+    </div>
+    <br>
+    <button class="btn-primary" onclick="saveClubDetails()">💾 Save Details</button>
+    <span id="clubDetailsSaveMsg" style="display:none;margin-left:12px;font-size:.84rem;color:#38a169;"></span>
+  </div>
+</section>
+
+<!-- VP PENDING CHANGES (feature iii — president sees VP's queued actions) -->
+<section class="dash-section" id="sec-vp-changes">
+  <div class="sec-header">
+    <h2>🔔 Pending Changes from VP</h2>
+    <button class="btn-primary" onclick="loadVpChanges()">🔄 Refresh</button>
+  </div>
+  <p style="font-size:.82rem;color:#718096;margin-bottom:12px;">Review and approve or reject changes submitted by the Vice President.</p>
+  <div id="vpChangesContainer"><p style="color:#999;">Loading…</p></div>
+</section>
+</section>
+
+<!-- ANALYTICS -->
+<section class="dash-section" id="sec-analytics">
+  <div class="sec-header"><h2>📈 Club Analytics</h2></div>
+  <div class="stats-row">
+    <div class="scard">       <h2 id="anTotal">0</h2>    <p>Total Registrations</p></div>
+    <div class="scard green"> <h2 id="anUpcoming">0</h2> <p>Upcoming Events</p></div>
+  </div>
+  <div class="chart-box"><h3>Registrations per Event</h3><canvas id="anChart" height="200"></canvas></div>
+</section>
+
+<!-- MY REGISTRATIONS -->
+<section class="dash-section" id="sec-myregistrations">
+  <div class="sec-header"><h2>🎟️ My Event Registrations</h2></div>
+  <div id="myRegList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;"></div>
+</section>
+
+<!-- MY PROFILE -->
+<section class="dash-section" id="sec-profile">
+  <div class="sec-header"><h2>👤 My Profile</h2></div>
+  <p style="font-size:.83rem;color:#6366f1;margin-bottom:16px;">💡 Your photo and bio appear on your club's <strong>Contact &amp; Info</strong> page.</p>
+  <div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;margin-bottom:20px;">
+    <div>
+      <div id="cdProfileAvatar" style="width:100px;height:100px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:2rem;color:#fff;box-shadow:0 4px 14px rgba(99,102,241,.25);overflow:hidden;">
+        <span id="cdProfileInitial">?</span>
+      </div>
+    </div>
+    <div style="flex:1;">
+      <div id="cdProfileName" style="font-size:1.3rem;font-weight:700;color:#1e1b4b;margin-bottom:3px;">—</div>
+      <div id="cdProfileRole" style="font-size:.8rem;color:#6366f1;font-weight:600;text-transform:uppercase;margin-bottom:3px;"></div>
+      <div id="cdProfileDept" style="font-size:.83rem;color:#718096;"></div>
+      <div id="cdProfileBio"  style="font-size:.81rem;color:#4b5563;margin-top:6px;font-style:italic;"></div>
+    </div>
+  </div>
+  <div class="dash-form">
+    <h3>Edit Profile</h3>
+    <div class="form-grid">
+      <div><label class="flabel">Full Name</label><input id="cdPName" class="finput"></div>
+      <div><label class="flabel">Department</label><input id="cdPDept" class="finput" placeholder="e.g. Computer Science"></div>
+      <div>
+        <label class="flabel">Year of Study</label>
+        <select id="cdPYear" class="finput">
+          <option value="">Select Year</option>
+          <option value="1">1st Year</option>
+          <option value="2">2nd Year</option>
+          <option value="3">3rd Year</option>
+          <option value="4">4th Year</option>
+        </select>
+      </div>
+      <div><label class="flabel">Profile Picture</label><input id="cdPPic" type="file" accept="image/*" class="finput" onchange="cdPreviewPic(this)"></div>
+      <div><label class="flabel">Phone Number</label><input id="pPhone" class="finput" placeholder="e.g. 9876543210"></div>
+      <div class="full"><label class="flabel">Bio</label><textarea id="cdPBio" class="finput" rows="2" placeholder="A short bio…"></textarea></div>
+      <div><label class="flabel">GitHub URL</label><input id="cdPGithub" class="finput" placeholder="https://github.com/username"></div>
+      <div><label class="flabel">LinkedIn URL</label><input id="cdPLinkedin" class="finput" placeholder="https://linkedin.com/in/username"></div>
+      <div><label class="flabel">Instagram URL</label><input id="cdPInstagram" class="finput" placeholder="https://instagram.com/username"></div>
+    </div>
+    <br>
+    <button onclick="cdSaveProfile()" class="btn-primary">💾 Save Profile</button>
+    <span id="cdProfileMsg" style="margin-left:12px;font-size:.83rem;color:#38a169;display:none;">✅ Saved!</span>
+  </div>
+</section>
+
+</main>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="rejectModal">
+  <div class="modal-box">
+    <h3>❌ Reject Event</h3>
+    <label class="flabel">Reason *</label>
+    <textarea id="rejectReason" class="finput" rows="4" placeholder="Enter reason…"></textarea>
+    <div class="modal-actions">
+      <button class="btn-danger"  onclick="submitReject()">Reject</button>
+      <button class="btn-primary" onclick="closeModal('rejectModal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="manageCoordsModal">
+  <div class="modal-box" style="width:540px;">
+    <h3>🎯 Manage Coordinators — <span id="manageCoordsEventTitle" style="color:#6366f1;font-size:.9rem;"></span></h3>
+    <p style="font-size:.82rem;color:#718096;margin-bottom:12px;">Click a member to assign or remove as coordinator.</p>
+    <label class="flabel">Club Members</label>
+    <div id="manageCoordsMembers" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;max-height:220px;overflow-y:auto;"></div>
+    <label class="flabel">Currently Assigned</label>
+    <div id="manageCoordsAssigned" style="margin:6px 0 14px;"></div>
+    <div class="modal-actions"><button class="btn-primary" onclick="closeModal('manageCoordsModal')">Done</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="coordModal">
+  <div class="modal-box">
+    <h3>👤 Assign Coordinator</h3>
+    <label class="flabel">Select Club Member</label>
+    <select id="coordSelect" class="finput"></select>
+    <div class="modal-actions">
+      <button class="btn-primary" onclick="submitCoordinator()">Assign</button>
+      <button class="btn-danger"  onclick="closeModal('coordModal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="regModal">
+  <div class="modal-box" style="width:560px;">
+    <h3>👥 Registered Students</h3>
+    <table class="dash-table">
+      <thead><tr><th>Name</th><th>Email</th><th>Dept</th><th>Year</th></tr></thead>
+      <tbody id="regModalTbody"></tbody>
+    </table>
+    <div class="modal-actions">
+      <button class="btn-primary" onclick="closeModal('regModal')">Close</button>
+      <button class="btn-export"  id="regExportBtn" style="background:#d1fae5;color:#065f46;border:none;border-radius:8px;padding:9px 18px;font-size:.87rem;cursor:pointer;font-weight:600;">⬇ Export Excel</button>
+    </div>
+  </div>
+</div>
+
+<script src="{% static 'js/script.js' %}"></script>
+<script>
+/* ======================================================
+   CLUB DASHBOARD — complete, self-contained script
+   No duplicate let declarations with script.js globals
+====================================================== */
+
+/* --- role helpers --- */
+const CD_ROLE_LABELS = {
+  president:"President", vice_president:"Vice President",
+  secretary:"Secretary", joint_secretary:"Joint Secretary",
+  treasurer:"Treasurer", hr:"HR",
+  event_coordinator:"Event Coordinator",
+  event_management_head:"Event Management Head",
+  event_management_associate:"Event Management Associate",
+  pr_head:"PR Head", pr_associate:"PR Associate", photography:"Photography"
+};
+const CD_EVENT_MGMT = new Set([
+  "president","vice_president","event_coordinator",
+  "event_management_head","event_management_associate"
+]);
+const CD_LEADERSHIP = new Set(["president","vice_president"]);
+
+function cdRoleLabel(r){ return CD_ROLE_LABELS[r]||(r||"").replace(/_/g," "); }
+function cdIsPresident(r){ return r==="president"; }
+function cdIsLeadership(r){ return CD_LEADERSHIP.has(r); }
+function cdCanManageEvents(r){ return CD_EVENT_MGMT.has(r); }
+
+/* --- state (use var to avoid duplicate-let with script.js) --- */
+var activeClubId   = null;
+var activeClubRole = null;
+var cdAllClubEvents= [];
+var cdRejectingId  = null;
+var cdCoordEventId = null;
+var cdCreatedEventId = null;
+var cdCharts = {};
+var cdConflictTimer = null;
+
+/* --- init --- */
+document.addEventListener("DOMContentLoaded", () => {
+  apiFetch("/me").then(r=>r.json()).then(data=>{
+    if(!data||!data.user){ window.location.href="/"; return; }
+    document.getElementById("memberName").textContent = "👤 " + data.user.name;
+    window._cdCurrentUserId = data.user.id;
+    cdLoadMyClubs();
+    cdLoadMyRegistrations();
+  });
+});
+
+/* --- section switcher --- */
+function showSection(name, el){
+  document.querySelectorAll(".dash-section").forEach(s=>s.classList.remove("active"));
+  document.querySelectorAll(".sidebar-item").forEach(s=>s.classList.remove("active"));
+  document.getElementById("sec-"+name).classList.add("active");
+  if(el) el.classList.add("active");
+  const map = {
+    overview:"cdLoadOverview", pending:"loadPendingEvents",
+    rejected:"cdLoadRejected", events:"cdLoadAllEvents",
+    members:"cdLoadMembers",   analytics:"cdLoadAnalytics",
+    myregistrations:"cdLoadMyRegistrations", profile:"cdLoadProfile",
+    "manage-events":"loadManageEvents",
+    "my-events":"loadMyCoordinatorEvents",
+    "manage-members":"loadManageMembers",
+    "club-details":"loadClubDetails",
+    "vp-changes":"loadVpChanges",
+    "my-submissions":"loadMySubmissions"
+  };
+  if(map[name]) window[map[name]]();
+}
+
+/* --- load my clubs --- */
+function cdLoadMyClubs(){
+  apiFetch("/api/my-clubs").then(r=>r.json()).then(clubs=>{
+    const sw = document.getElementById("clubSwitcher");
+    sw.innerHTML = "";
+    if(!clubs.length){
+      sw.innerHTML = '<p style="color:#6b7280;font-size:.78rem;padding:0 12px;">No club memberships.</p>';
+      return;
+    }
+    clubs.forEach((c,i)=>{
+      const btn = document.createElement("button");
+      btn.className = "club-btn"+(i===0?" active":"");
+      btn.innerHTML = c.name+'<span class="role-tag">'+cdRoleLabel(c.role)+"</span>";
+      btn.onclick = ()=>{
+        document.querySelectorAll(".club-btn").forEach(b=>b.classList.remove("active"));
+        btn.classList.add("active");
+        cdSetActiveClub(c.id, c.role, c.name);
+        showSection("overview", document.getElementById("nav-overview"));
+      };
+      sw.appendChild(btn);
+      if(i===0) cdSetActiveClub(c.id, c.role, c.name);
+    });
+  });
+}
+
+/* --- set active club --- */
+function cdSetActiveClub(clubId, role, name){
+  activeClubId   = clubId;
+  activeClubRole = role;
+  cdSetText("badgeName",        name);
+  cdSetText("badgeRole",        cdRoleLabel(role));
+  cdSetText("overviewClubName", name);
+
+  const isLeadership     = (role === "president" || role === "vice_president");
+  const canManageEvts    = cdCanManageEvents(role);
+
+  /* show/hide sidebar items based on role */
+  document.getElementById("nav-pending").style.display        = cdIsPresident(role) ? "" : "none";
+  document.getElementById("nav-create").style.display         = canManageEvts ? "" : "none";
+  document.getElementById("nav-manage-events").style.display  = canManageEvts ? "" : "none";
+  // My Events: shown for non-leadership event mgmt roles (coordinators etc)
+  const isCoordRole = canManageEvts && !isLeadership;
+  document.getElementById("nav-my-events").style.display = isCoordRole ? "" : "none";
+  document.getElementById("nav-manage-members").style.display  = isLeadership ? "" : "none";
+  document.getElementById("nav-club-details").style.display    = isLeadership ? "" : "none";
+  document.getElementById("nav-vp-changes").style.display      = cdIsPresident(role) ? "" : "none";
+  document.getElementById("nav-my-submissions").style.display  = (role === "vice_president") ? "" : "none";
+
+  // Show Add Member form only for president
+  const addForm = document.getElementById("presAddMemberForm");
+  if(addForm) addForm.style.display = cdIsPresident(role) ? "block" : "none";
+
+  /* VP note visibility */
+  const vpNote = document.getElementById("manageVpNote");
+  if(vpNote) vpNote.style.display = role==="vice_president" ? "" : "none";
+  const vpClubNote = document.getElementById("clubDetailsVpNote");
+  if(vpClubNote) vpClubNote.style.display = role==="vice_president" ? "" : "none";
+
+  cdLoadOverview();
+  loadPendingEvents();
+  cdLoadRejected();
+  ceLoadManagerPicker(clubId);
+}
+
+/* --- Event Manager Picker (Create Event form) --- */
+var ceSelectedManagers = new Set();
+
+function ceLoadManagerPicker(clubId){
+  ceSelectedManagers = new Set();
+  var list = document.getElementById("ceManagerPickerList");
+  var tags = document.getElementById("ceManagerSelected");
+  if(!list) return;
+  list.innerHTML = '<span style="color:#a0aec0;font-size:.82rem;align-self:center;">Loading…</span>';
+  tags.innerHTML = "";
+  apiFetch("/api/club/"+clubId+"/members").then(r=>r.json()).then(function(members){
+    var eligible = members.filter(function(m){ return m.id !== (window._cdCurrentUserId||0); });
+    if(!eligible.length){
+      list.innerHTML = '<span style="color:#a0aec0;font-size:.82rem;align-self:center;">No other members in this club.</span>';
+      return;
+    }
+    list.innerHTML = eligible.map(function(m){
+      return '<div id="cemp-'+m.id+'"'
+        +' data-mid="'+m.id+'"'
+        +' data-name="'+(m.name||"").replace(/"/g,"&quot;")+'"'
+        +' data-role="'+cdRoleLabel(m.role).replace(/"/g,"&quot;")+'"'
+        +' data-sel="0"'
+        +' onclick="ceToggleManager(this)"'
+        +' style="display:flex;align-items:center;gap:6px;background:#fff;border:1.5px solid #e2e8f0;'
+        +'border-radius:8px;padding:7px 11px;cursor:pointer;transition:all .15s;font-size:.82rem;">'
+        +'<span style="font-weight:600;color:#1e1b4b;">'+m.name+'</span>'
+        +' <span style="color:#718096;">'+cdRoleLabel(m.role)+'</span>'
+        +'</div>';
+    }).join("");
+  });
+}
+
+function ceToggleManager(el){
+  var id   = parseInt(el.dataset.mid);
+  var name = el.dataset.name;
+  var role = el.dataset.role;
+  var tags = document.getElementById("ceManagerSelected");
+  if(ceSelectedManagers.has(id)){
+    ceSelectedManagers.delete(id);
+    el.dataset.sel = "0";
+    el.style.borderColor = "#e2e8f0";
+    el.style.background  = "#fff";
+    var oldTag = document.getElementById("cetag-"+id);
+    if(oldTag) oldTag.remove();
+  } else {
+    ceSelectedManagers.add(id);
+    el.dataset.sel = "1";
+    el.style.borderColor = "#6366f1";
+    el.style.background  = "#eef2ff";
+    var tag = document.createElement("span");
+    tag.id = "cetag-"+id;
+    tag.style.cssText = "display:inline-flex;align-items:center;gap:5px;background:#eef2ff;"
+      +"border:1.5px solid #818cf8;border-radius:20px;padding:4px 10px;font-size:.78rem;color:#3730a3;";
+    var btn = document.createElement("button");
+    btn.style.cssText = "background:none;border:none;color:#e53e3e;cursor:pointer;padding:0;font-size:.9rem;";
+    btn.textContent = "✕";
+    btn.onclick = function(){ ceToggleManager(el); };
+    tag.appendChild(document.createTextNode("👤 "+name+" "));
+    tag.appendChild(btn);
+    tags.appendChild(tag);
+  }
+}
+/* --- overview --- */
+function cdLoadOverview(){
+  if(!activeClubId) return;
+  apiFetch("/api/club/"+activeClubId+"/stats").then(r=>r.json()).then(d=>{
+    cdSetText("ovTotal",         d.events||0);
+    cdSetText("ovUpcoming",      d.upcoming||0);
+    cdSetText("ovRegistrations", d.registrations||0);
+  });
+  apiFetch("/api/club/"+activeClubId+"/members").then(r=>r.json()).then(d=>{
+    cdSetText("ovMembers", d.length||0);
+  });
+  apiFetch("/api/pending-events/"+activeClubId).then(r=>r.json()).then(d=>{
+    const n = cdIsPresident(activeClubRole)
+      ? d.filter(e=>e.status==="pending_president").length
+      : d.length;
+    cdSetText("ovPending", n);
+    cdSetText("pendingBadge", n>0?n:"");
+  });
+  apiFetch("/api/club-events/"+activeClubId).then(r=>r.json()).then(events=>{
+    cdAllClubEvents = events;
+    if(!events.length) return;
+    cdBuildChart("ovChart","bar",
+      events.map(e=>e.title.length>16?e.title.slice(0,16)+"…":e.title),
+      [{label:"Registrations",data:events.map(e=>e.registered_count||0),backgroundColor:"#6366f1"}]);
+    const today=new Date(); today.setHours(0,0,0,0);
+    const upcoming=events.filter(e=>new Date(e.date)>=today).slice(0,3);
+    const ul=document.getElementById("upcomingEventsList");
+    ul.innerHTML=upcoming.length?upcoming.map(e=>`
+      <div style="background:#fff;border-radius:10px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <strong>${e.title}</strong>
+          <div style="font-size:.8rem;color:#718096;margin-top:2px;">📅 ${e.date} &nbsp;⏰ ${e.time} &nbsp;📍 ${e.location||"—"}</div>
+        </div>
+        <span class="pill ${e.status==='approved'?'pill-green':'pill-amber'}">${e.status.replace(/_/g," ")}</span>
+      </div>`).join(""):"<p style='color:#999;font-size:.85rem;'>No upcoming events.</p>";
+  });
+}
+
+/* --- pending approvals --- */
+function loadPendingEvents(){
+  if(!activeClubId) return;
+  apiFetch("/api/pending-events/"+activeClubId).then(r=>r.json()).then(events=>{
+    const tbody = document.getElementById("pendingTbody");
+    const noMsg = document.getElementById("noPending");
+    const table = document.getElementById("pendingTable");
+
+    const filtered = cdIsPresident(activeClubRole)
+      ? events.filter(e=>e.status==="pending_president")
+      : events;
+
+    const n = filtered.length;
+    cdSetText("pendingBadge", n>0?n:"");
+    cdSetText("ovPending", n);
+
+    if(!n){ noMsg.style.display="block"; table.style.display="none"; return; }
+    noMsg.style.display="none"; table.style.display="";
+
+    tbody.innerHTML = filtered.map(e=>{
+      const actions = cdIsPresident(activeClubRole)
+        ? '<button class="btn-xs btn-edit" onclick="openPresidentEditModal('+e.id+')">✏ Edit</button> <button class="btn-xs btn-approve" onclick="cdApproveEvent('+e.id+')">✔ Approve</button> <button class="btn-xs btn-reject" onclick="cdOpenReject('+e.id+')">✖ Reject</button>'
+        : '<span class="pill pill-gray">Awaiting President</span>';
+      return '<tr><td><strong>'+e.title+'</strong></td><td>'+e.date+'<br><small>'+e.time+'</small></td><td>'+(e.location||"—")+'</td><td><span class="pill pill-amber">'+e.status.replace(/_/g," ")+'</span></td><td>'+(e.registered_count||0)+'</td><td style="display:flex;gap:6px;flex-wrap:wrap;">'+actions+'</td></tr>';
+    }).join("");
+  });
+}
+
+function cdApproveEvent(id){
+  apiFetch("/api/events/"+id+"/president-approve",{method:"PUT"})
+  .then(r=>r.json()).then(d=>{ alert(d.message); loadPendingEvents(); cdLoadOverview(); });
+}
+
+function cdOpenReject(id){
+  cdRejectingId = id;
+  document.getElementById("rejectReason").value = "";
+  document.getElementById("rejectModal").classList.add("open");
+}
+
+function submitReject(){
+  const reason = document.getElementById("rejectReason").value.trim();
+  if(!reason){ alert("Please enter a reason"); return; }
+  fetch(API+"/api/events/"+cdRejectingId+"/reject",{
+    method:"PUT", credentials:"include",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({reason})
+  }).then(r=>r.json()).then(d=>{
+    alert(d.message);
+    closeModal("rejectModal");
+    loadPendingEvents();
+    cdLoadRejected();
+    cdLoadOverview();
+  });
+}
+
+/* --- rejected events --- */
+function cdLoadRejected(){
+  if(!activeClubId) return;
+  apiFetch("/api/club/"+activeClubId+"/rejected-events").then(r=>r.json()).then(events=>{
+    const c = document.getElementById("rejectedContainer");
+    if(!events||!events.length){
+      c.innerHTML = "<p style='color:#999;'>No rejected events in the last 24 hours.</p>";
+      return;
+    }
+    c.innerHTML = events.map(e=>{
+      const by     = e.president_rejection_reason ? "President" : "Admin";
+      const reason = e.president_rejection_reason||e.admin_rejection_reason||"No reason given";
+      return '<div class="rejected-banner"><div class="rej-head"><span class="rej-badge">REJECTED</span><span style="font-size:.79rem;color:#718096;">By '+by+' · Disappears in '+e.expires_in+'</span></div><strong>'+e.title+'</strong><div class="rej-reason">Reason: '+reason+'</div><div class="rej-expires">📅 '+e.date+' &nbsp;⏰ '+e.time+'</div></div>';
+    }).join("");
+  });
+}
+
+/* --- all club events --- */
+function cdLoadAllEvents(){
+  if(!activeClubId) return;
+  apiFetch("/api/club-events/"+activeClubId).then(r=>r.json()).then(events=>{
+    cdAllClubEvents = events;
+    cdRenderEventsTable(events);
+  });
+}
+
+function cdRenderEventsTable(events){
+  const tbody = document.getElementById("allEventsTbody");
+  tbody.innerHTML = "";
+  events.forEach(e=>{
+    const pct  = e.capacity>0 ? Math.round((e.registered_count/e.capacity)*100) : 0;
+    const pill = {approved:"pill-green",pending_president:"pill-amber",pending_admin:"pill-amber",rejected:"pill-red"}[e.status]||"pill-gray";
+    const coordBtn = cdIsPresident(activeClubRole)
+      ? '<button class="btn-xs btn-approve" onclick="cdOpenManageCoords('+e.id+',\''+e.title.replace(/'/g,"\\'")+'\')" style="white-space:nowrap;">🎯 Coordinators</button>'
+      : cdIsLeadership(activeClubRole)
+      ? '<button class="btn-xs btn-approve" onclick="cdOpenCoordModal('+e.id+')">🎯 Coord</button>'
+      : "";
+
+    const tr = document.createElement("tr");
+    tr.innerHTML = '<td><strong>'+e.title+'</strong><br><small style="color:#718096;">📍 '+(e.location||"—")+'</small></td>'
+      +'<td>'+e.date+'<br><small>'+e.time+'</small></td>'
+      +'<td><span class="pill '+pill+'">'+e.status.replace(/_/g," ")+'</span></td>'
+      +'<td><div class="pbar"><div class="pbar-fill" style="width:'+pct+'%"></div></div><small>'+(e.registered_count||0)+' / '+(e.capacity||0)+'</small></td>'
+      +'<td style="display:flex;gap:5px;flex-wrap:wrap;">'
+        +'<button class="btn-xs btn-edit" onclick="cdViewRegs('+e.id+')">👥 Regs</button>'
+        +'<button class="btn-xs btn-export" onclick="cdExportRegs('+e.id+')">⬇ Excel</button>'
+        +coordBtn
+      +'</td>';
+    tbody.appendChild(tr);
+
+    // Drag-drop upload row
+    const dropRow = document.createElement("tr");
+    dropRow.innerHTML = '<td colspan="5" style="padding:4px 14px 12px;">'
+      +'<div class="drop-zone" id="drop-'+e.id+'" '
+        +'ondragover="cdDragOver(event,'+e.id+')" ondragleave="cdDragLeave(event,'+e.id+')" ondrop="cdDrop(event,'+e.id+')" '
+        +'onclick="document.getElementById(\'fi-'+e.id+'\').click()">'
+        +'🖼️ Drop gallery image here for <em>'+e.title+'</em>'
+        +'<input type="file" id="fi-'+e.id+'" accept="image/*" style="display:none" onchange="cdUploadImage('+e.id+',this.files[0])">'
+      +'</div>'
+    +'</td>';
+    tbody.appendChild(dropRow);
+  });
+}
+
+function filterClubEventsTable(q){
+  const f = cdAllClubEvents.filter(e=>
+    e.title.toLowerCase().includes(q.toLowerCase()) ||
+    (e.location||"").toLowerCase().includes(q.toLowerCase())
+  );
+  cdRenderEventsTable(f);
+}
+
+/* --- create event --- */
+function checkConflictLive(){
+  clearTimeout(cdConflictTimer);
+  cdConflictTimer = setTimeout(()=>{
+    const loc  = document.getElementById("ceLocation").value.trim();
+    const date = document.getElementById("ceDate").value;
+    const time = document.getElementById("ceTime").value;
+    if(!loc||!date||!time) return;
+    apiFetch("/api/events/check-conflict",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({location:loc,date,time})})
+    .then(r=>r.json()).then(d=>{
+      const box = document.getElementById("conflictWarning");
+      if(d.conflict){
+        document.getElementById("conflictDetail").textContent = '"'+d.conflicts[0].title+'" is at this venue around '+d.conflicts[0].time;
+        box.style.display = "block";
+      } else { box.style.display="none"; }
+    });
+  }, 600);
+}
+
+function toggleTeamFields(){
+  const cat = document.getElementById("ceCategory").value;
+  document.getElementById("ceTeamDiv").style.display = cat==="team" ? "block" : "none";
+}
+function togglePriceField(){
+  const paid = document.getElementById("cePaid").value;
+  document.getElementById("cePriceDiv").style.display = paid==="1" ? "block" : "none";
+}
+
+function createClubEvent(){
+  if(!activeClubId){ alert("No club selected"); return; }
+  if(document.getElementById("conflictWarning").style.display==="block"){
+    if(!confirm("⚠️ Venue conflict detected. Submit anyway?")) return;
+  }
+  const isPaid = document.getElementById("cePaid").value === "1";
+  const cat    = document.getElementById("ceCategory").value;
+  const minM   = document.getElementById("ceMinMembers")?.value || null;
+  const maxM   = document.getElementById("ceMaxMembers")?.value || null;
+
+  if(cat==="team" && (!minM||!maxM)){ alert("Enter min and max team members."); return; }
+
+  const payload = {
+    club_id:        activeClubId,
+    title:          document.getElementById("ceTitle").value,
+    description:    document.getElementById("ceDesc").value,
+    date:           document.getElementById("ceDate").value,
+    time:           document.getElementById("ceTime").value,
+    location:       document.getElementById("ceLocation").value,
+    type:           document.getElementById("ceType").value,
+    capacity:       document.getElementById("ceCapacity").value,
+    event_category: cat,
+    min_members:    minM ? parseInt(minM) : null,
+    max_members:    maxM ? parseInt(maxM) : null,
+    is_paid:        isPaid,
+    price:          isPaid ? document.getElementById("cePrice").value : 0,
+    prize_pool:     document.getElementById("cePrizePool").value,
+    about:          document.getElementById("ceAbout").value,
+    rules:          document.getElementById("ceRules").value,
+    instructions:   document.getElementById("ceInstructions").value
+  };
+  if(!payload.title||!payload.date||!payload.time){ alert("Title, date and time are required."); return; }
+
+  apiFetch("/api/events",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)})
+  .then(r=>r.json()).then(d=>{
+    if(!d.event_id && !d.event_code){ alert(d.message||"Failed to create event."); return; }
+    cdCreatedEventId = d.event_id;
+
+    // Assign selected managers immediately
+    const managerIds = Array.from(ceSelectedManagers);
+    const assignAll  = managerIds.map(uid=>
+      apiFetch("/api/events/"+cdCreatedEventId+"/add-coordinator",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({user_id:uid})
+      }).then(r=>r.json())
+    );
+
+    Promise.all(assignAll).then(()=>{
+      ["ceTitle","ceDesc","ceDate","ceTime","ceLocation","ceCapacity","cePrizePool","ceAbout","ceRules","ceInstructions"].forEach(id=>{
+        const el = document.getElementById(id); if(el) el.value="";
+      });
+      document.getElementById("ceType").value     = "workshop";
+      document.getElementById("ceCategory").value = "individual";
+      document.getElementById("cePaid").value     = "0";
+      document.getElementById("cePriceDiv").style.display = "none";
+      document.getElementById("ceTeamDiv").style.display  = "none";
+      document.getElementById("conflictWarning").style.display = "none";
+      document.getElementById("ceManagerSelected").innerHTML = "";
+      ceSelectedManagers = new Set();
+      ceLoadManagerPicker(activeClubId);
+
+      if(d.is_president){
+        const panel = document.getElementById("assignCoordSection");
+        panel.style.display = "block";
+        document.getElementById("createEventBtn").style.display = "none";
+        cdLoadCoordMembers(cdCreatedEventId);
+        panel.scrollIntoView({behavior:"smooth",block:"start"});
+      } else {
+        const mgMsg = managerIds.length ? ` ${managerIds.length} manager(s) appointed.` : "";
+        alert("✅ Event submitted! It is now pending President approval."+mgMsg);
+        cdLoadOverview();
+        cdLoadAllEvents();
+      }
+    });
+  });
+}
+
+function cdLoadCoordMembers(eventId){
+  apiFetch("/api/club/"+activeClubId+"/members").then(r=>r.json()).then(members=>{
+    const eligible = members.filter(m=>!cdIsPresident(m.role));
+    const container = document.getElementById("coordMembersList");
+    container.innerHTML = eligible.length
+      ? eligible.map(m=>'<div id="cmc-'+m.id+'" data-assigned="0" onclick="cdToggleAssign('+eventId+','+m.id+')" style="background:#f8faff;border:2px solid #e2e8f0;border-radius:10px;padding:12px;cursor:pointer;transition:all .18s;"><div style="font-weight:600;font-size:.88rem;color:#1e1b4b;">'+m.name+'</div><div style="font-size:.75rem;color:#718096;">'+cdRoleLabel(m.role)+'</div></div>').join("")
+      : "<p style='color:#999;font-size:.84rem;'>No other members found.</p>";
+    cdRefreshAssigned(eventId);
+  });
+}
+
+function cdToggleAssign(eventId, userId){
+  const card = document.getElementById("cmc-"+userId);
+  const assigned = card.dataset.assigned==="1";
+  if(assigned){
+    apiFetch("/api/events/"+eventId+"/coordinators/"+userId,{method:"DELETE"}).then(r=>r.json()).then(()=>{
+      card.dataset.assigned="0"; card.style.borderColor="#e2e8f0"; card.style.background="#f8faff"; cdRefreshAssigned(eventId);
+    });
+  } else {
+    apiFetch("/api/events/"+eventId+"/add-coordinator",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user_id:userId})})
+    .then(r=>r.json()).then(()=>{
+      card.dataset.assigned="1"; card.style.borderColor="#6366f1"; card.style.background="#eef2ff"; cdRefreshAssigned(eventId);
+    });
+  }
+}
+
+function cdRefreshAssigned(eventId){
+  apiFetch("/api/events/"+eventId+"/coordinators").then(r=>r.json()).then(coords=>{
+    const c = document.getElementById("assignedCoordsContainer");
+    coords.forEach(co=>{
+      const card=document.getElementById("cmc-"+co.id);
+      if(card){ card.dataset.assigned="1"; card.style.borderColor="#6366f1"; card.style.background="#eef2ff"; }
+    });
+    c.innerHTML = coords.length
+      ? coords.map(co=>'<span style="display:inline-flex;align-items:center;gap:6px;background:#eef2ff;border:1.5px solid #818cf8;border-radius:20px;padding:5px 12px;margin:3px;font-size:.82rem;color:#3730a3;">👤 '+co.name+' <button onclick="cdToggleAssign('+eventId+','+co.id+')" style="background:none;border:none;color:#e53e3e;cursor:pointer;padding:0;">✕</button></span>').join("")
+      : "<p style='color:#999;font-size:.82rem;'>No coordinators assigned yet.</p>";
+  });
+}
+
+function doneAssigning(){
+  document.getElementById("assignCoordSection").style.display = "none";
+  document.getElementById("createEventBtn").style.display     = "block";
+  document.getElementById("coordMembersList").innerHTML       = "";
+  document.getElementById("assignedCoordsContainer").innerHTML= "";
+  cdCreatedEventId = null;
+  alert("Event created and coordinators assigned!");
+  cdLoadOverview();
+  cdLoadAllEvents();
+  showSection("events", document.getElementById("nav-events"));
+}
+
+/* --- manage coordinators modal (president) --- */
+function cdOpenManageCoords(eventId, eventTitle){
+  document.getElementById("manageCoordsEventTitle").textContent = eventTitle;
+  document.getElementById("manageCoordsModal").classList.add("open");
+  apiFetch("/api/club/"+activeClubId+"/members").then(r=>r.json()).then(members=>{
+    const eligible = members.filter(m=>!cdIsPresident(m.role));
+    apiFetch("/api/events/"+eventId+"/coordinators").then(r=>r.json()).then(assigned=>{
+      const ids = assigned.map(a=>a.id);
+      document.getElementById("manageCoordsMembers").innerHTML = eligible.map(m=>{
+        const yes=ids.includes(m.id);
+        return '<div id="mcc-'+eventId+'-'+m.id+'" data-assigned="'+(yes?1:0)+'" onclick="cdToggleManageCoord('+eventId+','+m.id+')" style="background:'+(yes?'#eef2ff':'#f8faff')+';border:2px solid '+(yes?'#6366f1':'#e2e8f0')+';border-radius:8px;padding:10px;cursor:pointer;transition:all .15s;"><div style="font-weight:600;font-size:.84rem;color:#1e1b4b;">'+m.name+'</div><div style="font-size:.72rem;color:#718096;">'+cdRoleLabel(m.role)+'</div>'+(yes?'<div style="font-size:.7rem;color:#6366f1;margin-top:2px;">✓ Assigned</div>':'')+'</div>';
+      }).join("");
+      cdRefreshManageAssigned(eventId);
+    });
+  });
+}
+
+function cdToggleManageCoord(eventId, userId){
+  const card = document.getElementById("mcc-"+eventId+"-"+userId);
+  const assigned = card.dataset.assigned==="1";
+  if(assigned){
+    apiFetch("/api/events/"+eventId+"/coordinators/"+userId,{method:"DELETE"}).then(r=>r.json()).then(()=>{ card.dataset.assigned="0"; card.style.borderColor="#e2e8f0"; card.style.background="#f8faff"; cdRefreshManageAssigned(eventId); });
+  } else {
+    apiFetch("/api/events/"+eventId+"/add-coordinator",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user_id:userId})})
+    .then(r=>r.json()).then(()=>{ card.dataset.assigned="1"; card.style.borderColor="#6366f1"; card.style.background="#eef2ff"; cdRefreshManageAssigned(eventId); });
+  }
+}
+
+function cdRefreshManageAssigned(eventId){
+  apiFetch("/api/events/"+eventId+"/coordinators").then(r=>r.json()).then(coords=>{
+    const c = document.getElementById("manageCoordsAssigned");
+    const ids = coords.map(co=>co.id);
+    document.querySelectorAll('[id^="mcc-'+eventId+'-"]').forEach(card=>{
+      const uid=parseInt(card.id.split("-").pop());
+      const yes=ids.includes(uid);
+      card.dataset.assigned=yes?"1":"0"; card.style.borderColor=yes?"#6366f1":"#e2e8f0"; card.style.background=yes?"#eef2ff":"#f8faff";
+    });
+    c.innerHTML = coords.length
+      ? coords.map(co=>'<span style="display:inline-flex;align-items:center;gap:6px;background:#eef2ff;border:1.5px solid #818cf8;border-radius:20px;padding:4px 12px;margin:3px;font-size:.81rem;color:#3730a3;">👤 '+co.name+' <button onclick="cdToggleManageCoord('+eventId+','+co.id+')" style="background:none;border:none;color:#e53e3e;cursor:pointer;padding:0;">✕</button></span>').join("")
+      : "<p style='color:#999;font-size:.8rem;'>No coordinators assigned.</p>";
+  });
+}
+
+/* --- coord modal (VP) --- */
+function cdOpenCoordModal(eventId){
+  cdCoordEventId = eventId;
+  apiFetch("/api/club/"+activeClubId+"/members").then(r=>r.json()).then(members=>{
+    document.getElementById("coordSelect").innerHTML = members.map(m=>'<option value="'+m.id+'">'+m.name+' ('+cdRoleLabel(m.role)+')</option>').join("");
+    document.getElementById("coordModal").classList.add("open");
+  });
+}
+
+function submitCoordinator(){
+  const uid = document.getElementById("coordSelect").value;
+  apiFetch("/api/events/"+cdCoordEventId+"/add-coordinator",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user_id:parseInt(uid)})})
+  .then(r=>r.json()).then(d=>{ alert(d.message); closeModal("coordModal"); });
+}
+
+/* --- members --- */
+function cdLoadMembers(){
+  if(!activeClubId) return;
+  var ghSvg='<svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>';
+  var liSvg='<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>';
+  var igSvg='<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>';
+  apiFetch("/api/club/"+activeClubId+"/members-public").then(r=>r.json()).then(function(members){
+    document.getElementById("membersTbody").innerHTML = members.map(function(m){
+      var av = m.profile_pic
+        ? '<img src="'+API+'/'+m.profile_pic+'" style="width:34px;height:34px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:9px;">'
+        : '<span style="display:inline-flex;width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:.8rem;margin-right:9px;vertical-align:middle;">'+(m.name||'?').charAt(0).toUpperCase()+'</span>';
+      var soc = [
+        m.github    ? '<a href="'+m.github+'"    target="_blank" title="GitHub"    style="color:#24292e;margin-right:7px;display:inline-flex;">'+ghSvg+'</a>' : '',
+        m.linkedin  ? '<a href="'+m.linkedin+'"  target="_blank" title="LinkedIn"  style="color:#0077b5;margin-right:7px;display:inline-flex;">'+liSvg+'</a>' : '',
+        m.instagram ? '<a href="'+m.instagram+'" target="_blank" title="Instagram" style="color:#e1306c;display:inline-flex;">'+igSvg+'</a>' : ''
+      ].filter(Boolean).join('');
+      return '<tr>'
+        +'<td style="white-space:nowrap;">'+av+'<strong style="color:#1e1b4b;">'+m.name+'</strong>'
+        +(m.bio?'<div style="font-size:.73rem;color:#718096;margin-top:2px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+m.bio+'</div>':'')
+        +(soc?'<div style="margin-top:4px;">'+soc+'</div>':'')
+        +'</td>'
+        +'<td style="font-size:.8rem;color:#4b5563;font-family:monospace;">'+(m.reg_no||'&#8212;')+'</td>'
+        +'<td style="font-size:.8rem;color:#4b5563;">'+m.email+'</td>'
+        +'<td style="font-size:.8rem;color:#718096;">'+(m.department||'&#8212;')+(m.year?' &middot; Yr '+m.year:'')+'</td>'
+        +'<td><span class="pill pill-blue">'+cdRoleLabel(m.role)+'</span></td>'
+        +'</tr>';
+    }).join('');
+  });
+}
+
+/* --- analytics --- */
+function cdLoadAnalytics(){
+  if(!activeClubId) return;
+  apiFetch("/api/club/"+activeClubId+"/stats").then(r=>r.json()).then(d=>{
+    cdSetText("anTotal", d.registrations||0);
+    cdSetText("anUpcoming", d.upcoming||0);
+  });
+  apiFetch("/api/club-events/"+activeClubId).then(r=>r.json()).then(events=>{
+    cdBuildChart("anChart","bar",
+      events.map(e=>e.title.length>16?e.title.slice(0,16)+"…":e.title),
+      [{label:"Registrations",data:events.map(e=>e.registered_count||0),backgroundColor:"#6366f1"}]);
+  });
+}
+
+/* --- my registrations --- */
+function cdLoadMyRegistrations(){
+  apiFetch("/api/my-registrations").then(r=>r.json()).then(events=>{
+    const c = document.getElementById("myRegList");
+    if(!c) return;
+    c.innerHTML = !events||!events.length
+      ? "<p style='color:#999;'>No registrations yet.</p>"
+      : events.map(e=>'<a href="/event/'+e.id+'?from=club-dashboard" style="text-decoration:none;"><div style="background:#fff;border-radius:12px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.07);"><strong style="color:#1e1b4b;">'+e.title+'</strong><p style="font-size:.79rem;color:#718096;margin:4px 0;">'+e.club_name+'</p><p style="font-size:.79rem;color:#4b5563;margin:0;">📅 '+e.date+' &nbsp;⏰ '+e.time+'</p><span class="pill '+(e.status==='registered'?'pill-green':'pill-red')+'" style="margin-top:6px;display:inline-block;">'+e.status+'</span></div></a>').join("");
+  });
+}
+
+/* --- registrations view modal --- */
+function cdViewRegs(eventId){
+  apiFetch("/api/event-registrations/"+eventId).then(r=>r.json()).then(students=>{
+    document.getElementById("regModalTbody").innerHTML = students.length
+      ? students.map(s=>'<tr><td>'+s.name+'</td><td>'+s.email+'</td><td>'+(s.department||"—")+'</td><td>'+(s.year||"—")+'</td></tr>').join("")
+      : '<tr><td colspan="4" style="text-align:center;color:#999;">No registrations yet.</td></tr>';
+    document.getElementById("regExportBtn").onclick = ()=>cdExportRegs(eventId);
+    document.getElementById("regModal").classList.add("open");
+  });
+}
+
+function cdExportRegs(id){ window.open(API+"/api/events/"+id+"/export-registrations","_blank"); }
+
+function cdDeleteEvent(eventId, title){
+  if(!confirm("Permanently delete \"" + title + "\"?\n\nThis cannot be undone. All registrations will also be deleted.")) return;
+  apiFetch("/api/event/"+eventId, {method:"DELETE"})
+  .then(r=>r.json()).then(d=>{
+    alert(d.message);
+    loadManageEvents();
+  });
+}
+
+function cdVpRequestDelete(eventId, title){
+  if(!activeClubId){ alert("Club not selected. Please refresh."); return; }
+  if(!confirm("Submit a deletion request for \"" + title + "\" to the president for approval?")) return;
+
+  apiFetch("/api/club/"+activeClubId+"/events/"+eventId+"/request-delete", {method:"POST"})
+  .then(r=>{
+    if(!r.ok) return r.json().then(e=>{ throw new Error(e.message||"Request failed ("+r.status+")"); });
+    return r.json();
+  })
+  .then(d=>{
+    alert("✅ " + d.message);
+  })
+  .catch(err=>{
+    alert("❌ Error: " + err.message);
+  });
+}
+
+/* --- drag & drop upload --- */
+function cdDragOver(e,id){ e.preventDefault(); document.getElementById("drop-"+id).classList.add("dragover"); }
+function cdDragLeave(e,id){ document.getElementById("drop-"+id).classList.remove("dragover"); }
+function cdDrop(e,id){ e.preventDefault(); document.getElementById("drop-"+id).classList.remove("dragover"); cdUploadImage(id,e.dataTransfer.files[0]); }
+function cdUploadImage(eventId,file){
+  if(!file||!file.type.startsWith("image/")){ alert("Please upload an image."); return; }
+  const fd=new FormData(); fd.append("image",file);
+  apiFetch("/api/events/"+eventId+"/upload-image",{method:"POST",body:fd}).then(r=>r.json()).then(d=>alert(d.message));
+}
+
+/* --- profile --- */
+function cdLoadProfile(){
+  apiFetch("/profile").then(r=>r.json()).then(u=>{
+    if(!u) return;
+    cdSetText("cdProfileName",    u.name||"—");
+    cdSetText("cdProfileRole",    u.role||"");
+    cdSetText("cdProfileDept",    [u.department,u.year?"Year "+u.year:""].filter(Boolean).join(" · "));
+    cdSetText("cdProfileBio",     u.bio?'"'+u.bio+'"':"");
+    cdSetText("cdProfileInitial", (u.name||"?").charAt(0).toUpperCase());
+    const av=document.getElementById("cdProfileAvatar");
+    if(u.profile_pic) av.innerHTML='<img src="'+API+"/"+u.profile_pic+'" style="width:100px;height:100px;object-fit:cover;border-radius:50%;">';
+    document.getElementById("cdPName").value     = u.name      ||"";
+    document.getElementById("cdPDept").value     = u.department||"";
+    document.getElementById("cdPYear").value     = u.year      ||"";
+    document.getElementById("cdPBio").value      = u.bio       ||"";
+    document.getElementById("pPhone").value      = u.phone     ||"";
+    document.getElementById("cdPGithub").value   = u.github    ||"";
+    document.getElementById("cdPLinkedin").value = u.linkedin  ||"";
+    document.getElementById("cdPInstagram").value= u.instagram ||"";
+  });
+}
+function cdPreviewPic(input){
+  const file=input.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{ document.getElementById("cdProfileAvatar").innerHTML='<img src="'+e.target.result+'" style="width:100px;height:100px;object-fit:cover;border-radius:50%;">'; };
+  reader.readAsDataURL(file);
+}
+function cdSaveProfile(){
+  const fd=new FormData();
+  fd.append("name",       document.getElementById("cdPName").value);
+  fd.append("department", document.getElementById("cdPDept").value);
+  fd.append("year",       document.getElementById("cdPYear").value);
+  fd.append("bio",        document.getElementById("cdPBio").value);
+  fd.append("github",     document.getElementById("cdPGithub").value);
+  fd.append("linkedin",   document.getElementById("cdPLinkedin").value);
+  fd.append("instagram",  document.getElementById("cdPInstagram").value);
+  fd.append("phone",     document.getElementById("pPhone").value);
+  const pic=document.getElementById("cdPPic").files[0];
+  if(pic) fd.append("profile_pic",pic);
+  apiFetch("/profile/update",{method:"PUT",body:fd}).then(r=>r.json()).then(d=>{
+    const msg=document.getElementById("cdProfileMsg");
+    msg.textContent="✅ "+d.message; msg.style.display="inline";
+    setTimeout(()=>{msg.style.display="none";},3000);
+    cdLoadProfile();
+  });
+}
+
+/* --- helpers --- */
+function cdSetText(id,val){ const e=document.getElementById(id); if(e) e.textContent=val; }
+function closeModal(id){ document.getElementById(id).classList.remove("open"); }
+function cdBuildChart(id,type,labels,datasets){
+  const c=document.getElementById(id); if(!c) return;
+  if(cdCharts[id]) cdCharts[id].destroy();
+  cdCharts[id]=new Chart(c,{type,data:{labels,datasets},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}});
+}
+
+/* ============================================================
+   MANAGE EVENTS (feature ii)
+   ============================================================ */
+let _manageEventsData = [];
+
+function loadManageEvents(){
+  if(!activeClubId) return;
+  const countEl = document.getElementById("manageEventsCount");
+  if(countEl) countEl.textContent = "Loading…";
+
+  apiFetch("/api/club/"+activeClubId+"/manage-events")
+  .then(r=>r.json()).then(events=>{
+    _manageEventsData = events || [];
+    if(countEl) countEl.textContent = _manageEventsData.length + " event(s) total";
+    renderManageEvents(_manageEventsData);
+  });
+}
+
+function filterManageEvents(q){
+  const f = q.toLowerCase();
+  renderManageEvents(_manageEventsData.filter(e=>
+    (e.title||"").toLowerCase().includes(f) ||
+    (e.location||"").toLowerCase().includes(f)
+  ));
+}
+
+function renderManageEvents(events){
+  const tbody = document.getElementById("manageEventsTbody");
+  if(!tbody) return;
+
+  if(!events || !events.length){
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#999;padding:24px;">No events found.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = events.map(e => {
+    const statusPill = {
+      approved:         "pill-green",
+      rejected:         "pill-red",
+      pending_president:"pill-amber",
+      pending_admin:    "pill-amber",
+      cancelled:        "pill-gray",
+      completed:        "pill-blue"
+    }[e.status] || "pill-gray";
+
+    const regType = e.event_category === "team"
+      ? `<span class="pill" style="background:#fef3c7;color:#92400e;">👥 Team</span>`
+      : `<span class="pill" style="background:#e0f2fe;color:#0369a1;">👤 Individual</span>`;
+
+    const paid = e.is_paid
+      ? `<span class="pill" style="background:#d1fae5;color:#065f46;margin-left:4px;">💰 Paid</span>`
+      : `<span class="pill" style="background:#f1f5f9;color:#475569;margin-left:4px;">🆓 Free</span>`;
+
+    const cap  = parseInt(e.capacity) || 0;
+    const reg  = parseInt(e.registered_count) || 0;
+    const pct  = cap > 0 ? Math.min(100, Math.round((reg/cap)*100)) : 0;
+    const pbarColor = pct >= 90 ? "#e53e3e" : pct >= 60 ? "#d97706" : "#4f46e5";
+
+    // President: Edit + Export + Delete directly
+    // VP: Edit + Export + Request Delete (needs approval)
+    const isPresident = cdIsPresident(activeClubRole);
+    const safeTitle = (e.title||"").replace(/'/g, "\\'");
+    const deleteBtn = isPresident
+      ? '<button class="btn-xs btn-reject" onclick="cdDeleteEvent('+e.id+',\''+safeTitle+'\')">🗑 Delete</button>'
+      : '<button class="btn-xs" style="background:#fef3c7;color:#92400e;" onclick="cdVpRequestDelete('+e.id+',\''+safeTitle+'\')">🗑 Request Delete</button>';
+
+    return `<tr>
+      <td>
+        <strong style="color:#1e1b4b;">${e.title}</strong>
+        <div style="font-size:.76rem;color:#718096;margin-top:2px;">
+          📍 ${e.location||"—"}
+        </div>
+      </td>
+      <td>${regType}${paid}</td>
+      <td>
+        <span style="font-weight:600;color:#1e1b4b;">${e.date||""}</span>
+        <div style="font-size:.76rem;color:#718096;">⏰ ${e.time||""}</div>
+      </td>
+      <td><span class="pill ${statusPill}">${(e.status||"").replace(/_/g," ")}</span></td>
+      <td>
+        <div class="pbar"><div class="pbar-fill" style="width:${pct}%;background:${pbarColor};"></div></div>
+        <small style="color:#718096;">${reg} / ${cap || "—"}</small>
+      </td>
+      <td style="white-space:nowrap;display:flex;flex-wrap:wrap;gap:4px;align-items:center;">
+        <button class="btn-xs btn-edit"   onclick="openEditEventModal(${e.id},'member')">✏ Edit</button>
+        <button class="btn-xs btn-export" onclick="cdExportRegs(${e.id})">⬇ Excel</button>
+        ${deleteBtn}
+      </td>
+    </tr>`;
+  }).join("");
+}
+
+
+function openEditEventModal(eventId, mode){
+  _editEventId = eventId;
+  _editMode    = mode || "member";
+
+  apiFetch("/api/event/" + eventId).then(r => r.json()).then(ev => {
+    const title = _editMode === "president-pending" ? "📝 Edit Before Approving" : "✏️ Edit Event";
+
+    // Build type options
+    const types = ["workshop","seminar","competition","social","recruitment"];
+    const typeOpts = types.map(t =>
+      `<option value="${t}" ${ev.type===t?"selected":""}>${t.charAt(0).toUpperCase()+t.slice(1)}</option>`
+    ).join("");
+
+    const html = `
+      <div style="padding:4px 0 16px;">
+        <h3 style="margin:0 0 4px;color:#1e1b4b;font-size:1.05rem;">${title}</h3>
+        <p style="font-size:.78rem;color:#718096;margin:0 0 16px;">Only safe fields are editable — won't affect registered students.</p>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div>
+          <label class="flabel">Date</label>
+          <input id="ee_date" type="date" class="finput" value="${ev.date||""}">
+        </div>
+        <div>
+          <label class="flabel">Time</label>
+          <input id="ee_time" type="time" class="finput" value="${ev.time||""}">
+        </div>
+        <div>
+          <label class="flabel">Venue</label>
+          <input id="ee_location" class="finput" value="${ev.location||""}">
+        </div>
+        <div>
+          <label class="flabel">Type</label>
+          <select id="ee_type" class="finput">${typeOpts}</select>
+        </div>
+        <div>
+          <label class="flabel">Capacity</label>
+          <input id="ee_capacity" type="number" class="finput" value="${ev.capacity||""}">
+          <small style="color:#718096;font-size:.72rem;">Registered: <span id="ee_reg_count">…</span></small>
+        </div>
+        <div>
+          <label class="flabel">Prize Pool</label>
+          <input id="ee_prize_pool" class="finput" value="${ev.prize_pool||""}">
+        </div>
+        <div style="grid-column:1/-1;">
+          <label class="flabel">Description</label>
+          <textarea id="ee_description" class="finput" rows="2" style="resize:vertical;">${ev.description||""}</textarea>
+        </div>
+        <div style="grid-column:1/-1;">
+          <label class="flabel">About this Event</label>
+          <textarea id="ee_about" class="finput" rows="2" style="resize:vertical;">${ev.about||""}</textarea>
+        </div>
+        <div style="grid-column:1/-1;">
+          <label class="flabel">Rules</label>
+          <textarea id="ee_rules" class="finput" rows="2" style="resize:vertical;">${ev.rules||""}</textarea>
+        </div>
+        <div style="grid-column:1/-1;">
+          <label class="flabel">Instructions</label>
+          <textarea id="ee_instructions" class="finput" rows="2" style="resize:vertical;">${ev.instructions||""}</textarea>
+        </div>
+      </div>
+
+      <div style="margin-top:18px;">
+        <label class="flabel" style="font-size:.85rem;font-weight:700;margin-bottom:8px;display:block;">📸 Gallery</label>
+        <div id="ee_gallery_grid" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;min-height:20px;"></div>
+        <label style="display:flex;align-items:center;justify-content:center;gap:8px;border:2px dashed #6366f1;border-radius:10px;padding:16px;text-align:center;color:#6366f1;cursor:pointer;font-size:.84rem;background:#f8f7ff;" id="ee_drop_label">
+          🖼️ Drag &amp; drop photos here, or click to browse
+          <input id="ee_file_input" type="file" accept="image/*" multiple style="display:none">
+        </label>
+        <div id="ee_upload_status" style="font-size:.78rem;color:#38a169;margin-top:6px;min-height:16px;"></div>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:18px;">
+        ${cdIsPresident(activeClubRole) ? `
+        <div style="margin-bottom:16px;">
+          <label class="flabel" style="font-size:.85rem;font-weight:700;display:block;margin-bottom:8px;">🎯 Event Coordinators</label>
+          <p style="font-size:.78rem;color:#718096;margin-bottom:10px;">Select club members to coordinate this event.</p>
+          <div id="ee_coord_list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;margin-bottom:10px;"></div>
+        </div>` : ""}
+        <button id="ee_save_btn" onclick="submitEventEdit()" style="flex:1;background:#4f46e5;color:#fff;border:none;border-radius:8px;padding:10px;font-weight:600;cursor:pointer;font-size:.9rem;">💾 Save Changes</button>
+        <button onclick="closeGenericModal()" style="flex:1;background:#f1f5f9;color:#374151;border:none;border-radius:8px;padding:10px;cursor:pointer;font-size:.9rem;">Cancel</button>
+      </div>`;
+
+    openGenericModal(html);
+
+    // Wire up file input after modal renders
+    setTimeout(() => {
+      const inp = document.getElementById("ee_file_input");
+      const lbl = document.getElementById("ee_drop_label");
+      if(inp) {
+        inp.onchange = (e) => handleGalleryFileSelect(e, eventId);
+        // drag and drop on label
+        if(lbl) {
+          lbl.ondragover  = (e) => { e.preventDefault(); lbl.style.background="#eef2ff"; };
+          lbl.ondragleave = ()  => { lbl.style.background="#f8f7ff"; };
+          lbl.ondrop      = (e) => { e.preventDefault(); lbl.style.background="#f8f7ff"; handleGalleryDrop(e, eventId); };
+        }
+      }
+
+      // Load reg count
+      apiFetch("/api/event/" + eventId + "/registrations").then(r => r.json()).then(d => {
+        const el = document.getElementById("ee_reg_count");
+        if(el) el.textContent = d.registrations || 0;
+      }).catch(() => {});
+
+      // Load gallery
+      loadEditGallery(eventId);
+
+      // Load coordinator assignment (president only)
+      if(cdIsPresident(activeClubRole)){
+        loadEditEventCoords(eventId);
+      }
+    }, 50);
+  });
+}
+
+function loadEditEventCoords(eventId){
+  const grid = document.getElementById("ee_coord_list");
+  if(!grid) return;
+
+  Promise.all([
+    apiFetch("/api/club/"+activeClubId+"/members").then(r=>r.json()),
+    apiFetch("/api/events/"+eventId+"/coordinators").then(r=>r.json())
+  ]).then(([members, assigned])=>{
+    const assignedIds = (assigned||[]).map(a=>a.id);
+    const eligible = (members||[]).filter(m=>m.role !== "president");
+
+    grid.innerHTML = eligible.map(m=>{
+      const yes = assignedIds.includes(m.id);
+      return `<div id="eecoord-${eventId}-${m.id}"
+        onclick="eeToggleCoord(${eventId},${m.id},this)"
+        style="cursor:pointer;border:2px solid ${yes?"#6366f1":"#e2e8f0"};
+               background:${yes?"#eef2ff":"#f8faff"};
+               border-radius:10px;padding:10px 12px;font-size:.82rem;
+               display:flex;align-items:center;gap:8px;transition:all .15s;">
+        <span style="font-size:1rem;">${yes?"✅":"⬜"}</span>
+        <span style="color:#1e1b4b;font-weight:${yes?"600":"400"};">${m.name}</span>
+        <span style="font-size:.72rem;color:#718096;">${cdFormatRole(m.role)}</span>
+      </div>`;
+    }).join("");
+  });
+}
+
+function eeToggleCoord(eventId, userId, el){
+  const isAssigned = el.dataset.assigned === "1" ||
+    el.style.borderColor === "rgb(99, 102, 241)";
+
+  if(isAssigned){
+    apiFetch("/api/events/"+eventId+"/coordinators/"+userId, {method:"DELETE"})
+    .then(r=>r.json()).then(()=>{ loadEditEventCoords(eventId); });
+  } else {
+    apiFetch("/api/events/"+eventId+"/add-coordinator", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({user_id: userId})
+    }).then(r=>r.json()).then(()=>{ loadEditEventCoords(eventId); });
+  }
+}
+
+function loadEditGallery(eventId){
+  apiFetch("/api/events/" + eventId + "/gallery-full").then(r => r.json()).then(images => {
+    const grid = document.getElementById("ee_gallery_grid");
+    if(!grid) return;
+    if(!images || !images.length){
+      grid.innerHTML = "<p style='color:#999;font-size:.8rem;margin:0;'>No photos yet.</p>";
+      return;
+    }
+    grid.innerHTML = images.map(img => `
+      <div style="position:relative;width:76px;height:76px;border-radius:8px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.12);">
+        <img src="${API}/${img.image_url}" style="width:100%;height:100%;object-fit:cover;">
+        <button onclick="deleteGalleryImage(${eventId},${img.id})" title="Remove photo"
+          style="position:absolute;top:2px;right:2px;background:rgba(220,38,38,.9);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:.65rem;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;">✕</button>
+      </div>`).join("");
+  });
+}
+
+function deleteGalleryImage(eventId, imageId){
+  if(!confirm("Remove this photo?")) return;
+  apiFetch("/api/events/" + eventId + "/gallery/" + imageId, { method:"DELETE" })
+  .then(r => r.json()).then(() => loadEditGallery(eventId));
+}
+
+function handleGalleryDrop(event, eventId){
+  const files = Array.from(event.dataTransfer.files).filter(f => f.type.startsWith("image/"));
+  uploadGalleryFiles(files, eventId);
+}
+
+function handleGalleryFileSelect(event, eventId){
+  uploadGalleryFiles(Array.from(event.target.files), eventId);
+}
+
+async function uploadGalleryFiles(files, eventId){
+  const status = document.getElementById("ee_upload_status");
+  if(!files.length) return;
+  if(status) status.textContent = "Uploading " + files.length + " photo(s)…";
+  let done = 0;
+  for(const file of files){
+    const fd = new FormData();
+    fd.append("image", file);
+    try {
+      const r = await apiFetch("/api/events/" + eventId + "/upload-image", { method:"POST", body:fd });
+      const d = await r.json();
+      if(d.message) done++;
+    } catch(e){}
+  }
+  if(status) status.textContent = "✅ " + done + " photo(s) uploaded.";
+  loadEditGallery(eventId);
+  const inp = document.getElementById("ee_file_input");
+  if(inp) inp.value = "";
+}
+
+function submitEventEdit(){
+  if(!_editEventId) return;
+  const btn = document.getElementById("ee_save_btn");
+  if(btn){ btn.disabled = true; btn.textContent = "Saving…"; }
+
+  const payload = {
+    date:         document.getElementById("ee_date").value,
+    time:         document.getElementById("ee_time").value,
+    location:     document.getElementById("ee_location").value,
+    type:         document.getElementById("ee_type").value,
+    capacity:     document.getElementById("ee_capacity").value || null,
+    description:  document.getElementById("ee_description").value,
+    prize_pool:   document.getElementById("ee_prize_pool").value,
+    about:        document.getElementById("ee_about").value,
+    rules:        document.getElementById("ee_rules").value,
+    instructions: document.getElementById("ee_instructions").value
+  };
+
+  const endpoint = _editMode === "president-pending"
+    ? "/api/events/" + _editEventId + "/president-edit"
+    : "/api/club/" + activeClubId + "/event/" + _editEventId + "/edit";
+
+  apiFetch(endpoint, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload) })
+  .then(r => r.json()).then(d => {
+    closeGenericModal();
+    alert(d.message);
+    if(_editMode === "president-pending") loadPendingEvents();
+    else { loadManageEvents(); loadMyCoordinatorEvents(); }
+  }).catch(() => {
+    if(btn){ btn.disabled = false; btn.textContent = "💾 Save Changes"; }
+    alert("Failed to save. Please try again.");
+  });
+}
+
+function openPresidentEditModal(eventId){
+  openEditEventModal(eventId, "president-pending");
+}
+
+function openGenericModal(html){
+  let overlay = document.getElementById("genericModalOverlay");
+  if(!overlay){
+    overlay = document.createElement("div");
+    overlay.id = "genericModalOverlay";
+    overlay.style.cssText = "display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1500;align-items:center;justify-content:center;";
+    const box = document.createElement("div");
+    box.id = "genericModalBox";
+    box.style.cssText = "background:#fff;border-radius:16px;padding:28px;max-width:600px;width:95%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.25);";
+    overlay.appendChild(box);
+    overlay.onclick = e => { if(e.target === overlay) closeGenericModal(); };
+    document.body.appendChild(overlay);
+  }
+  document.getElementById("genericModalBox").innerHTML = html;
+  overlay.style.display = "flex";
+}
+
+function closeGenericModal(){
+  const o = document.getElementById("genericModalOverlay");
+  if(o) o.style.display = "none";
+}
+
+
+/* ============================================================
+   MY COORDINATOR EVENTS (Feature A)
+   ============================================================ */
+let _myCoordEventsData = [];
+
+function loadMyCoordinatorEvents(){
+  const countEl = document.getElementById("myEventsCount");
+  if(countEl) countEl.textContent = "Loading…";
+
+  apiFetch("/api/my-coordinator-events").then(r=>r.json()).then(events=>{
+    _myCoordEventsData = events || [];
+    if(countEl) countEl.textContent = _myCoordEventsData.length + " event(s) assigned to you.";
+    renderMyCoordEvents(_myCoordEventsData);
+  });
+}
+
+function filterMyEvents(q){
+  const f = q.toLowerCase();
+  renderMyCoordEvents(_myCoordEventsData.filter(e=>
+    (e.title||"").toLowerCase().includes(f) ||
+    (e.location||"").toLowerCase().includes(f)
+  ));
+}
+
+function renderMyCoordEvents(events){
+  const tbody = document.getElementById("myCoordEventsTbody");
+  if(!tbody) return;
+
+  if(!events || !events.length){
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#999;padding:24px;">You have not been assigned as coordinator for any events yet.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = events.map(e => {
+    const statusPill = {
+      approved:         "pill-green",
+      rejected:         "pill-red",
+      pending_president:"pill-amber",
+      pending_admin:    "pill-amber",
+      cancelled:        "pill-gray",
+      completed:        "pill-blue"
+    }[e.status] || "pill-gray";
+
+    const regType = e.event_category === "team"
+      ? `<span class="pill" style="background:#fef3c7;color:#92400e;">👥 Team</span>`
+      : `<span class="pill" style="background:#e0f2fe;color:#0369a1;">👤 Individual</span>`;
+
+    const paid = e.is_paid
+      ? `<span class="pill" style="background:#d1fae5;color:#065f46;margin-left:4px;">💰 Paid</span>`
+      : `<span class="pill" style="background:#f1f5f9;color:#475569;margin-left:4px;">🆓 Free</span>`;
+
+    const cap  = parseInt(e.capacity) || 0;
+    const reg  = parseInt(e.registered_count) || 0;
+    const pct  = cap > 0 ? Math.min(100, Math.round((reg/cap)*100)) : 0;
+    const pbarColor = pct >= 90 ? "#e53e3e" : pct >= 60 ? "#d97706" : "#4f46e5";
+
+    return `<tr>
+      <td>
+        <strong style="color:#1e1b4b;">${e.title}</strong>
+        <div style="font-size:.76rem;color:#718096;margin-top:2px;">
+          🏛️ ${e.club_name||""} &nbsp;📍 ${e.location||"—"}
+        </div>
+      </td>
+      <td>${regType}${paid}</td>
+      <td>
+        <span style="font-weight:600;color:#1e1b4b;">${e.date||""}</span>
+        <div style="font-size:.76rem;color:#718096;">⏰ ${e.time||""}</div>
+      </td>
+      <td><span class="pill ${statusPill}">${(e.status||"").replace(/_/g," ")}</span></td>
+      <td>
+        <div class="pbar"><div class="pbar-fill" style="width:${pct}%;background:${pbarColor};"></div></div>
+        <small style="color:#718096;">${reg} / ${cap || "—"}</small>
+      </td>
+      <td style="white-space:nowrap;display:flex;flex-wrap:wrap;gap:4px;align-items:center;">
+        <button class="btn-xs btn-edit"   onclick="openEditEventModal(${e.id},'member')">✏ Edit</button>
+        <button class="btn-xs btn-export" onclick="cdExportRegs(${e.id})">⬇ Excel</button>
+        <button class="btn-xs" style="background:#ede9fe;color:#5b21b6;" onclick="openQrModal(${e.id},'${e.title.replace(/'/g,"\\'")}')">📱 QR</button>
+      </td>
+    </tr>`;
+  }).join("");
+}
+
+
+
+/* ============================================================
+   MANAGE MEMBERS (feature iii — president/VP)
+   ============================================================ */
+const ALL_ROLES_PRES = ["president","vice_president","secretary","joint_secretary","treasurer","hr",
+  "event_coordinator","event_management_head","event_management_associate","pr_head","pr_associate","photography"];
+const ROLE_LABEL_PRES = {
+  "president":"President","vice_president":"Vice President","secretary":"Secretary",
+  "joint_secretary":"Joint Secretary","treasurer":"Treasurer","hr":"HR",
+  "event_coordinator":"Event Coordinator","event_management_head":"Event Mgmt Head",
+  "event_management_associate":"Event Mgmt Associate",
+  "pr_head":"PR Head","pr_associate":"PR Associate","photography":"Photography"
+};
+
+function loadManageMembers(){
+  if(!activeClubId) return;
+
+  // Load role dropdown for add-member form
+  apiFetch("/api/club/"+activeClubId+"/roles").then(r=>r.json()).then(roles=>{
+    const sel = document.getElementById("presAddRole");
+    if(sel){
+      sel.innerHTML = (roles||[]).map(r=>
+        `<option value="${r.role_name}">${cdFormatRole(r.role_name)}${r.is_standard?"":" ✦"}</option>`
+      ).join("") + `<option value="__new__">+ Add new role…</option>`;
+      sel.onchange = function(){ presHandleRoleSelect(this); };
+    }
+  });
+
+  Promise.all([
+    apiFetch("/api/club/"+activeClubId+"/roles").then(r=>r.json()),
+    apiFetch("/api/club/"+activeClubId+"/president/members").then(r=>r.json())
+  ]).then(([roles, members])=>{
+    const tbody = document.getElementById("manageMembersTbody");
+    if(!tbody) return;
+
+    const roleOpts = (roles||[]).map(r=>
+      `<option value="${r.role_name}">${cdFormatRole(r.role_name)}${r.is_standard?"":" ✦"}</option>`
+    ).join("") + `<option value="__new__">+ Add new role…</option>`;
+
+    // Find logged-in user's id in the members list
+    // We use activeClubRole to know if we're president
+    const isPresident = cdIsPresident(activeClubRole);
+
+    if(!members||!members.length){
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#999;padding:20px;">No members found.</td></tr>';
+      return;
+    }
+
+    var ghS='<svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>';
+    var liS='<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>';
+    var igS='<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>';
+    tbody.innerHTML = members.map(function(m){
+      var isSelf = (m.role === 'president' && isPresident);
+      var av = m.profile_pic
+        ? '<img src="'+API+'/'+m.profile_pic+'" style="width:34px;height:34px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:9px;">'
+        : '<span style="display:inline-flex;width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:.8rem;margin-right:9px;vertical-align:middle;">'+(m.name||'?').charAt(0).toUpperCase()+'</span>';
+      var soc = [
+        m.github    ? '<a href="'+m.github+'"    target="_blank" title="GitHub"    style="color:#24292e;margin-right:7px;display:inline-flex;">'+ghS+'</a>' : '',
+        m.linkedin  ? '<a href="'+m.linkedin+'"  target="_blank" title="LinkedIn"  style="color:#0077b5;margin-right:7px;display:inline-flex;">'+liS+'</a>' : '',
+        m.instagram ? '<a href="'+m.instagram+'" target="_blank" title="Instagram" style="color:#e1306c;display:inline-flex;">'+igS+'</a>' : ''
+      ].filter(Boolean).join('');
+      var nameCell = '<td style="white-space:nowrap;">'+av
+        +'<strong style="color:#1e1b4b;">'+m.name+'</strong>'
+        +(isSelf?' <span class="pill pill-green" style="font-size:.65rem;">You</span>':'')
+        +(m.bio?'<div style="font-size:.73rem;color:#718096;margin-top:2px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+m.bio+'</div>':'')
+        +(soc?'<div style="margin-top:4px;">'+soc+'</div>':'')
+        +'</td>';
+      var roleCell = isSelf
+        ? '<span class="pill pill-blue">'+cdFormatRole(m.role)+'</span><small style="color:#a0aec0;font-size:.7rem;display:block;margin-top:2px;">Your own role</small>'
+        : '<select onchange="presEditMemberRole('+m.id+',this)" style="font-size:.78rem;border:1.5px solid #e2e8f0;border-radius:6px;padding:3px 6px;max-width:180px;">'+roleOpts.replace('value="'+m.role+'"','value="'+m.role+'" selected')+'</select>';
+      var actBtn = isSelf
+        ? '<span style="font-size:.75rem;color:#a0aec0;">&#8212;</span>'
+        : '<button onclick="presRemoveMember('+m.id+',\''+( m.name||'').replace(/\'/g,'')+'\')'+'" class="btn-xs btn-reject">Remove</button>';
+      return '<tr>'+nameCell
+        +'<td style="font-size:.8rem;color:#4b5563;font-family:monospace;">'+(m.reg_no||'&#8212;')+'</td>'
+        +'<td style="font-size:.8rem;color:#4b5563;">'+m.email+'</td>'
+        +'<td style="font-size:.8rem;color:#718096;">'+(m.department||'&#8212;')+(m.year?' &middot; Yr '+m.year:'')+'</td>'
+        +'<td>'+roleCell+'</td>'
+        +'<td>'+actBtn+'</td>'
+        +'</tr>';
+    }).join('');
+  });
+}
+
+// Add member helpers for president
+let _presLookupTimer = null;
+function presLookupUser(immediate){
+  clearTimeout(_presLookupTimer);
+  var delay = immediate ? 0 : 400;
+  _presLookupTimer = setTimeout(function(){
+    var query = document.getElementById("presAddEmail").value.trim();
+    var fb    = document.getElementById("presUserLookupResult");
+    if(!query){ fb.textContent=""; return; }
+    fb.innerHTML = '<span style="color:#718096;">Searching…</span>';
+    apiFetch("/api/user-lookup?q="+encodeURIComponent(query)).then(r=>r.json()).then(function(users){
+      if(users && users.length > 0){
+        var match = users[0];
+        document.getElementById("presAddUserId").value = match.id;
+        fb.innerHTML = '<span style="color:#16a34a;">✅ '
+          +match.name
+          +' <span style="color:#718096;font-size:.75rem;">('+match.reg_no+')</span>'
+          +(match.department || match.year ? ' \u2014 '+(match.department||'')+(match.year ? ' Yr '+match.year : '') : '')
+          +'</span>';
+      } else {
+        document.getElementById("presAddUserId").value = "";
+        fb.innerHTML = '<span style="color:#dc2626;">❌ No user found with that email or reg no</span>';
+      }
+    });
+  }, delay);
+}
+
+function presHandleRoleSelect(sel){
+  const div = document.getElementById("presNewRoleDiv");
+  if(div) div.style.display = sel.value==="__new__" ? "block" : "none";
+}
+
+function presAddNewRole(){
+  const name = document.getElementById("presNewRoleName").value.trim();
+  if(!name){ alert("Enter a role name."); return; }
+  apiFetch("/api/club/"+activeClubId+"/roles",{method:"POST",
+    headers:{"Content-Type":"application/json"},body:JSON.stringify({role_name:name})
+  }).then(r=>r.json()).then(d=>{
+    alert(d.message);
+    loadManageMembers(); // reload to refresh dropdowns
+  });
+}
+
+function presAddMemberToClub(){
+  const userId = document.getElementById("presAddUserId").value;
+  const role   = document.getElementById("presAddRole").value;
+  if(!userId){ alert("Find a valid user by email or reg no first."); return; }
+  if(!role || role==="__new__"){ alert("Select a valid role."); return; }
+
+  apiFetch("/api/club/"+activeClubId+"/members",{method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({user_id:parseInt(userId), role})
+  }).then(r=>r.json()).then(d=>{
+    const msg = document.getElementById("presAddMsg");
+    msg.textContent = d.message;
+    msg.style.display = "inline";
+    setTimeout(()=>msg.style.display="none", 3000);
+    if(!d.message.toLowerCase().includes("already")){
+      document.getElementById("presAddEmail").value  = "";
+      document.getElementById("presAddUserId").value = "";
+      document.getElementById("presUserLookupResult").textContent = "";
+    }
+    loadManageMembers();
+  });
+}
+
+function cdFormatRole(r){
+  return (r||"").split("_").map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(" ");
+}
+
+
+function presEditMemberRole(userId, selectEl){
+  const newRole = selectEl.value;
+  if(newRole === "__new__"){
+    const custom = prompt("Enter new role name. e.g. Media Head, Content Writer, PR & Media");
+    if(!custom){ loadManageMembers(); return; }
+    const cleaned = custom.trim();
+    if(!cleaned){ alert("Role name cannot be empty."); loadManageMembers(); return; }
+    // Add role to club, then assign
+    apiFetch("/api/club/"+activeClubId+"/roles",{method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({role_name:cleaned})
+    }).then(r=>r.json()).then(()=>{
+      apiFetch("/api/club/"+activeClubId+"/president/members/"+userId,
+        {method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({role:cleaned})})
+      .then(r=>r.json()).then(d=>{ alert(d.message); loadManageMembers(); });
+    });
+    return;
+  }
+  if(!confirm("Change role to " + cdFormatRole(newRole) + "?")){ loadManageMembers(); return; }
+  apiFetch("/api/club/"+activeClubId+"/president/members/"+userId,
+    {method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({role:newRole})})
+  .then(r=>r.json()).then(d=>{ alert(d.message); loadManageMembers(); });
+}
+
+function presRemoveMember(userId, name){
+  if(!confirm("Remove "+name+" from this club?")) return;
+  apiFetch("/api/club/"+activeClubId+"/president/members/"+userId,{method:"DELETE"})
+  .then(r=>r.json()).then(d=>{ alert(d.message); loadManageMembers(); });
+}
+
+/* ============================================================
+   CLUB DETAILS (feature iii — president/VP)
+   ============================================================ */
+function loadClubDetails(){
+  if(!activeClubId) return;
+  apiFetch("/api/club/"+activeClubId).then(r=>r.json()).then(data=>{
+    const c = data.club || {};
+    const set = (id, val) => { const el=document.getElementById(id); if(el) el.value = val || ""; };
+    set("cdName",        c.name);
+    set("cdCategory",    c.category);
+    set("cdDescription", c.description);
+    set("cdAbout",       c.about);
+    set("cdVision",      c.vision);
+    set("cdMission",     c.mission);
+  });
+}
+
+function saveClubDetails(){
+  const fd = new FormData();
+  fd.append("name",        document.getElementById("cdName").value);
+  fd.append("category",    document.getElementById("cdCategory").value);
+  fd.append("description", document.getElementById("cdDescription").value);
+  fd.append("about",       document.getElementById("cdAbout")?.value || "");
+  fd.append("vision",      document.getElementById("cdVision")?.value || "");
+  fd.append("mission",     document.getElementById("cdMission")?.value || "");
+  const img = document.getElementById("cdImage")?.files[0];
+  if(img) fd.append("image", img);
+
+  apiFetch("/api/club/"+activeClubId+"/president/details",{method:"PUT",body:fd})
+  .then(r=>r.json()).then(d=>{
+    const msg = document.getElementById("clubDetailsSaveMsg");
+    if(msg){ msg.textContent="✅ "+d.message; msg.style.display="inline"; setTimeout(()=>msg.style.display="none",3000); }
+  });
+}
+
+/* ============================================================
+   VP PENDING CHANGES (feature iii — president reviews)
+   ============================================================ */
+function loadVpChanges(){
+  if(!activeClubId) return;
+  apiFetch("/api/club/"+activeClubId+"/pending-changes")
+  .then(r=>r.json()).then(changes=>{
+    const container = document.getElementById("vpChangesContainer");
+    const badge     = document.getElementById("vpChangeBadge");
+    if(badge) badge.textContent = changes.length || "";
+    if(!container) return;
+
+    if(!changes.length){
+      container.innerHTML = "<p style='color:#999;padding:20px 0;'>No pending changes from VP.</p>";
+      return;
+    }
+
+    container.innerHTML = changes.map(ch=>{
+      const p = ch.payload_parsed || {};
+
+      // Build a rich human-readable description
+      let summary = "", detail = "";
+      if(ch.change_type === "event_delete"){
+        summary = `🗑️ Delete Event — <strong>${ch.target_name||p.title||"Unknown event"}</strong>`;
+        detail  = `<span style="background:#fee2e2;color:#991b1b;border-radius:4px;padding:1px 8px;font-size:.76rem;">Permanent deletion requested</span>`;
+      } else if(ch.change_type === "event_edit"){
+        summary = `✏️ Event Edit — <strong>${ch.target_name||"Unknown event"}</strong>`;
+        const fields = Object.keys(p).filter(k=>k!=="id");
+        if(fields.length){
+          detail = fields.map(k=>{
+            const label = {title:"Title",date:"Date",time:"Time",location:"Venue",
+                           description:"Description",capacity:"Capacity",prize_pool:"Prize Pool",
+                           about:"About",rules:"Rules",instructions:"Instructions",type:"Type"}[k]||k;
+            return `<span style="background:#f1f5f9;border-radius:4px;padding:1px 6px;font-size:.74rem;margin:2px;">${label}: ${String(p[k]).slice(0,40)}</span>`;
+          }).join(" ");
+        }
+      } else if(ch.change_type === "member_role"){
+        if(p.action === "remove"){
+          summary = `🗑️ Remove Member — <strong>${ch.target_name||"Unknown member"}</strong>`;
+        } else {
+          summary = `🔄 Role Change — <strong>${ch.target_name||"Unknown member"}</strong>`;
+          detail  = `New role: <span style="background:#dbeafe;color:#1e40af;border-radius:4px;padding:1px 8px;font-size:.78rem;">${cdFormatRole(p.new_role||"")}</span>`;
+        }
+      } else if(ch.change_type === "club_details"){
+        summary = "🏛️ Club Details Update";
+        const fields = Object.keys(p).filter(k=>k!=="image" && p[k]);
+        if(fields.length){
+          detail = fields.map(k=>{
+            const label = {name:"Name",category:"Category",description:"Description",
+                           about:"About",vision:"Vision",mission:"Mission"}[k]||k;
+            return `<span style="background:#f1f5f9;border-radius:4px;padding:1px 6px;font-size:.74rem;margin:2px;">${label} changed</span>`;
+          }).join(" ");
+        }
+      } else {
+        summary = ch.change_type;
+      }
+
+      return `
+      <div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;padding:16px;margin-bottom:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <span style="font-weight:600;color:#4f46e5;">${ch.vp_name||"VP"}</span>
+              <span style="font-size:.74rem;color:#a0aec0;">${ch.created_at||""}</span>
+            </div>
+            <div style="font-size:.88rem;color:#1e1b4b;margin-top:6px;">${summary}</div>
+            ${detail ? `<div style="margin-top:6px;flex-wrap:wrap;display:flex;gap:2px;">${detail}</div>` : ""}
+          </div>
+          <div style="display:flex;gap:8px;flex-shrink:0;">
+            <button onclick="approveChange(${ch.id})" class="btn-xs btn-approve">✅ Approve</button>
+            <button onclick="rejectChange(${ch.id})"  class="btn-xs btn-reject">❌ Reject</button>
+          </div>
+        </div>
+      </div>`;
+    }).join("");
+  });
+}
+
+function loadMySubmissions(){
+  if(!activeClubId) return;
+  apiFetch("/api/club/"+activeClubId+"/my-changes")
+  .then(r=>r.json()).then(changes=>{
+    const container = document.getElementById("mySubmissionsContainer");
+    if(!container) return;
+
+    if(!changes||!changes.length){
+      container.innerHTML = "<p style='color:#999;padding:20px 0;'>You have not submitted any changes yet.</p>";
+      return;
+    }
+
+    container.innerHTML = changes.map(ch=>{
+      const p = ch.payload_parsed || {};
+
+      // Build description
+      let summary = "";
+      if(ch.change_type === "event_delete"){
+        summary = `🗑️ Delete Event — <strong>${ch.target_name||ch.payload_parsed?.title||"Unknown event"}</strong>`;
+      } else if(ch.change_type === "event_edit"){
+        summary = `✏️ Event Edit — <strong>${ch.target_name||"Unknown event"}</strong>`;
+      } else if(ch.change_type === "member_role"){
+        summary = p.action === "remove"
+          ? `🗑️ Remove Member — <strong>${ch.target_name||"Unknown"}</strong>`
+          : `🔄 Role Change — <strong>${ch.target_name||"Unknown"}</strong> → ${cdFormatRole(p.new_role||"")}`;
+      } else if(ch.change_type === "club_details"){
+        summary = "🏛️ Club Details Update";
+      } else {
+        summary = ch.change_type;
+      }
+
+      const statusCfg = {
+        pending:  { pill:"pill-amber", icon:"⏳", label:"Pending" },
+        approved: { pill:"pill-green", icon:"✅", label:"Approved" },
+        rejected: { pill:"pill-red",   icon:"❌", label:"Rejected" }
+      }[ch.status] || { pill:"pill-gray", icon:"•", label:ch.status };
+
+      const reviewInfo = ch.status !== "pending"
+        ? `<div style="font-size:.78rem;color:#718096;margin-top:6px;">
+             ${statusCfg.icon} ${ch.status === "approved" ? "Approved" : "Rejected"} by
+             <strong>${ch.reviewed_by_name||"President"}</strong>
+             ${ch.reviewed_at ? "on "+ch.reviewed_at : ""}
+             ${ch.review_note ? `<div style="margin-top:3px;color:#e53e3e;font-style:italic;">"${ch.review_note}"</div>` : ""}
+           </div>`
+        : `<div style="font-size:.78rem;color:#d97706;margin-top:4px;">⏳ Awaiting president review</div>`;
+
+      return `
+      <div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;padding:16px;margin-bottom:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">
+          <div style="flex:1;">
+            <div style="font-size:.88rem;color:#1e1b4b;">${summary}</div>
+            <div style="font-size:.74rem;color:#a0aec0;margin-top:3px;">Submitted: ${ch.created_at||""}</div>
+            ${reviewInfo}
+          </div>
+          <span class="pill ${statusCfg.pill}" style="flex-shrink:0;">${statusCfg.label}</span>
+        </div>
+      </div>`;
+    }).join("");
+  });
+}
+
+
+function approveChange(changeId){
+  apiFetch("/api/club/"+activeClubId+"/pending-changes/"+changeId+"/approve",{method:"PUT"})
+  .then(r=>r.json()).then(d=>{ alert(d.message); loadVpChanges(); });
+}
+
+function rejectChange(changeId){
+  const note = prompt("Reason for rejection (optional):") || "";
+  apiFetch("/api/club/"+activeClubId+"/pending-changes/"+changeId+"/reject",
+    {method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({note})})
+  .then(r=>r.json()).then(d=>{ alert(d.message); loadVpChanges(); });
+}
+
+
+
+/* ═══════════════════════════════════════════════════
+   QR ATTENDANCE — coordinator side
+   Uses qrcode.js (loaded inline) to draw on canvas
+═══════════════════════════════════════════════════ */
+
+// Inline minimal QR code generator (pure JS, no CDN needed offline)
+// We load QRCode.js from cdnjs
+var _qrScript = document.createElement('script');
+_qrScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+document.head.appendChild(_qrScript);
+
+var _qrEventId    = null;
+var _qrSeed       = null;
+var _qrExpiresAt  = null;
+var _qrRotateInt  = null;
+var _qrSessionInt = null;
+var _qrAttInt     = null;
+var _qrRotateTick = null;
+var _qrObj        = null;
+
+function openQrModal(eventId, eventTitle) {
+  _qrEventId = eventId;
+  document.getElementById('qrEventName').textContent = eventTitle;
+  document.getElementById('qrStep1').style.display = '';
+  document.getElementById('qrStep2').style.display = 'none';
+  document.getElementById('qrStep3').style.display = 'none';
+  document.getElementById('qrModal').classList.add('open');
+}
+
+function closeQrModal() {
+  document.getElementById('qrModal').classList.remove('open');
+  _clearQrTimers();
+  _qrSeed = null;
+  _qrObj  = null;
+}
+
+function _clearQrTimers() {
+  clearInterval(_qrRotateInt);
+  clearInterval(_qrSessionInt);
+  clearInterval(_qrAttInt);
+  clearInterval(_qrRotateTick);
+}
+
+function confirmGenerateQr() {
+  _clearQrTimers();
+  apiFetch('/api/events/' + _qrEventId + '/qr/generate', { method: 'POST' })
+    .then(r => r.json())
+    .then(d => {
+      if (!d.seed) { alert(d.message || 'Failed to generate QR'); return; }
+      _qrSeed      = d.seed;
+      _qrExpiresAt = new Date(d.expires_at + ' UTC');
+
+      document.getElementById('qrStep1').style.display = 'none';
+      document.getElementById('qrStep2').style.display = '';
+      document.getElementById('qrStep3').style.display = 'none';
+
+      const scanUrl = window.location.origin + '/attendance/' + _qrEventId + '/scan';
+      document.getElementById('qrScanUrl').textContent = scanUrl;
+
+      // Start rotating QR token every 30 seconds
+      _fetchAndDrawQr();
+      _qrRotateInt  = setInterval(_fetchAndDrawQr, 30000);
+      _qrSessionInt = setInterval(_tickSession,     1000);
+      _qrAttInt     = setInterval(refreshQrAttendance, 8000);
+      // Tick the 0:30 countdown every second
+      _startRotateTicker();
+      refreshQrAttendance();
+    })
+    .catch(() => alert('Network error. Please try again.'));
+}
+
+function _fetchAndDrawQr() {
+  apiFetch('/api/events/' + _qrEventId + '/qr/token')
+    .then(r => r.json())
+    .then(d => {
+      if (!d.token) {
+        _clearQrTimers();
+        document.getElementById('qrStep2').style.display = 'none';
+        document.getElementById('qrStep3').style.display = '';
+        return;
+      }
+      document.getElementById('qrTokenDisplay').textContent = d.token;
+      const div = document.getElementById('qrCanvas');
+      div.innerHTML = ''; // clear previous before drawing new one
+      if (typeof QRCode !== 'undefined') {
+        new QRCode(div, {
+          text:         d.qr_data,
+          width:        220,
+          height:       220,
+          colorDark:    '#000000',
+          colorLight:   '#ffffff',
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      } else {
+        // QRCode.js not ready yet — retry after 500ms
+        setTimeout(_fetchAndDrawQr, 500);
+      }
+    })
+    .catch(() => {});
+}
+
+function _startRotateTicker() {
+  clearInterval(_qrRotateTick);
+  var secondsLeft = 30 - (Math.floor(Date.now() / 1000) % 30);
+  var el = document.getElementById('qrRotateTimer');
+  if (el) el.textContent = '0:' + String(secondsLeft).padStart(2, '0');
+  _qrRotateTick = setInterval(function() {
+    var secs = 30 - (Math.floor(Date.now() / 1000) % 30);
+    var el = document.getElementById('qrRotateTimer');
+    if (el) el.textContent = '0:' + String(secs).padStart(2, '0');
+    // When it hits 30 (reset), fetch new token
+    if (secs === 30) _fetchAndDrawQr();
+  }, 1000);
+}
+
+function _drawQrFallback(canvas, text) {
+  // Simple text fallback if QRCode.js isn't loaded yet
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, 220, 220);
+  ctx.fillStyle = '#1a1730';
+  ctx.font = 'bold 13px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('QR Code', 110, 100);
+  ctx.font = '10px monospace';
+  ctx.fillText(text.slice(-16), 110, 120);
+}
+
+function _tickSession() {
+  if (!_qrExpiresAt) return;
+  const now       = new Date();
+  const remaining = Math.max(0, Math.floor((_qrExpiresAt - now) / 1000));
+  const mins      = Math.floor(remaining / 60);
+  const secs      = remaining % 60;
+  document.getElementById('qrSessionTimer').textContent =
+    mins + ':' + String(secs).padStart(2, '0');
+
+  // Progress bar
+  const pct = (remaining / 600) * 100;
+  document.getElementById('qrProgressFill').style.width = pct + '%';
+  document.getElementById('qrProgressFill').style.background =
+    pct < 20 ? '#ef4444' : pct < 50 ? '#f59e0b' : 'linear-gradient(90deg,#6366f1,#8b5cf6)';
+
+  if (remaining <= 0) {
+    _clearQrTimers();
+    document.getElementById('qrStep2').style.display = 'none';
+    document.getElementById('qrStep3').style.display = '';
+  }
+}
+
+function refreshQrAttendance() {
+  if (!_qrEventId) return;
+  apiFetch('/api/events/' + _qrEventId + '/attendance')
+    .then(r => r.json())
+    .then(d => {
+      document.getElementById('qrAttNumber').textContent = d.attended || 0;
+      document.getElementById('qrAttTotal').textContent  = d.total_registered || 0;
+
+      const list = document.getElementById('qrAttList');
+      if (!d.attendance || !d.attendance.length) {
+        list.innerHTML = '<p style="color:#6b7280;font-size:.8rem;text-align:center;padding:10px 0;">No attendance marked yet.</p>';
+        return;
+      }
+      list.innerHTML = d.attendance.map(a =>
+        '<div class="att-row">' +
+          '<div><strong>' + a.name + '</strong><span style="color:#6b7280;font-size:.72rem;margin-left:8px;">' + (a.reg_no||'') + '</span></div>' +
+          '<div style="font-size:.72rem;color:#6b7280;">' + (a.marked_at||'').slice(11,16) + '</div>' +
+        '</div>'
+      ).join('');
+    })
+    .catch(() => {});
+}
+
+</script>
+<!-- ═══════════ QR ATTENDANCE MODAL ═══════════ -->
+<div class="qr-modal-overlay" id="qrModal">
+  <div class="qr-modal-box">
+    <h3>📱 Event Attendance QR</h3>
+    <div class="qr-event-name" id="qrEventName"></div>
+
+    <!-- Step 1: Confirm generate -->
+    <div id="qrStep1">
+      <p style="color:#94a3b8;font-size:.85rem;margin-bottom:18px;line-height:1.6;">
+        This will generate a QR code valid for <strong style="color:#e2e8f0;">10 minutes</strong>.<br>
+        The code changes every <strong style="color:#e2e8f0;">30 seconds</strong> to prevent sharing.
+      </p>
+      <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:10px;padding:12px;margin-bottom:18px;font-size:.8rem;color:#fcd34d;text-align:left;">
+        ✅ Anti-fraud: Token rotates every 30 seconds<br>
+        ✅ Anti-fraud: Each student can only scan once<br>
+        ✅ Only registered students can mark attendance
+      </div>
+      <div class="qr-actions">
+        <button class="qr-btn qr-btn-primary" onclick="confirmGenerateQr()">Generate QR Code</button>
+        <button class="qr-btn qr-btn-ghost"   onclick="closeQrModal()">Cancel</button>
+      </div>
+    </div>
+
+    <!-- Step 2: Live QR display -->
+    <div id="qrStep2" style="display:none;">
+      <div id="qrCanvas" style="width:220px;height:220px;margin:0 auto 14px;border-radius:12px;overflow:hidden;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(99,102,241,.4);"></div>
+      <div class="qr-timer" id="qrRotateTimer">0:30</div>
+      <div style="font-size:.72rem;color:#6b7280;margin-bottom:8px;">Token refreshes in</div>
+      <div class="qr-token-display" id="qrTokenDisplay">——————</div>
+      <div class="qr-session-timer">
+        Session expires in <span id="qrSessionTimer">10:00</span>
+      </div>
+      <div class="qr-progress"><div class="qr-progress-fill" id="qrProgressFill" style="width:100%;"></div></div>
+      <div class="qr-attendance-count" id="qrAttCount">
+        👥 <span id="qrAttNumber">0</span> attended / <span id="qrAttTotal">0</span> registered
+      </div>
+      <div class="qr-scan-link" id="qrScanLink">
+        Student scan link: <strong id="qrScanUrl"></strong>
+      </div>
+      <div id="qrAttList" class="att-list"></div>
+      <div class="qr-actions" style="margin-top:14px;">
+        <button class="qr-btn qr-btn-primary" onclick="refreshQrAttendance()">🔄 Refresh List</button>
+        <button class="qr-btn qr-btn-ghost"   onclick="closeQrModal()">Close</button>
+      </div>
+    </div>
+
+    <!-- Step 3: Expired -->
+    <div id="qrStep3" style="display:none;">
+      <div style="font-size:2.5rem;margin-bottom:12px;">⏰</div>
+      <p style="color:#fca5a5;margin-bottom:16px;">QR session has expired.</p>
+      <div class="qr-actions">
+        <button class="qr-btn qr-btn-primary" onclick="confirmGenerateQr()">Generate New QR</button>
+        <button class="qr-btn qr-btn-ghost"   onclick="closeQrModal()">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

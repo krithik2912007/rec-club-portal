@@ -1,0 +1,671 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centralized Club Portal</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <style>
+        /* ══════════════════════════════════════════
+           CINEMATIC THEME — Aadhi / REC Palette
+           Deep purple-black · Gold · Spotlight white
+        ══════════════════════════════════════════ */
+
+        :root {
+            --c-bg:       #08060f;
+            --c-surface:  #100d1e;
+            --c-card:     #16112a;
+            --c-border:   rgba(139,92,246,.18);
+            --c-purple:   #7c3aed;
+            --c-violet:   #a78bfa;
+            --c-gold:     #f59e0b;
+            --c-gold2:    #fbbf24;
+            --c-text:     #f3f0ff;
+            --c-muted:    rgba(243,240,255,.5);
+        }
+
+        @keyframes fadeUp    { from { opacity:0; transform:translateY(28px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes fadeIn    { from { opacity:0; } to { opacity:1; } }
+        @keyframes float     { 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-12px); } }
+        @keyframes pulse     { 0%,100%{ transform:scale(1); opacity:1; } 50%{ transform:scale(1.12); opacity:.7; } }
+        @keyframes goldShimmer { 0%{ background-position:-600px 0; } 100%{ background-position:600px 0; } }
+        @keyframes spotlightPan { 0%,100%{ opacity:.45; } 50%{ opacity:.7; } }
+        @keyframes particleDrift {
+            0%  { transform:translateY(0) translateX(0) rotate(0deg);   opacity:.6; }
+            33% { transform:translateY(-50px) translateX(18px) rotate(120deg); opacity:.3; }
+            66% { transform:translateY(-25px) translateX(-12px) rotate(240deg); opacity:.5; }
+            100%{ transform:translateY(0) translateX(0) rotate(360deg); opacity:.6; }
+        }
+        @keyframes borderGlow { 0%,100%{ box-shadow:0 0 14px rgba(245,158,11,.35); } 50%{ box-shadow:0 0 32px rgba(245,158,11,.65); } }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation-duration:.01ms!important; transition-duration:.01ms!important; }
+        }
+
+        body { background: var(--c-bg); color: var(--c-text); }
+
+        /* ── HEADER ── */
+        header {
+            background: rgba(8,6,15,.88) !important;
+            border-bottom: 1px solid var(--c-border) !important;
+            backdrop-filter: blur(18px);
+        }
+        .site-logo-full { height: 38px; width: auto; display: block; object-fit: contain; }
+        nav a { color: var(--c-muted) !important; font-weight: 500; transition: color .2s; }
+        nav a:hover { color: var(--c-gold) !important; }
+
+        /* ── HERO ── */
+        .hero {
+            position: relative;
+            min-height: 96vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            overflow: hidden;
+            background: var(--c-bg);
+            padding: 100px 24px 90px;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -60px; left: 50%;
+            transform: translateX(-50%);
+            width: 700px; height: 700px;
+            background: radial-gradient(ellipse at top, rgba(124,58,237,.32) 0%, transparent 68%);
+            pointer-events: none;
+            animation: spotlightPan 8s ease-in-out infinite;
+        }
+        .hero::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; right: 0; height: 220px;
+            background: linear-gradient(to top, rgba(124,58,237,.15), transparent);
+            pointer-events: none;
+        }
+        .hero-gold-line {
+            position: absolute;
+            bottom: 0; left: 0; right: 0; height: 2px;
+            background: linear-gradient(90deg, transparent, var(--c-gold), var(--c-gold2), var(--c-gold), transparent);
+            opacity: .55;
+            z-index: 3;
+        }
+        .hero-particles { position:absolute; inset:0; pointer-events:none; }
+        .particle { position:absolute; border-radius:50%; background:var(--c-gold); }
+        .particle:nth-child(1)  { width:4px; height:4px; top:14%; left:9%;   animation:particleDrift 7s  ease-in-out infinite; }
+        .particle:nth-child(2)  { width:3px; height:3px; top:25%; left:19%;  animation:particleDrift 9s  ease-in-out infinite 1s; opacity:.4; }
+        .particle:nth-child(3)  { width:5px; height:5px; top:62%; left:7%;   animation:particleDrift 8s  ease-in-out infinite 2s; }
+        .particle:nth-child(4)  { width:3px; height:3px; top:78%; left:24%;  animation:particleDrift 10s ease-in-out infinite .5s; opacity:.5; }
+        .particle:nth-child(5)  { width:4px; height:4px; top:10%; right:11%; animation:particleDrift 8s  ease-in-out infinite 1.5s; }
+        .particle:nth-child(6)  { width:3px; height:3px; top:38%; right:9%;  animation:particleDrift 6s  ease-in-out infinite 3s; opacity:.4; }
+        .particle:nth-child(7)  { width:6px; height:6px; top:58%; right:6%;  animation:particleDrift 11s ease-in-out infinite .8s; opacity:.6; }
+        .particle:nth-child(8)  { width:3px; height:3px; top:72%; right:20%; animation:particleDrift 7s  ease-in-out infinite 2.2s; }
+        .particle:nth-child(9)  { width:5px; height:5px; top:42%; left:52%;  animation:particleDrift 9s  ease-in-out infinite 1.2s; opacity:.5; }
+        .particle:nth-child(10) { width:3px; height:3px; top:18%; left:62%;  animation:particleDrift 8s  ease-in-out infinite 3.5s; }
+
+        .hero-content { position:relative; z-index:2; max-width:740px; }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(245,158,11,.1);
+            border: 1px solid rgba(245,158,11,.35);
+            border-radius: 99px;
+            padding: 6px 18px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--c-gold2);
+            margin-bottom: 28px;
+            backdrop-filter: blur(8px);
+            animation: fadeIn .8s ease both;
+            letter-spacing: .04em;
+        }
+        .hero-badge-dot {
+            width:8px; height:8px;
+            background: var(--c-gold);
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        .hero h1 {
+            font-size: clamp(34px,5.5vw,62px);
+            font-weight: 900;
+            line-height: 1.1;
+            color: var(--c-text);
+            margin-bottom: 20px;
+            animation: fadeUp .9s ease .2s both;
+            letter-spacing: -.5px;
+        }
+        .hero h1 .gold-text {
+            background: linear-gradient(90deg, var(--c-gold), var(--c-gold2), #fff9c4, var(--c-gold));
+            background-size: 600px 100%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: goldShimmer 3s linear infinite;
+        }
+        .hero > .hero-content > p {
+            font-size: 18px;
+            color: var(--c-muted);
+            margin-bottom: 40px;
+            animation: fadeUp .9s ease .35s both;
+            line-height: 1.7;
+        }
+        .hero-buttons { animation: fadeUp .9s ease .5s both; }
+        .hero-buttons-row {
+            display: flex;
+            gap: 14px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 14px;
+        }
+        .hero-buttons-row a {
+            display: inline-block;
+            padding: 13px 32px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 15px;
+            text-decoration: none;
+            transition: transform .18s, box-shadow .18s;
+        }
+        .hero-buttons-row a:first-child {
+            background: linear-gradient(135deg, var(--c-gold), var(--c-gold2));
+            color: #1a0a00;
+            box-shadow: 0 4px 24px rgba(245,158,11,.4);
+            animation: borderGlow 3s ease-in-out infinite;
+        }
+        .hero-buttons-row a:first-child:hover { transform:translateY(-3px); box-shadow:0 8px 36px rgba(245,158,11,.55); }
+        .hero-buttons-row a:last-child {
+            background: rgba(124,58,237,.15);
+            color: var(--c-violet);
+            border: 1.5px solid rgba(124,58,237,.4);
+            backdrop-filter: blur(8px);
+        }
+        .hero-buttons-row a:last-child:hover { background:rgba(124,58,237,.28); transform:translateY(-3px); }
+
+        #dashboardButtons {
+            display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 10px;
+        }
+        #dashboardButtons .primary-btn {
+            background: rgba(255,255,255,.07);
+            color: var(--c-text);
+            border: 1.5px solid rgba(255,255,255,.15);
+            padding: 11px 24px;
+            border-radius: 10px;
+            font-weight: 600; font-size: 14px;
+            cursor: pointer; backdrop-filter: blur(6px);
+            transition: background .15s, transform .15s, border-color .15s;
+        }
+        #dashboardButtons .primary-btn:hover {
+            background: rgba(245,158,11,.12);
+            border-color: rgba(245,158,11,.35);
+            transform: translateY(-2px);
+        }
+        .scroll-hint {
+            position: absolute;
+            bottom: 32px; left: 50%;
+            transform: translateX(-50%);
+            display: flex; flex-direction: column; align-items: center; gap: 6px;
+            color: rgba(245,158,11,.5);
+            font-size: 11px; letter-spacing: .14em; text-transform: uppercase;
+            animation: fadeIn 1.2s ease 1.2s both; z-index: 3;
+        }
+        .scroll-arrow {
+            width:20px; height:20px;
+            border-right: 2px solid rgba(245,158,11,.45);
+            border-bottom: 2px solid rgba(245,158,11,.45);
+            transform: rotate(45deg);
+            animation: float 1.6s ease-in-out infinite;
+        }
+
+        /* ── SCROLL VIDEO ── */
+        #scroll-video-section {
+            height: 600vh; position: relative; background: var(--c-bg);
+        }
+        #scroll-video-sticky {
+            position: sticky; top: 0; height: 100vh;
+            display: flex; align-items: center; justify-content: center; overflow: hidden;
+        }
+        #scroll-video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            pointer-events: none;
+            will-change: contents;
+            transform: translateZ(0);
+        }
+        #scroll-video-label {
+            position: absolute; bottom: 36px; left: 50%; transform: translateX(-50%);
+            color: rgba(245,158,11,.5); font-size: 11px; font-weight: 700;
+            letter-spacing: .2em; text-transform: uppercase; pointer-events: none;
+        }
+        #scroll-video-sticky::before {
+            content:''; position:absolute; top:0; left:0; right:0; height:140px;
+            background:linear-gradient(to bottom, var(--c-bg), transparent); z-index:2; pointer-events:none;
+        }
+        #scroll-video-sticky::after {
+            content:''; position:absolute; bottom:0; left:0; right:0; height:140px;
+            background:linear-gradient(to top, var(--c-bg), transparent); z-index:2; pointer-events:none;
+        }
+
+        /* ── REVEAL ── */
+        .reveal        { opacity:0; transform:translateY(30px); transition:opacity .7s ease, transform .7s ease; }
+        .reveal.visible{ opacity:1; transform:translateY(0); }
+        .reveal-left   { opacity:0; transform:translateX(-30px); transition:opacity .7s ease, transform .7s ease; }
+        .reveal-right  { opacity:0; transform:translateX(30px);  transition:opacity .7s ease, transform .7s ease; }
+        .reveal-left.visible, .reveal-right.visible { opacity:1; transform:translateX(0); }
+        .reveal-delay-1{ transition-delay:.1s; }
+        .reveal-delay-2{ transition-delay:.2s; }
+        .reveal-delay-3{ transition-delay:.3s; }
+
+        /* ── MY EVENTS ── */
+        .my-events-section { padding:60px 40px 20px; max-width:1200px; margin:0 auto; }
+        .my-events-title { font-size:22px; font-weight:800; color:var(--c-gold2); margin-bottom:20px; }
+
+        /* ── WAVE ── */
+        .wave-divider { line-height:0; overflow:hidden; background:var(--c-bg) !important; }
+        .wave-divider svg { display:block; }
+
+        /* ── STATS ── */
+        .stats {
+            background: var(--c-surface) !important;
+            border-top: 1px solid var(--c-border) !important;
+            border-bottom: 1px solid var(--c-border) !important;
+            padding: 60px 40px !important;
+            position: relative;
+        }
+        .stats::before {
+            content:''; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+            width:600px; height:200px;
+            background:radial-gradient(ellipse, rgba(124,58,237,.1), transparent 70%);
+            pointer-events:none;
+        }
+        .stat { position:relative; }
+        .stat::after {
+            content:''; position:absolute; right:-30px; top:10%; height:80%;
+            width:1px; background:var(--c-border);
+        }
+        .stat:last-child::after { display:none; }
+        .stat h2 {
+            font-size:52px !important; font-weight:900 !important;
+            background:linear-gradient(135deg, var(--c-gold), var(--c-gold2)) !important;
+            -webkit-background-clip:text !important; -webkit-text-fill-color:transparent !important;
+            background-clip:text !important; line-height:1 !important; margin-bottom:8px !important;
+        }
+        .stat p {
+            font-size:13px !important; color:var(--c-muted) !important;
+            font-weight:600 !important; text-transform:uppercase !important; letter-spacing:.1em !important;
+        }
+
+        /* ── PAGE SECTIONS ── */
+        .page-section { background:var(--c-bg) !important; }
+
+        .section-tag {
+            background: rgba(245,158,11,.12) !important;
+            color: var(--c-gold2) !important;
+            border: 1px solid rgba(245,158,11,.25);
+        }
+        .section-heading-wrap h2 {
+            color: var(--c-text) !important;
+            font-size: 32px !important;
+            font-weight: 900 !important;
+        }
+        .section-heading-wrap h2::after {
+            content:''; display:block; width:48px; height:3px;
+            background:linear-gradient(90deg, var(--c-gold), var(--c-gold2));
+            border-radius:2px; margin:10px auto 0;
+        }
+        .section-heading-wrap p { color:var(--c-muted) !important; }
+
+        /* ── CARDS — Frosted Dark Glass ── */
+        .card, .event-card, .club-card {
+            background: rgba(255,255,255,.045) !important;
+            backdrop-filter: blur(14px) !important;
+            -webkit-backdrop-filter: blur(14px) !important;
+            border: 1px solid rgba(255,255,255,.1) !important;
+            border-radius: 14px !important;
+            color: var(--c-text) !important;
+            transition: transform .22s, box-shadow .22s, border-color .22s, background .22s !important;
+        }
+        .card:hover, .event-card:hover, .club-card:hover {
+            background: rgba(255,255,255,.075) !important;
+            border-color: rgba(245,158,11,.38) !important;
+            box-shadow: 0 10px 36px rgba(0,0,0,.45), 0 0 0 1px rgba(245,158,11,.12) !important;
+            transform: translateY(-4px) !important;
+        }
+        .card h3, .card h4, .card h2,
+        .event-card h3, .event-card h4,
+        .club-card h3, .club-card h4 { color: #ffffff !important; }
+        .card p, .card small, .card span,
+        .event-card p, .event-card small, .event-card span,
+        .club-card p, .club-card small, .club-card span,
+        .event-meta, .event-meta span { color: rgba(255,255,255,.75) !important; }
+        .badge, .domain-badge, .event-type-badge {
+            background: rgba(245,158,11,.15) !important;
+            color: var(--c-gold2) !important;
+            border: 1px solid rgba(245,158,11,.25) !important;
+        }
+        .learn-link, .view-event-link { color: var(--c-gold2) !important; }
+        .learn-link:hover, .view-event-link:hover { color: #fff !important; }
+
+        /* ── VIEW ALL ── */
+        .view-all-btn {
+            background: transparent !important;
+            color: var(--c-gold2) !important;
+            border: 1.5px solid rgba(245,158,11,.4) !important;
+            border-radius: 10px !important;
+            padding: 12px 32px !important;
+            font-weight: 700 !important; font-size: 15px !important;
+            text-decoration: none !important; display: inline-block !important;
+            transition: background .18s, box-shadow .18s, transform .18s !important;
+        }
+        .view-all-btn:hover {
+            background: rgba(245,158,11,.1) !important;
+            box-shadow: 0 4px 20px rgba(245,158,11,.25) !important;
+            transform: translateY(-2px) !important;
+        }
+
+        /* ── FOOTER ── */
+        footer {
+            background: #04030a !important;
+            border-top: 1px solid var(--c-border);
+            color: var(--c-muted) !important;
+        }
+
+        /* ── PROFILE TRIGGER BUTTON ── */
+        .profile-trigger {
+            border-color: rgba(255,255,255,.15) !important;
+            color: var(--c-text) !important;
+            background: rgba(255,255,255,.06) !important;
+        }
+        .profile-trigger:hover {
+            border-color: rgba(245,158,11,.5) !important;
+            box-shadow: 0 0 0 3px rgba(245,158,11,.12) !important;
+        }
+        .profile-trigger .p-name { color: var(--c-text) !important; }
+        .profile-trigger .p-chevron { color: rgba(255,255,255,.4) !important; }
+
+        /* ── PROFILE DROPDOWN PANEL ── */
+        .profile-dropdown {
+            background: #13101f !important;
+            border: 1px solid rgba(255,255,255,.1) !important;
+            box-shadow: 0 16px 48px rgba(0,0,0,.7) !important;
+            backdrop-filter: blur(20px) !important;
+        }
+
+        /* Header section */
+        .pd-header {
+            border-bottom: 1px solid rgba(255,255,255,.08) !important;
+        }
+        .pd-name  { color: #ffffff !important; }
+        .pd-email { color: rgba(255,255,255,.5) !important; }
+        .pd-role  {
+            background: rgba(245,158,11,.15) !important;
+            color: var(--c-gold2) !important;
+        }
+
+        /* Meta row (Reg No etc.) */
+        .pd-meta {
+            border-bottom: 1px solid rgba(255,255,255,.08) !important;
+        }
+        .pd-meta-row { color: rgba(255,255,255,.45) !important; }
+        .pd-meta-row span:last-child { color: #ffffff !important; font-weight: 600 !important; }
+
+        /* Action buttons */
+        .pd-action-btn {
+            color: rgba(255,255,255,.8) !important;
+        }
+        .pd-action-btn:hover {
+            background: rgba(255,255,255,.07) !important;
+            color: #ffffff !important;
+        }
+        .pd-action-btn.signout { color: #f87171 !important; }
+        .pd-action-btn.signout:hover {
+            background: rgba(248,113,113,.1) !important;
+        }
+
+        /* ── SCROLLBAR ── */
+        ::-webkit-scrollbar { width:6px; }
+        ::-webkit-scrollbar-track { background:var(--c-bg); }
+        ::-webkit-scrollbar-thumb { background:var(--c-purple); border-radius:3px; }
+        ::-webkit-scrollbar-thumb:hover { background:var(--c-gold); }
+    </style>
+</head>
+<body>
+
+<div id="header-trigger"></div>
+<header>
+    <div class="logo-title">
+        <img src="{% static 'images/rec-logo.png' %}" class="site-logo-full" alt="Rajalakshmi Engineering College">
+    </div>
+    <nav>
+        <a href="/home" id="nav-home">Home</a>
+        <a href="/clubs" id="nav-clubs">Clubs</a>
+        <a href="/events" id="nav-events">Events</a>
+        <a href="/calendar" id="nav-calendar">Calendar</a>
+        <div class="profile-btn-wrap" id="profileBtnWrap"></div>
+    </nav>
+</header>
+
+
+<!-- ═══ HERO ═══ -->
+<section class="hero">
+    <div class="hero-gold-line"></div>
+    <div class="hero-particles">
+        <div class="particle"></div><div class="particle"></div>
+        <div class="particle"></div><div class="particle"></div>
+        <div class="particle"></div><div class="particle"></div>
+        <div class="particle"></div><div class="particle"></div>
+        <div class="particle"></div><div class="particle"></div>
+    </div>
+    <div class="hero-content">
+        <div class="hero-badge">
+            <span class="hero-badge-dot"></span>
+            Now Live — Join your club today
+        </div>
+        <h1>Welcome to<br><span class="gold-text">Centralized Club Portal</span></h1>
+        <p>Discover clubs, connect with communities,<br>and explore exciting events happening on campus.</p>
+        <div class="hero-buttons">
+            <div class="hero-buttons-row">
+                <a href="/clubs">Explore Clubs</a>
+                <a href="/events">View Events</a>
+            </div>
+            <div id="dashboardButtons"></div>
+        </div>
+    </div>
+    <div class="scroll-hint">
+        <span>Scroll</span>
+        <div class="scroll-arrow"></div>
+    </div>
+</section>
+
+
+<!-- ═══ SCROLL VIDEO ═══ -->
+<section id="scroll-video-section">
+    <div id="scroll-video-sticky">
+        <video
+            id="scroll-video"
+            muted
+            playsinline
+            preload="auto"
+        >
+            <!-- WebM first — Chrome decodes this fastest -->
+            <source src="{% static 'aadhivideo/aadhi_scrub.webm' %}" type="video/webm">
+            <!-- mp4 fallback — all keyframes, faststart for instant seeking -->
+            <source src="{% static 'aadhivideo/aadhi_scrub.mp4' %}" type="video/mp4">
+        </video>
+        <div id="scroll-video-label">✦ &nbsp; Aadhi &nbsp; ✦</div>
+    </div>
+</section>
+
+<script>
+(function() {
+    var section  = document.getElementById('scroll-video-section');
+    var video    = document.getElementById('scroll-video');
+
+    var rafPending  = false;   // RAF lock — only one frame queued at a time
+    var targetTime  = 0;       // desired currentTime from latest scroll event
+    var ready       = false;   // true once metadata is loaded
+
+    /* Called inside requestAnimationFrame — safest time to update currentTime */
+    function applySeek() {
+        rafPending = false;
+        if (!ready) return;
+        /* Only seek if delta > 1 frame (1/24s ≈ 0.042s) to avoid micro-stutters */
+        if (Math.abs(video.currentTime - targetTime) > 0.02) {
+            video.currentTime = targetTime;
+        }
+    }
+
+    function onScroll() {
+        if (!ready) return;
+        var rect       = section.getBoundingClientRect();
+        var scrollable = section.offsetHeight - window.innerHeight;
+        var progress   = Math.min(Math.max(-rect.top / scrollable, 0), 1);
+        targetTime = progress * video.duration;
+
+        /* Throttle to one RAF per frame — eliminates scroll event storm */
+        if (!rafPending) {
+            rafPending = true;
+            requestAnimationFrame(applySeek);
+        }
+    }
+
+    video.addEventListener('loadedmetadata', function() {
+        ready = true;
+        video.currentTime = 0;
+        onScroll();
+    });
+
+    /* Force decode first frame so there's no blank flash on load */
+    video.addEventListener('canplay', function() {
+        if (video.currentTime === 0) video.currentTime = 0.001;
+    });
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+})();
+</script>
+
+
+<!-- ═══ MY REGISTERED EVENTS ═══ -->
+<div class="my-events-section reveal">
+    <h2 class="my-events-title">My Registered Events</h2>
+    <div id="myEvents" class="event-grid"></div>
+</div>
+
+
+<!-- Wave divider -->
+<div class="wave-divider">
+    <svg viewBox="0 0 1440 40" xmlns="http://www.w3.org/2000/svg">
+        <path d="M0,20 C360,40 1080,0 1440,20 L1440,40 L0,40 Z" fill="#100d1e"/>
+    </svg>
+</div>
+
+
+<!-- ═══ STATS ═══ -->
+<div class="stats reveal">
+    <div class="stat reveal-delay-1">
+        <h2 id="clubCount">0</h2>
+        <p>Active Clubs</p>
+    </div>
+    <div class="stat reveal-delay-2">
+        <h2 id="eventCount">0</h2>
+        <p>Upcoming Events</p>
+    </div>
+    <div class="stat reveal-delay-3">
+        <h2 id="memberCount">0</h2>
+        <p>Total Members</p>
+    </div>
+</div>
+
+
+<!-- ═══ UPCOMING EVENTS ═══ -->
+<section class="section page-section">
+    <div class="section-heading-wrap reveal">
+        <span class="section-tag">On Campus</span>
+        <h2>Upcoming Events</h2>
+        <p>Don't miss these upcoming events happening soon</p>
+    </div>
+    <div id="upcomingEvents" class="event-grid reveal reveal-delay-1"></div>
+    <div class="view-all reveal reveal-delay-2">
+        <a href="/events" class="view-all-btn">View All Events →</a>
+    </div>
+</section>
+
+
+<!-- ═══ FEATURED CLUBS ═══ -->
+<section class="section page-section" style="background: #100d1e !important;">
+    <div class="section-heading-wrap reveal">
+        <span class="section-tag">Student Organizations</span>
+        <h2>Featured Clubs</h2>
+        <p>Explore some of our most popular student organizations</p>
+    </div>
+    <div class="club-grid reveal reveal-delay-1" id="featuredClubs"></div>
+    <div class="view-all reveal reveal-delay-2">
+        <a href="/clubs" class="view-all-btn">View All Clubs →</a>
+    </div>
+</section>
+
+
+<footer>
+    <p>© 2026 Centralized Club Portal — Built with ❤️</p>
+</footer>
+
+
+<script src="{% static 'js/script.js' %}"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    initProfileDropdown();
+    loadDashboardButton();
+    loadMyRegistrations();
+    loadFeaturedClubs();
+    loadStats();
+    loadUpcomingEvents();
+
+    function animateCount(el, target, duration) {
+        var start=0, step=target/(duration/16);
+        var timer=setInterval(function(){
+            start+=step;
+            if(start>=target){ el.textContent=target; clearInterval(timer); return; }
+            el.textContent=Math.floor(start);
+        },16);
+    }
+
+    var revealEls=document.querySelectorAll(".reveal, .reveal-left, .reveal-right");
+    var statsAnimated=false;
+
+    var observer=new IntersectionObserver(function(entries){
+        entries.forEach(function(entry){
+            if(entry.isIntersecting){
+                entry.target.classList.add("visible");
+                if(!statsAnimated && entry.target.classList.contains("stats")){
+                    statsAnimated=true;
+                    setTimeout(function(){
+                        var cc=document.getElementById("clubCount");
+                        var ec=document.getElementById("eventCount");
+                        var mc=document.getElementById("memberCount");
+                        if(cc && cc.textContent!=="0") animateCount(cc,parseInt(cc.textContent),1200);
+                        if(ec && ec.textContent!=="0") animateCount(ec,parseInt(ec.textContent),1200);
+                        if(mc && mc.textContent!=="0") animateCount(mc,parseInt(mc.textContent),1200);
+                    },300);
+                }
+                observer.unobserve(entry.target);
+            }
+        });
+    },{threshold:0.12});
+
+    revealEls.forEach(function(el){ observer.observe(el); });
+    document.querySelectorAll(".stats").forEach(function(el){ observer.observe(el); });
+
+    document.addEventListener("mouseover", function(e){
+        var card=e.target.closest(".card");
+        if(card && !card.style.transition)
+            card.style.transition="transform .2s, box-shadow .2s, border-color .2s";
+    });
+});
+</script>
+
+</body>
+</html>

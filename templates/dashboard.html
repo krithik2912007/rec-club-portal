@@ -1,0 +1,650 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+<title>My Dashboard</title>
+<link rel="stylesheet" href="{% static 'css/styles.css' %}">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root { --primary:#4f46e5; --success:#38a169; --danger:#e53e3e; --warn:#d97706; }
+
+.dash-layout { display:flex; min-height:calc(100vh - 64px); }
+.dash-sidebar { width:200px; min-width:200px; background:#1e1b4b; padding:20px 0; position:sticky; top:64px; height:calc(100vh - 64px); }
+.dash-sidebar .brand { color:#a5b4fc; font-size:.72rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; padding:0 18px 12px; }
+.sidebar-item { display:flex; align-items:center; gap:10px; padding:10px 18px; color:#c7d2fe; font-size:.87rem; cursor:pointer; border-left:3px solid transparent; transition:all .18s; }
+.sidebar-item:hover, .sidebar-item.active { background:rgba(99,102,241,.2); color:#fff; border-left-color:#818cf8; }
+.sidebar-item .ico { font-size:1rem; width:20px; text-align:center; }
+
+.dash-main { flex:1; padding:24px 28px; background:#f8faff; }
+.dash-section { display:none; }
+.dash-section.active { display:block; }
+
+.sec-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+.sec-header h2 { font-size:1.15rem; font-weight:700; color:#1e1b4b; margin:0; }
+
+.stats-row { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:14px; margin-bottom:24px; }
+.scard { background:#fff; border-radius:12px; padding:18px; box-shadow:0 1px 4px rgba(0,0,0,.06); border-left:4px solid var(--primary); }
+.scard h2 { font-size:1.8rem; font-weight:700; margin:0; color:#1e1b4b; }
+.scard p  { margin:4px 0 0; font-size:.8rem; color:#718096; }
+.scard.green { border-left-color:var(--success); }
+.scard.amber { border-left-color:var(--warn); }
+
+.ev-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:14px; }
+.ev-card { background:#fff; border-radius:12px; padding:16px; box-shadow:0 1px 4px rgba(0,0,0,.07); text-decoration:none; color:inherit; display:block; transition:transform .2s; }
+.ev-card:hover { transform:translateY(-3px); }
+.ev-card h4 { margin:0 0 4px; font-size:.92rem; color:#1e1b4b; }
+.ev-card .meta { font-size:.78rem; color:#718096; margin:3px 0; }
+.pill { display:inline-block; border-radius:20px; padding:3px 10px; font-size:.72rem; font-weight:600; margin-top:6px; }
+.pill-green { background:#d1fae5; color:#065f46; }
+.pill-red   { background:#fee2e2; color:#991b1b; }
+.pill-amber { background:#fef3c7; color:#92400e; }
+.pill-blue  { background:#dbeafe; color:#1e40af; }
+
+.club-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:14px; }
+.club-card { background:#fff; border-radius:12px; padding:16px; box-shadow:0 1px 4px rgba(0,0,0,.07); text-decoration:none; color:inherit; display:block; transition:transform .2s; }
+.club-card:hover { transform:translateY(-3px); }
+.club-card h4 { margin:0 0 4px; font-size:.9rem; color:#1e1b4b; }
+
+.waitlist-info { background:#fff3cd; border:1px solid #ffc107; border-radius:8px; padding:8px 12px; font-size:.8rem; color:#856404; margin-top:4px; }
+
+.pbar { background:#e2e8f0; border-radius:4px; height:5px; margin:6px 0; }
+.pbar-fill { background:var(--primary); height:100%; border-radius:4px; }
+
+/* Cart payment modal */
+.modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:1500; align-items:center; justify-content:center; }
+.modal-overlay.open { display:flex; }
+.modal-box { background:#fff; border-radius:16px; padding:28px; max-width:480px; width:95%; max-height:90vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,.25); }
+.modal-box h3 { margin:0 0 18px; font-size:1.1rem; color:#1e1b4b; }
+.pay-option { display:block; width:100%; background:#f8faff; border:1.5px solid #e2e8f0; border-radius:10px; padding:12px 16px; margin-bottom:8px; cursor:pointer; font-size:.88rem; font-weight:600; color:#1e1b4b; text-align:left; transition:all .15s; }
+.pay-option:hover { border-color:#4f46e5; background:#eef2ff; }
+
+/* ════ MOBILE RESPONSIVE ════ */
+@media (max-width: 768px) {
+  .dash-layout { flex-direction: column; }
+  .dash-sidebar {
+    width:100%; min-width:unset; height:auto; position:relative;
+    top:0; display:flex; flex-wrap:nowrap; overflow-x:auto;
+    padding:8px 0 4px;
+  }
+  .dash-sidebar .brand, .active-club-badge, .club-switcher, .sidebar-divider { display:none; }
+  .sidebar-item { flex-shrink:0; flex-direction:column; padding:7px 10px;
+    font-size:.68rem; gap:2px; border-left:none; border-bottom:3px solid transparent; }
+  .sidebar-item.active { border-left:none; border-bottom-color:#818cf8; }
+  .dash-main { padding:12px 10px; }
+  .stats-row { grid-template-columns:1fr 1fr; gap:10px; }
+  .ev-grid { grid-template-columns:1fr !important; }
+  .dash-table { display:block; overflow-x:auto; }
+  .sec-header { flex-direction:column; align-items:flex-start; gap:8px; }
+  .modal-box { padding:16px; }
+}
+@media (max-width: 480px) {
+  .stats-row { grid-template-columns:1fr; }
+}
+</style>
+</head>
+<body>
+
+<div id="page-loader"></div>
+
+<header>
+    <div class="logo-title">
+        <img src="{% static 'images/r-logo.png' %}" class="site-logo">
+        <h3>Centralized Club Portal</h3>
+    </div>
+    <nav>
+        <a href="/home">Home</a>
+        <a href="/events">Events</a>
+        <a href="/clubs">Clubs</a>
+        <a href="/calendar">Calendar</a>
+        <span id="studentName" style="color:#a5b4fc;font-weight:600;font-size:.87rem;margin-right:8px;"></span>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+    </nav>
+</header>
+
+<div class="dash-layout">
+
+<!-- Sidebar -->
+<aside class="dash-sidebar">
+    <div class="brand">My Dashboard</div>
+    <div class="sidebar-item active" onclick="showSection('overview',this)"><span class="ico">🏠</span> Overview</div>
+    <div class="sidebar-item" onclick="showSection('registered',this)"> <span class="ico">🎟️</span> My Registrations</div>
+    <div class="sidebar-item" onclick="showSection('upcoming',this)">   <span class="ico">📅</span> Upcoming Events</div>
+    <div class="sidebar-item" onclick="showSection('favourites',this)"> <span class="ico">❤️</span> My Favourites</div>
+    <div class="sidebar-item" onclick="showSection('clubs',this)">      <span class="ico">🏛️</span> Browse Clubs</div>
+    <div class="sidebar-item" onclick="showSection('cart',this)">      <span class="ico">🛒</span> My Cart</div>
+    <div class="sidebar-item" onclick="showSection('waitlists',this)">  <span class="ico">⏳</span> My Waitlists</div>
+    <div class="sidebar-item" onclick="showSection('profile',this)">    <span class="ico">👤</span> My Profile</div>
+</aside>
+
+<!-- Main -->
+<main class="dash-main">
+
+<!-- OVERVIEW -->
+<section class="dash-section active" id="sec-overview">
+    <div class="sec-header">
+        <h2>👋 Welcome back, <span id="greetName">there</span>!</h2>
+        <span style="font-size:.82rem;color:#718096;" id="todayDate"></span>
+    </div>
+    <div class="stats-row">
+        <div class="scard"><h2 id="stRegs">0</h2><p>Registered Events</p></div>
+        <div class="scard green"><h2 id="stUpcoming">0</h2><p>Upcoming</p></div>
+        <div class="scard amber"><h2 id="stFavClubs">0</h2><p>Favourite Clubs</p></div>
+        <div class="scard"><h2 id="stFavEvents">0</h2><p>Favourite Events</p></div>
+    </div>
+
+    <h3 style="font-size:.95rem;font-weight:700;color:#1e1b4b;margin-bottom:12px;">Your Next Events</h3>
+    <div class="ev-grid" id="nextEventsGrid">
+        <p style="color:#999;font-size:.85rem;">Loading…</p>
+    </div>
+</section>
+
+<!-- MY REGISTRATIONS -->
+<section class="dash-section" id="sec-registered">
+    <div class="sec-header">
+        <h2>🎟️ My Registrations</h2>
+        <input style="border:1.5px solid #e2e8f0;border-radius:8px;padding:6px 11px;font-size:.84rem;outline:none;" placeholder="🔍 Search…" oninput="filterMyRegs(this.value)">
+    </div>
+    <div class="ev-grid" id="myRegsGrid"></div>
+</section>
+
+<!-- UPCOMING EVENTS -->
+<section class="dash-section" id="sec-upcoming">
+    <div class="sec-header"><h2>📅 Upcoming Events</h2></div>
+    <div class="ev-grid" id="upcomingGrid"></div>
+</section>
+
+<!-- FAVOURITES -->
+<section class="dash-section" id="sec-favourites">
+    <div class="sec-header"><h2>❤️ Favourite Clubs</h2></div>
+    <div class="club-grid" id="favClubsGrid"></div>
+    <div class="sec-header" style="margin-top:24px;"><h2>❤️ Favourite Events</h2></div>
+    <div class="ev-grid" id="favEventsGrid"></div>
+</section>
+
+<!-- BROWSE CLUBS -->
+<section class="dash-section" id="sec-clubs">
+    <div class="sec-header">
+        <h2>🏛️ Browse Clubs</h2>
+        <input style="border:1.5px solid #e2e8f0;border-radius:8px;padding:6px 11px;font-size:.84rem;outline:none;" placeholder="🔍 Search clubs…" oninput="filterDashClubs(this.value)">
+    </div>
+    <div class="club-grid" id="allClubsGrid"></div>
+</section>
+
+<!-- CART (feature v) -->
+<section class="dash-section" id="sec-cart">
+    <div class="sec-header"><h2>🛒 My Cart</h2></div>
+    <div id="cartAlert" style="display:none;background:#fff3cd;border:1px solid #ffc107;border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:.85rem;color:#856404;"></div>
+    <div id="cartGrid" class="ev-grid">
+        <p style="color:#999;font-size:.85rem;">Loading cart…</p>
+    </div>
+</section>
+
+<!-- WAITLISTS -->
+<section class="dash-section" id="sec-waitlists">
+    <div class="sec-header"><h2>⏳ My Waitlists</h2></div>
+    <div class="ev-grid" id="waitlistGrid">
+        <p style="color:#999;font-size:.85rem;">Loading waitlist info…</p>
+    </div>
+</section>
+
+<!-- MY PROFILE -->
+<section class="dash-section" id="sec-profile">
+    <div class="sec-header"><h2>👤 My Profile</h2></div>
+
+    <div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;margin-bottom:24px;">
+        <div style="text-align:center;min-width:140px;">
+            <div id="profileAvatarPreview" style="width:110px;height:110px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:2.2rem;color:#fff;margin:0 auto 10px;box-shadow:0 4px 14px rgba(99,102,241,.25);overflow:hidden;">
+                <span id="profileInitial">?</span>
+            </div>
+            <div style="font-size:.78rem;color:#718096;">Profile picture</div>
+        </div>
+        <div style="flex:1;min-width:200px;">
+            <div id="profileNameDisplay"  style="font-size:1.4rem;font-weight:700;color:#1e1b4b;margin-bottom:4px;">—</div>
+            <div id="profileRoleDisplay"  style="font-size:.82rem;color:#6366f1;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;"></div>
+            <div id="profileDeptDisplay"  style="font-size:.85rem;color:#718096;"></div>
+            <div id="profileRegNo" style="font-size:.8rem;color:#6366f1;font-weight:600;margin-top:2px;"></div>
+            <div id="profileBioDisplay"   style="font-size:.83rem;color:#4b5563;margin-top:8px;font-style:italic;"></div>
+        </div>
+    </div>
+
+    <div style="background:#fff;border-radius:14px;padding:24px;box-shadow:0 1px 4px rgba(0,0,0,.06);">
+        <h3 style="margin:0 0 18px;font-size:.98rem;font-weight:700;color:#1e1b4b;">Edit Profile</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div><label class="flabel">Full Name</label><input id="pName" class="finput" placeholder="Your name"></div>
+            <div><label class="flabel">Department</label><input id="pDept" class="finput" placeholder="e.g. Computer Science"></div>
+            <div>
+                <label class="flabel">Year of Study</label>
+                <select id="pYear" class="finput">
+                    <option value="">Select Year</option>
+                    <option value="1">1st Year</option>
+                    <option value="2">2nd Year</option>
+                    <option value="3">3rd Year</option>
+                    <option value="4">4th Year</option>
+                </select>
+            </div>
+            <div><label class="flabel">Profile Picture</label><input id="pPic" type="file" accept="image/*" class="finput" onchange="previewProfilePic(this)"></div>
+            <div><label class="flabel">Phone Number</label><input id="pPhone" class="finput" placeholder="e.g. 9876543210"></div>
+            <div style="grid-column:1/-1;"><label class="flabel">Bio <span style="color:#a0aec0;font-weight:400;">(shown on club page)</span></label><textarea id="pBio" class="finput" rows="2" placeholder="A short bio about yourself…"></textarea></div>
+            <div><label class="flabel">GitHub URL</label><input id="pGithub" class="finput" placeholder="https://github.com/username"></div>
+            <div><label class="flabel">LinkedIn URL</label><input id="pLinkedin" class="finput" placeholder="https://linkedin.com/in/username"></div>
+            <div><label class="flabel">Instagram URL</label><input id="pInstagram" class="finput" placeholder="https://instagram.com/username"></div>
+        </div>
+        <br>
+        <button onclick="saveProfile()" style="background:#4f46e5;color:#fff;border:none;border-radius:8px;padding:10px 24px;font-size:.88rem;font-weight:600;cursor:pointer;">💾 Save Profile</button>
+        <span id="profileSaveMsg" style="margin-left:12px;font-size:.84rem;color:#38a169;display:none;">✅ Saved!</span>
+    </div>
+
+    <div id="clubMemberReminder" style="display:none;background:#eef2ff;border:1.5px solid #818cf8;border-radius:12px;padding:14px 18px;margin-top:16px;">
+        <strong style="color:#4f46e5;">💡 You're a club member!</strong>
+        <p style="font-size:.83rem;color:#4b5563;margin:4px 0 0;">Your photo and bio will appear on your club's Contact & Info page once filled in.</p>
+    </div>
+</section>
+
+</main>
+</div>
+
+<script src="{% static 'js/script.js' %}"></script>
+<script>
+let myRegsData  = [];
+let allDashClubs= [];
+let charts = {};
+
+function showSection(name, el){
+    document.querySelectorAll(".dash-section").forEach(s=>s.classList.remove("active"));
+    document.querySelectorAll(".sidebar-item").forEach(s=>s.classList.remove("active"));
+    document.getElementById("sec-"+name).classList.add("active");
+    if(el) el.classList.add("active");
+    const loaders = {
+        registered:  loadMyRegs,
+        upcoming:    loadUpcomingSection,
+        favourites:  loadFavourites,
+        clubs:       loadAllClubs,
+        cart:        loadCart,
+        waitlists:   loadWaitlists,
+        profile:     loadProfile
+    };
+    if(loaders[name]) loaders[name]();
+}
+
+document.addEventListener("DOMContentLoaded", ()=>{
+    document.getElementById("todayDate").textContent =
+        new Date().toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+
+    apiFetch("/me").then(r=>r.json()).then(data=>{
+        if(!data||!data.user){ window.location.href="/"; return; }
+        const name = data.user.name.split(" ")[0];
+        document.getElementById("greetName").textContent = name;
+        document.getElementById("studentName").textContent = "👤 " + data.user.name;
+    });
+
+    loadOverview();
+});
+
+function loadOverview(){
+    apiFetch("/api/my-registrations").then(r=>r.json()).then(regs=>{
+        myRegsData = regs||[];
+        setText("stRegs", regs.length);
+        const today = new Date(); today.setHours(0,0,0,0);
+        const upcoming = regs.filter(e=>new Date(e.date)>=today);
+        setText("stUpcoming", upcoming.length);
+
+        const grid = document.getElementById("nextEventsGrid");
+        const next3 = upcoming.slice(0,3);
+        grid.innerHTML = next3.length ? next3.map(evCard).join("") : "<p style='color:#999;font-size:.85rem;'>No upcoming registered events.</p>";
+    });
+
+    apiFetch("/api/clubs").then(r=>r.json()).then(clubs=>{
+        const fav = clubs.filter(c=>c.is_favorited);
+        setText("stFavClubs", fav.length);
+    });
+
+    apiFetch("/api/events").then(r=>r.json()).then(events=>{
+        const fav = events.filter(e=>e.is_favorited);
+        setText("stFavEvents", fav.length);
+    });
+}
+
+function loadMyRegs(){
+    apiFetch("/api/my-registrations").then(r=>r.json()).then(regs=>{
+        myRegsData = regs||[];
+        renderMyRegs(myRegsData);
+    });
+}
+
+function renderMyRegs(data){
+    const grid = document.getElementById("myRegsGrid");
+    grid.innerHTML = data.length ? data.map(evCard).join("") : "<p style='color:#999;'>No registrations yet.</p>";
+}
+
+function filterMyRegs(q){
+    const f = myRegsData.filter(e=>e.title.toLowerCase().includes(q.toLowerCase())||e.club_name.toLowerCase().includes(q.toLowerCase()));
+    renderMyRegs(f);
+}
+
+function loadUpcomingSection(){
+    apiFetch("/api/events").then(r=>r.json()).then(events=>{
+        const today = new Date(); today.setHours(0,0,0,0);
+        const upcoming = events.filter(e=>new Date(e.date)>=today);
+        const grid = document.getElementById("upcomingGrid");
+        grid.innerHTML = upcoming.length ? upcoming.map(e=>`
+        <a href="/event/${e.id}?from=dashboard" class="ev-card">
+            <h4>${e.title}</h4>
+            <div class="meta">🏛️ ${e.club_name}</div>
+            <div class="meta">📅 ${e.date} &nbsp;⏰ ${e.time}</div>
+            <div class="meta">📍 ${e.location||"—"}</div>
+            <div class="pbar"><div class="pbar-fill" style="width:${e.capacity?Math.round((e.registered_count/e.capacity)*100):0}%"></div></div>
+            <small style="color:#718096;">${e.registered_count||0} / ${e.capacity||0} registered</small>
+            ${e.is_full?`<span class="pill pill-red">Full</span>`:`<span class="pill pill-green">${e.seats_left} seats left</span>`}
+        </a>`).join("") : "<p style='color:#999;'>No upcoming events.</p>";
+    });
+}
+
+function loadFavourites(){
+    apiFetch("/api/clubs").then(r=>r.json()).then(clubs=>{
+        const fav = clubs.filter(c=>c.is_favorited);
+        document.getElementById("favClubsGrid").innerHTML = fav.length
+            ? fav.map(c=>`
+            <a href="/club/${c.id}?from=dashboard" class="club-card">
+                ${c.image?`<img src="${API}/${c.image}" style="width:100%;height:80px;object-fit:cover;border-radius:8px;margin-bottom:8px;">` :""}
+                <h4>${c.name}</h4>
+                <small style="color:#718096;">${c.category}</small>
+                <div style="font-size:.78rem;color:#4b5563;margin-top:4px;">📅 ${c.event_count||0} events</div>
+            </a>`).join("")
+            : "<p style='color:#999;'>No favourite clubs yet. Heart a club to add it here.</p>";
+    });
+
+    apiFetch("/api/events").then(r=>r.json()).then(events=>{
+        const fav = events.filter(e=>e.is_favorited);
+        document.getElementById("favEventsGrid").innerHTML = fav.length
+            ? fav.map(evCard).join("")
+            : "<p style='color:#999;'>No favourite events yet.</p>";
+    });
+}
+
+function loadAllClubs(){
+    apiFetch("/api/clubs").then(r=>r.json()).then(clubs=>{
+        allDashClubs = clubs;
+        renderDashClubs(clubs);
+    });
+}
+
+function renderDashClubs(clubs){
+    document.getElementById("allClubsGrid").innerHTML = clubs.map(c=>`
+    <a href="/club/${c.id}?from=dashboard" class="club-card">
+        ${c.image?`<img src="${API}/${c.image}" style="width:100%;height:80px;object-fit:cover;border-radius:8px;margin-bottom:8px;">` :""}
+        <h4>${c.name}</h4>
+        <small style="color:#718096;">${c.category}</small>
+        <div style="font-size:.78rem;color:#4b5563;margin-top:4px;">📅 ${c.event_count||0} approved events</div>
+    </a>`).join("");
+}
+
+function filterDashClubs(q){
+    const f = allDashClubs.filter(c=>c.name.toLowerCase().includes(q.toLowerCase())||c.category.toLowerCase().includes(q.toLowerCase()));
+    renderDashClubs(f);
+}
+
+function loadWaitlists(){
+    apiFetch("/api/events").then(r=>r.json()).then(events=>{
+        const grid = document.getElementById("waitlistGrid");
+        const checks = events.map(e=>
+            apiFetch("/api/events/"+e.id+"/waitlist-status")
+            .then(r=>r.json()).then(w=>({...e, waitlist:w}))
+            .catch(()=>null)
+        );
+        Promise.all(checks).then(results=>{
+            const onWait = results.filter(r=>r&&r.waitlist&&r.waitlist.on_waitlist);
+            grid.innerHTML = onWait.length ? onWait.map(e=>`
+            <a href="/event/${e.id}?from=dashboard" class="ev-card">
+                <h4>${e.title}</h4>
+                <div class="meta">📅 ${e.date} &nbsp;⏰ ${e.time}</div>
+                <div class="waitlist-info">⏳ You are #${e.waitlist.position} of ${e.waitlist.total_waiting} on the waitlist</div>
+            </a>`).join("") : "<p style='color:#999;'>You are not on any waitlist.</p>";
+        });
+    });
+}
+
+function evCard(e){
+    const today = new Date(); today.setHours(0,0,0,0);
+    const isPast = new Date(e.date) < today;
+    return `<a href="/event/${e.id}?from=dashboard" class="ev-card">
+        <h4>${e.title}</h4>
+        <div class="meta">🏛️ ${e.club_name||""}</div>
+        <div class="meta">📅 ${e.date} &nbsp;⏰ ${e.time}</div>
+        <div class="meta">📍 ${e.location||"—"}</div>
+        ${e.status ? `<span class="pill ${e.status==='registered'?'pill-green':'pill-red'}">${e.status}</span>` : ""}
+        ${isPast ? `<span class="pill pill-amber" style="margin-left:4px;">Past</span>` : ""}
+    </a>`;
+}
+
+function setText(id,val){ const e=document.getElementById(id); if(e) e.textContent=val; }
+
+/* ===== Profile ===== */
+function loadProfile(){
+    apiFetch("/profile").then(r=>r.json()).then(u=>{
+        if(!u) return;
+
+        // Fill preview card
+        setText("profileNameDisplay", u.name || "—");
+        setText("profileRoleDisplay", u.role || "");
+        setText("profileDeptDisplay", [u.department, u.year ? "Year "+u.year : ""].filter(Boolean).join(" · "));
+        setText("profileBioDisplay",  u.bio ? `"${u.bio}"` : "");
+        setText("profileRegNo",       u.reg_no ? "🎓 Reg No: " + u.reg_no : "");
+        setText("profileInitial",     (u.name||"?").charAt(0).toUpperCase());
+
+        // Profile picture
+        const av = document.getElementById("profileAvatarPreview");
+        if(u.profile_pic){
+            av.innerHTML = `<img src="${API}/${u.profile_pic}" style="width:110px;height:110px;object-fit:cover;border-radius:50%;">`;
+        }
+
+        // Fill form fields
+        document.getElementById("pName").value     = u.name     || "";
+        document.getElementById("pPhone").value    = u.phone    || "";
+        document.getElementById("pDept").value     = u.department || "";
+        document.getElementById("pYear").value     = u.year     || "";
+        document.getElementById("pBio").value      = u.bio      || "";
+        document.getElementById("pGithub").value   = u.github   || "";
+        document.getElementById("pLinkedin").value = u.linkedin || "";
+        document.getElementById("pInstagram").value= u.instagram|| "";
+    });
+
+    // Show club member reminder if user is in any club
+    apiFetch("/api/my-clubs").then(r=>r.json()).then(clubs=>{
+        if(clubs && clubs.length > 0){
+            document.getElementById("clubMemberReminder").style.display = "block";
+        }
+    }).catch(()=>{});
+}
+
+function previewProfilePic(input){
+    const file = input.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+        document.getElementById("profileAvatarPreview").innerHTML =
+            `<img src="${e.target.result}" style="width:110px;height:110px;object-fit:cover;border-radius:50%;">`;
+    };
+    reader.readAsDataURL(file);
+}
+
+// ===== CART =====
+let activePaymentId = null;
+let payTimerInterval = null;
+
+function loadCart(){
+    apiFetch("/api/cart").then(r=>r.json()).then(items=>{
+        const grid   = document.getElementById("cartGrid");
+        const alertEl = document.getElementById("cartAlert");
+
+        if(!items || !items.length){
+            grid.innerHTML = "<p style='color:#999;'>Your cart is empty. Add paid events from the events page.</p>";
+            alertEl.style.display = "none";
+            return;
+        }
+
+        // Check for pending payments and show warning banner
+        apiFetch("/api/cart/check-pending").then(r=>r.json()).then(p=>{
+            if(p && p.pending_titles && p.pending_titles.length){
+                alertEl.textContent = "⚠️ Payment pending for: " + p.pending_titles.join(", ") + ". Please complete payment before adding more events.";
+                alertEl.style.display = "block";
+            } else {
+                alertEl.style.display = "none";
+            }
+        }).catch(()=>{ alertEl.style.display = "none"; });
+
+        grid.innerHTML = items.map((item,i) => {
+            const titleSafe = (item.title||"").replace(/'/g,"&#39;");
+            const teamId    = item.team_id ? item.team_id : 0;
+            return `
+            <div class="ev-card" style="border:1.5px solid #e2e8f0;">
+                <h4>${item.title||""}</h4>
+                <div class="meta">🏛️ ${item.club_name||""}</div>
+                <div class="meta">📅 ${item.date||""} &nbsp;⏰ ${item.time||""}</div>
+                <div class="meta">📍 ${item.location||"—"}</div>
+                ${item.team_name ? `<div class="meta" style="color:#d97706;">👥 Team: ${item.team_name}</div>` : ""}
+                <div style="font-size:1.05rem;font-weight:700;color:#1e1b4b;margin:8px 0;">
+                    ₹${parseFloat(item.price||0).toFixed(2)}
+                </div>
+                <div style="display:flex;gap:8px;margin-top:8px;">
+                    <button data-event-id="${item.event_id}" data-team-id="${teamId}"
+                        data-title="${titleSafe}" data-price="${item.price||0}"
+                        onclick="confirmCartPaymentFromBtn(this)"
+                        style="flex:1;background:#16a34a;color:#fff;border:none;border-radius:8px;padding:9px;font-size:.83rem;font-weight:600;cursor:pointer;">
+                        💳 Confirm Payment
+                    </button>
+                    <button onclick="removeFromCart(${item.event_id})"
+                        style="background:#fee2e2;color:#dc2626;border:none;border-radius:8px;padding:9px 12px;font-size:.83rem;cursor:pointer;">
+                        🗑️
+                    </button>
+                </div>
+            </div>`;
+        }).join("");
+    }).catch(err=>{
+        console.error("Cart load error:", err);
+        document.getElementById("cartGrid").innerHTML = "<p style='color:#e53e3e;'>Failed to load cart. Please try again.</p>";
+    });
+}
+
+function confirmCartPaymentFromBtn(btn){
+    const eventId = parseInt(btn.dataset.eventId);
+    const teamId  = parseInt(btn.dataset.teamId) || null;
+    const title   = btn.dataset.title;
+    const price   = parseFloat(btn.dataset.price) || 0;
+    confirmCartPayment(eventId, teamId, title, price);
+}
+
+
+function removeFromCart(eventId){
+    if(!confirm("Remove this event from cart?")) return;
+    apiFetch("/api/cart/remove/"+eventId, {method:"DELETE"})
+    .then(r=>r.json()).then(d=>{ alert(d.message); loadCart(); });
+}
+
+function confirmCartPayment(eventId, teamId, title, amount){
+    apiFetch("/api/cart/confirm-payment", {method:"POST", headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({event_id:eventId})})
+    .then(r=>r.json()).then(d=>{
+        if(d.payment_id){
+            activePaymentId = d.payment_id;
+            openPayModal(d.payment_id, title, amount, d.expires_at);
+        } else {
+            alert(d.message);
+        }
+    });
+}
+
+function openPayModal(paymentId, title, amount, expiresAt){
+    activePaymentId = paymentId;
+    // Build modal if not exists
+    let modal = document.getElementById("payModalDash");
+    if(!modal){
+        modal = document.createElement("div");
+        modal.id = "payModalDash";
+        modal.className = "modal-overlay";
+        modal.innerHTML = `
+        <div class="modal-box" style="max-width:400px;">
+            <h3>💳 Complete Payment</h3>
+            <p id="pmTitle" style="font-size:.88rem;color:#4b5563;margin:0 0 4px;"></p>
+            <p id="pmAmount" style="font-size:1.1rem;font-weight:700;color:#1e1b4b;margin:0 0 10px;"></p>
+            <div style="font-size:1.4rem;font-weight:700;color:#e53e3e;text-align:center;margin:10px 0;">⏱ <span id="pmTimer">10:00</span></div>
+            <p style="font-size:.78rem;color:#718096;text-align:center;margin:0 0 14px;">Select payment method to proceed</p>
+            <button class="pay-option" onclick="mockPay('gpay')">📱 Google Pay</button>
+            <button class="pay-option" onclick="mockPay('phonepe')">📱 PhonePe</button>
+            <button class="pay-option" onclick="mockPay('upi_qr')">📷 UPI QR Code</button>
+            <button class="pay-option" onclick="mockPay('netbanking')">🏦 Net Banking</button>
+            <button onclick="closePayModal()" style="width:100%;padding:10px;margin-top:6px;border:none;border-radius:8px;cursor:pointer;background:#f1f5f9;font-size:.87rem;">Cancel</button>
+        </div>`;
+        document.body.appendChild(modal);
+    }
+    document.getElementById("pmTitle").textContent  = title;
+    document.getElementById("pmAmount").textContent = "₹" + parseFloat(amount).toFixed(2);
+    modal.classList.add("open");
+    startPayTimer(expiresAt);
+}
+
+function closePayModal(){
+    const m = document.getElementById("payModalDash");
+    if(m) m.classList.remove("open");
+    if(payTimerInterval) clearInterval(payTimerInterval);
+}
+
+function startPayTimer(expiresAt){
+    if(payTimerInterval) clearInterval(payTimerInterval);
+    payTimerInterval = setInterval(()=>{
+        const remaining = new Date(expiresAt) - new Date();
+        if(remaining <= 0){
+            clearInterval(payTimerInterval);
+            document.getElementById("pmTimer").textContent = "00:00";
+            closePayModal();
+            alert("Payment window expired. Please try again.");
+            return;
+        }
+        const m = Math.floor(remaining/60000);
+        const s = Math.floor((remaining%60000)/1000);
+        document.getElementById("pmTimer").textContent = String(m).padStart(2,"0")+":"+String(s).padStart(2,"0");
+    }, 1000);
+}
+
+function mockPay(method){
+    if(!activePaymentId) return;
+    apiFetch("/api/cart/payment-success",{method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({payment_id:activePaymentId, method})})
+    .then(r=>r.json()).then(d=>{
+        closePayModal();
+        alert(d.message);
+        loadCart();
+    });
+}
+
+function saveProfile(){
+    const fd = new FormData();
+    fd.append("name",      document.getElementById("pName").value);
+    fd.append("department",document.getElementById("pDept").value);
+    fd.append("year",      document.getElementById("pYear").value);
+    fd.append("bio",       document.getElementById("pBio").value);
+    fd.append("github",    document.getElementById("pGithub").value);
+    fd.append("linkedin",  document.getElementById("pLinkedin").value);
+    fd.append("instagram", document.getElementById("pInstagram").value);
+    fd.append("phone",     document.getElementById("pPhone").value);
+
+    const pic = document.getElementById("pPic").files[0];
+    if(pic) fd.append("profile_pic", pic);
+
+    apiFetch("/profile/update", { method:"PUT", body:fd })
+    .then(r=>r.json()).then(d=>{
+        const msg = document.getElementById("profileSaveMsg");
+        msg.textContent = "✅ " + d.message;
+        msg.style.display = "inline";
+        setTimeout(()=>{ msg.style.display="none"; }, 3000);
+        loadProfile(); // refresh preview
+    });
+}
+</script>
+
+<style>
+.flabel { font-size:.76rem; font-weight:600; color:#64748b; margin-bottom:3px; display:block; }
+.finput { width:100%; border:1.5px solid #e2e8f0; border-radius:8px; padding:8px 11px; font-size:.85rem; box-sizing:border-box; outline:none; font-family:inherit; transition:border-color .15s; }
+.finput:focus { border-color:#4f46e5; }
+</style>
+</body>
+</html>

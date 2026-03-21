@@ -1,0 +1,727 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Event Details</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <style>
+        :root { --primary:#4f46e5; --success:#38a169; --danger:#e53e3e; --warn:#d97706; }
+
+        .waitlist-badge { display:inline-block; background:#fff3cd; color:#856404; border:1px solid #ffc107; border-radius:20px; padding:4px 14px; font-size:.82rem; margin-top:8px; }
+
+        /* Gallery */
+        .gallery-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:12px; margin-top:12px; }
+        .gallery-thumb { position:relative; border-radius:10px; overflow:hidden; aspect-ratio:4/3; cursor:pointer; background:#f0f0f0; }
+        .gallery-thumb img { width:100%; height:100%; object-fit:cover; transition:transform .25s; display:block; }
+        .gallery-thumb:hover img { transform:scale(1.06); }
+
+        /* Lightbox */
+        #lightbox { display:none; position:fixed; inset:0; background:rgba(0,0,0,.92); z-index:2000; align-items:center; justify-content:center; }
+        #lightbox.open { display:flex; }
+        #lightbox .lb-inner { position:relative; max-width:90vw; max-height:90vh; }
+        #lightbox img { max-width:88vw; max-height:88vh; border-radius:10px; object-fit:contain; }
+        .lb-close { position:absolute; top:18px; right:22px; color:#fff; font-size:2rem; cursor:pointer; z-index:2001; }
+        .lb-prev, .lb-next { position:fixed; top:50%; transform:translateY(-50%); background:rgba(255,255,255,.15); color:#fff; border:none; border-radius:50%; width:46px; height:46px; font-size:1.4rem; cursor:pointer; z-index:2001; }
+        .lb-prev { left:16px; } .lb-next { right:16px; }
+        .lb-counter { position:fixed; bottom:22px; left:50%; transform:translateX(-50%); color:rgba(255,255,255,.75); font-size:.88rem; z-index:2001; }
+
+        /* Agenda */
+        .agenda-item { display:flex; gap:14px; padding:14px 0; border-bottom:1px solid #f1f5f9; }
+        .agenda-item:last-child { border-bottom:none; }
+        .agenda-time { min-width:70px; font-size:.82rem; font-weight:700; color:#6366f1; }
+        .agenda-body h4 { margin:0 0 3px; font-size:.9rem; font-weight:600; color:#1e1b4b; }
+        .agenda-body p  { margin:0; font-size:.81rem; color:#718096; }
+
+        /* About section fields (vi) */
+        .about-section { margin-bottom:18px; }
+        .about-section h4 { font-size:.9rem; font-weight:700; color:#1e1b4b; margin:0 0 6px; display:flex; align-items:center; gap:6px; }
+        .about-section p  { font-size:.87rem; color:#4b5563; margin:0; line-height:1.6; white-space:pre-wrap; }
+        .prize-badge { background:linear-gradient(135deg,#f59e0b,#d97706); color:#fff; border-radius:20px; padding:5px 16px; font-size:.85rem; font-weight:700; display:inline-block; }
+        .rule-list { list-style:none; padding:0; margin:0; }
+        .rule-list li { padding:5px 0; font-size:.86rem; color:#374151; border-bottom:1px dashed #e5e7eb; }
+        .rule-list li:last-child { border-bottom:none; }
+        .rule-list li::before { content:"→ "; color:#6366f1; font-weight:700; }
+        .coord-chip { display:inline-flex; align-items:center; gap:6px; background:#eef2ff; color:#4f46e5; border-radius:20px; padding:5px 14px; margin:3px; font-size:.82rem; }
+        .mgr-card { background:#f8faff; border:1.5px solid #e2e8f0; border-radius:14px; padding:18px; text-align:center; }
+        .mgr-avatar { width:64px; height:64px; border-radius:50%; object-fit:cover; border:2px solid #e2e8f0; margin:0 auto 10px; display:block; }
+        .mgr-avatar-placeholder { width:64px; height:64px; border-radius:50%; background:linear-gradient(135deg,#6366f1,#818cf8); display:flex; align-items:center; justify-content:center; margin:0 auto 10px; font-size:1.4rem; color:#fff; font-weight:700; }
+        .mgr-name { font-weight:700; color:#1e1b4b; font-size:.92rem; margin-bottom:4px; }
+        .mgr-contact { font-size:.78rem; color:#718096; margin:2px 0; }
+        .mgr-contact a { color:#4f46e5; text-decoration:none; }
+        .mgr-contact a:hover { text-decoration:underline; }
+        .coord-chip a { color:#6366f1; text-decoration:none; font-weight:600; }
+
+        /* Paid / Team badges */
+        .badge-paid { background:#d1fae5; color:#065f46; border-radius:12px; padding:3px 10px; font-size:.78rem; font-weight:600; }
+        .badge-free { background:#e0f2fe; color:#0369a1; border-radius:12px; padding:3px 10px; font-size:.78rem; font-weight:600; }
+        .badge-team { background:#fef3c7; color:#92400e; border-radius:12px; padding:3px 10px; font-size:.78rem; font-weight:600; }
+
+        /* Team registration modal */
+        .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:1500; align-items:center; justify-content:center; }
+        .modal-overlay.open { display:flex; }
+        .modal-box { background:#fff; border-radius:16px; padding:28px; max-width:480px; width:95%; max-height:90vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,.25); }
+        .modal-box h3 { margin:0 0 18px; font-size:1.1rem; color:#1e1b4b; }
+        .modal-box .mfield { width:100%; border:1.5px solid #e2e8f0; border-radius:8px; padding:9px 12px; font-size:.87rem; box-sizing:border-box; margin-bottom:10px; outline:none; font-family:inherit; }
+        .modal-box .mfield:focus { border-color:#4f46e5; }
+        .reg-validate { font-size:.75rem; margin-top:-6px; margin-bottom:8px; min-height:16px; }
+        .reg-validate.ok  { color:#16a34a; }
+        .reg-validate.err { color:#dc2626; }
+        .modal-actions { display:flex; gap:10px; margin-top:14px; }
+        .modal-actions button { flex:1; padding:10px; border:none; border-radius:8px; font-size:.88rem; font-weight:600; cursor:pointer; }
+        .btn-submit { background:#4f46e5; color:#fff; }
+        .btn-cancel { background:#f1f5f9; color:#374151; }
+
+        /* Cart / Payment */
+        .cart-btn { background:#f59e0b; color:#fff; border:none; border-radius:8px; padding:9px 18px; font-size:.87rem; font-weight:600; cursor:pointer; margin-top:8px; width:100%; }
+        .cart-btn:hover { background:#d97706; }
+
+        /* Payment modal */
+        #paymentModal .modal-box { max-width:400px; }
+        .pay-timer { font-size:1.4rem; font-weight:700; color:#e53e3e; text-align:center; margin:10px 0; }
+        .pay-option { display:block; width:100%; background:#f8faff; border:1.5px solid #e2e8f0; border-radius:10px; padding:12px 16px; margin-bottom:8px; cursor:pointer; font-size:.88rem; font-weight:600; color:#1e1b4b; text-align:left; transition:all .15s; }
+        .pay-option:hover { border-color:#4f46e5; background:#eef2ff; }
+
+        .pill { display:inline-block; border-radius:20px; padding:3px 10px; font-size:.72rem; font-weight:600; margin-top:6px; }
+        .pill-green { background:#d1fae5; color:#065f46; }
+        .pill-red   { background:#fee2e2; color:#991b1b; }
+    </style>
+</head>
+<body>
+
+<div id="page-loader"></div>
+
+<!-- Lightbox -->
+<div id="lightbox">
+    <span class="lb-close" onclick="closeLightbox()">✕</span>
+    <button class="lb-prev" onclick="lbNav(-1)">‹</button>
+    <div class="lb-inner" id="lbInner"></div>
+    <button class="lb-next" onclick="lbNav(1)">›</button>
+    <div class="lb-counter" id="lbCounter"></div>
+</div>
+
+<!-- Team Registration Modal -->
+<div class="modal-overlay" id="teamModal">
+    <div class="modal-box">
+        <h3>🤝 Team Registration</h3>
+        <p id="teamModalInfo" style="font-size:.83rem;color:#718096;margin:0 0 14px;"></p>
+        <input id="teamNameInput" class="mfield" type="text" placeholder="Team Name">
+        <div id="memberFields"></div>
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="closeTeamModal()">Cancel</button>
+            <button class="btn-submit" onclick="submitTeamRegistration()">Register Team</button>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Modal -->
+<div class="modal-overlay" id="paymentModal">
+    <div class="modal-box">
+        <h3>💳 Complete Payment</h3>
+        <p id="payEventTitle" style="font-size:.88rem;color:#4b5563;margin:0 0 4px;"></p>
+        <p id="payAmount" style="font-size:1.1rem;font-weight:700;color:#1e1b4b;margin:0 0 10px;"></p>
+        <div class="pay-timer">⏱ <span id="payTimerDisplay">10:00</span></div>
+        <p style="font-size:.78rem;color:#718096;text-align:center;margin:0 0 14px;">Select payment method to proceed</p>
+        <button class="pay-option" onclick="mockPay('gpay')">📱 Google Pay</button>
+        <button class="pay-option" onclick="mockPay('phonepe')">📱 PhonePe</button>
+        <button class="pay-option" onclick="mockPay('upi_qr')">📷 UPI QR Code</button>
+        <button class="pay-option" onclick="mockPay('netbanking')">🏦 Net Banking</button>
+        <button class="btn-cancel" style="width:100%;padding:10px;margin-top:6px;border:none;border-radius:8px;cursor:pointer;" onclick="closePayModal()">Cancel</button>
+    </div>
+</div>
+
+<header>
+    <div class="logo-title">
+        <img src="{% static 'images/r-logo.png' %}" class="site-logo">
+        <h3>Centralized Club Portal</h3>
+    </div>
+    <nav>
+        <a href="/home">Home</a>
+        <a href="/clubs">Clubs</a>
+        <a href="/events">Events</a>
+        <a href="/calendar">Calendar</a>
+        <div class="profile-btn-wrap" id="profileBtnWrap"></div>
+    </nav>
+</header>
+
+<div class="container">
+    <a id="backBtn" href="/events" class="back-link">← Back to Events</a>
+
+    <!-- Event Hero -->
+    <div class="event-hero">
+        <div>
+            <h1 id="eventTitle"></h1>
+            <p id="eventDesc"></p>
+            <div class="event-hero-meta">
+                <span id="eventDate"></span>
+                <span id="eventTime"></span>
+                <span id="eventVenue"></span>
+            </div>
+            <div style="margin-top:8px;" id="eventBadges"></div>
+        </div>
+        <div class="event-hero-right">
+            <strong id="eventClub"></strong>
+            <span id="eventType"></span>
+            <div id="eventRating" class="event-rating"></div>
+
+            <div id="registrationArea">
+                <!-- Filled dynamically -->
+            </div>
+
+            <div id="waitlistSection" style="display:none; margin-top:8px;">
+                <p class="waitlist-badge" id="waitlistInfo"></p>
+                <button class="action-btn" id="waitlistBtn" style="margin-top:8px;"></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+        <div id="about-tab"   class="tab active">About</div>
+        <div id="gallery-tab" class="tab">Gallery</div>
+        <div id="agenda-tab"  class="tab">Contact</div>
+    </div>
+
+    <!-- ABOUT TAB -->
+    <div id="about" class="tab-content active">
+        <div class="info-card">
+
+            <!-- Prize Pool (vi) -->
+            <div class="about-section" id="prizeSec" style="display:none;">
+                <h4>🏆 Prize Pool</h4>
+                <div id="prizePoolVal"></div>
+            </div>
+
+            <!-- About (vi) -->
+            <div class="about-section" id="aboutSec" style="display:none;">
+                <h4>📌 About this Event</h4>
+                <p id="aboutText"></p>
+            </div>
+
+            <!-- Coordinators moved to Contact tab -->
+
+            <!-- Rules (vi) -->
+            <div class="about-section" id="rulesSec" style="display:none;">
+                <h4>📋 Rules</h4>
+                <p id="rulesText"></p>
+            </div>
+
+            <!-- Instructions (vi) -->
+            <div class="about-section" id="instrSec" style="display:none;">
+                <h4>📝 Instructions</h4>
+                <p id="instrText"></p>
+            </div>
+
+            <!-- Fallback if nothing filled -->
+            <div id="aboutFallback" style="display:none;color:#999;font-size:.87rem;">No details added yet for this event.</div>
+        </div>
+    </div>
+
+    <!-- GALLERY TAB -->
+    <div id="gallery" class="tab-content">
+        <div class="info-card">
+            <h3>Event Gallery</h3>
+            <div id="eventGalleryGrid" class="gallery-grid"></div>
+            <p id="noGalleryMsg" style="color:#888;display:none;margin-top:8px;">No images uploaded yet.</p>
+        </div>
+    </div>
+
+    <!-- AGENDA TAB -->
+    <div id="agenda" class="tab-content">
+        <div class="info-card">
+            <h3>📞 Event Managers</h3>
+            <p style="color:#718096;font-size:.87rem;margin-bottom:18px;">
+                For any queries, contact the event managers.
+            </p>
+            <div id="eventManagersGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;">
+                <p style="color:#999;">No event managers assigned yet.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- FEEDBACK -->
+<div class="container">
+    <div class="info-card">
+        <h3>Event Feedback</h3>
+        <div class="feedback-form" id="feedbackFormSection">
+            <label>Rating</label>
+            <div class="star-rating" id="starRating">
+                <span data-value="1">☆</span><span data-value="2">☆</span>
+                <span data-value="3">☆</span><span data-value="4">☆</span>
+                <span data-value="5">☆</span>
+            </div>
+            <input type="hidden" id="rating" value="0">
+            <textarea id="feedbackComment" placeholder="Write your feedback..."></textarea>
+            <button onclick="submitFeedback()" class="primary-btn">Submit Feedback</button>
+        </div>
+        <hr>
+        <div id="feedbackList"></div>
+    </div>
+</div>
+
+<footer>© 2026 Centralized Club Portal</footer>
+
+<script src="{% static 'js/script.js' %}"></script>
+<script>
+let selectedEventId = null;
+let eventData = null;
+let galleryItems = [];
+let lbIndex = 0;
+let activePaymentId = null;
+let payTimerInterval = null;
+
+// Smart back button
+(function(){
+    const params  = new URLSearchParams(window.location.search);
+    const from    = params.get("from");
+    const clubId  = params.get("clubId");
+    const btn     = document.getElementById("backBtn");
+    if(from==="club"&&clubId){ btn.href="/club/"+clubId; btn.textContent="← Back to Club"; }
+    else if(from==="dashboard"){ btn.href="/dashboard"; btn.textContent="← Back to Dashboard"; }
+    else if(from==="club-dashboard"){ btn.href="/club-dashboard"; btn.textContent="← Back to Club Dashboard"; }
+    else { btn.href="/events"; btn.textContent="← Back to Events"; }
+})();
+
+document.addEventListener("DOMContentLoaded", () => {
+    initProfileDropdown();
+    const parts = window.location.pathname.split("/");
+    selectedEventId = parts[parts.length - 1];
+
+    apiFetch("/api/event/" + selectedEventId)
+    .then(r => r.json())
+    .then(ev => {
+        eventData = ev;
+        document.getElementById("eventTitle").textContent = ev.title;
+        document.getElementById("eventDesc").textContent  = ev.description || "";
+        document.getElementById("eventDate").textContent  = "📅 " + ev.date;
+        document.getElementById("eventTime").textContent  = "⏰ " + ev.time;
+        document.getElementById("eventVenue").textContent = "📍 " + (ev.location || "—");
+        document.getElementById("eventClub").textContent  = ev.club_name;
+        document.getElementById("eventType").textContent  = ev.type || "";
+
+        // Rating
+        document.getElementById("eventRating").innerHTML = ev.avg_rating
+            ? "⭐ " + ev.avg_rating.toFixed(1) + " / 5 (" + ev.total_reviews + " reviews)"
+            : "No reviews yet";
+
+        // Badges — paid/free, individual/team
+        const badges = document.getElementById("eventBadges");
+        badges.innerHTML =
+            `<span class="${ev.is_paid ? 'badge-paid' : 'badge-free'}">${ev.is_paid ? '💰 Paid — ₹'+parseFloat(ev.price||0).toFixed(0) : '🆓 Free'}</span>` +
+            (ev.event_category==="team"
+                ? ` <span class="badge-team">👥 Team Event (${ev.min_members}–${ev.max_members} members)</span>`
+                : ` <span class="badge-free" style="background:#f3e8ff;color:#6b21a8;">👤 Individual</span>`);
+
+        // About section fields (vi)
+        let anyAbout = false;
+        if(ev.prize_pool){ document.getElementById("prizeSec").style.display=""; document.getElementById("prizePoolVal").innerHTML=`<span class="prize-badge">🏆 ${ev.prize_pool}</span>`; anyAbout=true; }
+        if(ev.about){ document.getElementById("aboutSec").style.display=""; document.getElementById("aboutText").textContent=ev.about; anyAbout=true; }
+        if(ev.rules){ document.getElementById("rulesSec").style.display=""; document.getElementById("rulesText").textContent=ev.rules; anyAbout=true; }
+        if(ev.instructions){ document.getElementById("instrSec").style.display=""; document.getElementById("instrText").textContent=ev.instructions; anyAbout=true; }
+        if(!anyAbout) document.getElementById("aboutFallback").style.display="";
+
+        // Coordinators with phone
+        if(ev.coordinators && ev.coordinators.length){
+            // Render manager cards in Contact tab
+            const grid = document.getElementById("eventManagersGrid");
+            if(grid && ev.coordinators && ev.coordinators.length){
+                grid.innerHTML = ev.coordinators.map(c => {
+                    const initials = (c.name||"?").split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
+                    const avatar = c.profile_pic
+                        ? `<img src="${c.profile_pic}" class="mgr-avatar" alt="${c.name}">`
+                        : `<div class="mgr-avatar-placeholder">${initials}</div>`;
+                    const email = c.email
+                        ? `<div class="mgr-contact">✉️ <a href="mailto:${c.email}">${c.email}</a></div>`
+                        : "";
+                    const phone = c.phone
+                        ? `<div class="mgr-contact">📞 <a href="tel:${c.phone}">${c.phone}</a></div>`
+                        : "";
+                    return `<div class="mgr-card">
+                        ${avatar}
+                        <div class="mgr-name">${c.name}</div>
+                        ${email}
+                        ${phone}
+                    </div>`;
+                }).join("");
+            } else if(grid){
+                grid.innerHTML = "<p style='color:#999;'>No event managers assigned yet.</p>";
+            }
+        }
+
+        if(new Date() < new Date(ev.date)){
+            document.getElementById("feedbackFormSection").style.display = "none";
+        }
+
+        updateRegistrationArea();
+        loadFeedback();
+        loadGallery();
+    });
+
+    // Star rating
+    document.querySelectorAll("#starRating span").forEach(star => {
+        star.addEventListener("click", () => {
+            const r = star.dataset.value;
+            document.getElementById("rating").value = r;
+            document.querySelectorAll("#starRating span").forEach(s => {
+                s.textContent = s.dataset.value <= r ? "⭐" : "☆";
+            });
+        });
+    });
+
+    // Tabs
+    document.querySelectorAll(".tab").forEach(tab => {
+        tab.addEventListener("click", () => {
+            const name = tab.id.replace("-tab","");
+            document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+            document.querySelectorAll(".tab-content").forEach(c=>c.classList.remove("active"));
+            tab.classList.add("active");
+            document.getElementById(name).classList.add("active");
+        });
+    });
+
+    document.getElementById("lightbox").addEventListener("click", e => {
+        if(e.target.id==="lightbox") closeLightbox();
+    });
+    document.addEventListener("keydown", e => {
+        if(document.getElementById("lightbox").classList.contains("open")){
+            if(e.key==="ArrowLeft") lbNav(-1);
+            if(e.key==="ArrowRight") lbNav(1);
+            if(e.key==="Escape") closeLightbox();
+        }
+    });
+});
+
+// ===== Registration Area =====
+function updateRegistrationArea(){
+    const area = document.getElementById("registrationArea");
+    apiFetch("/api/registration-status/" + selectedEventId)
+    .then(r=>r.json()).then(data => {
+        const ev = eventData;
+        if(!ev) return;
+
+        if(data.registered){
+            const ev = eventData;
+            // Show cancel button only for free events
+            const cancelBtn = (ev && ev.is_paid)
+                ? `<p style="font-size:.78rem;color:#e53e3e;margin-top:6px;">
+                       ⚠️ Paid event — cancellation not allowed.<br>
+                       Contact the event organiser if needed.
+                   </p>`
+                : `<button class="action-btn" onclick="cancelRegistration()" style="background:#e53e3e;">Cancel Registration</button>`;
+
+            // For team events, add team cancel note
+            const teamNote = (ev && ev.event_category === "team")
+                ? `<p style="font-size:.75rem;color:#718096;margin-top:4px;">⚠️ Cancelling will remove your entire team.</p>`
+                : "";
+
+            area.innerHTML = `
+                <p class="reg-status">Status: Registered ✅</p>
+                ${cancelBtn}
+                ${teamNote}`;
+            document.getElementById("waitlistSection").style.display = "none";
+        } else if(data.status === "pending_payment"){
+            area.innerHTML = `<p class="reg-status" style="color:#d97706;">⏳ Payment Pending</p>
+                <button class="cart-btn" onclick="window.location.href='/dashboard'">Go to Cart →</button>`;
+        } else {
+            // Build register button based on event type
+            if(ev.is_paid){
+                if(ev.event_category === "team"){
+                    area.innerHTML = `
+                        <button class="action-btn" onclick="openTeamModal()">Register Team</button>
+                        <p style="font-size:.75rem;color:#718096;margin-top:4px;">Team registration → Added to cart for payment</p>`;
+                } else {
+                    // Check if already in cart
+                apiFetch("/api/cart").then(r=>r.json()).then(cartItems=>{
+                    const inCart = Array.isArray(cartItems) && cartItems.some(c=>c.event_id==selectedEventId);
+                    if(inCart){
+                        area.innerHTML = `
+                            <button class="cart-btn" disabled style="background:#16a34a;cursor:default;">✅ Added to Cart</button>
+                            <p style="font-size:.75rem;color:#718096;margin-top:4px;">Go to your dashboard to complete payment</p>`;
+                    } else {
+                        area.innerHTML = `
+                            <button class="cart-btn" onclick="addToCart()">🛒 Add to Cart — ₹${parseFloat(ev.price||0).toFixed(0)}</button>
+                            <p style="font-size:.75rem;color:#718096;margin-top:4px;">Pay via cart to complete registration</p>`;
+                    }
+                }).catch(()=>{
+                    area.innerHTML = `
+                        <button class="cart-btn" onclick="addToCart()">🛒 Add to Cart — ₹${parseFloat(ev.price||0).toFixed(0)}</button>
+                        <p style="font-size:.75rem;color:#718096;margin-top:4px;">Pay via cart to complete registration</p>`;
+                });
+                }
+            } else {
+                if(ev.event_category === "team"){
+                    area.innerHTML = `<button class="action-btn" onclick="openTeamModal()">Register as Team</button>`;
+                } else {
+                    area.innerHTML = `<button class="action-btn" id="registerBtn" onclick="registerEvent()">Register</button>`;
+                }
+            }
+
+            const regStatus = document.createElement("p");
+            regStatus.className = "reg-status";
+            regStatus.textContent = "Status: Not Registered";
+            area.insertAdjacentElement("beforeend", regStatus);
+
+            if(ev.is_full) loadWaitlistStatus();
+        }
+    });
+}
+
+// Individual free registration
+function registerEvent(){
+    apiFetch("/api/register", {method:"POST", headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({event_id: parseInt(selectedEventId)})})
+    .then(r=>r.json()).then(d=>{ alert(d.message); updateRegistrationArea(); });
+}
+
+function cancelRegistration(){
+    const ev = eventData;
+    const isTeam = ev && ev.event_category === "team";
+    const msg = isTeam
+        ? "Cancel your entire team's registration? All team members will be removed."
+        : "Cancel your registration for this event?";
+
+    if(!confirm(msg)) return;
+
+    apiFetch("/api/cancel-registration/"+selectedEventId, {method:"PUT"})
+    .then(r=>r.json()).then(d=>{
+        if(d.blocked){
+            alert("⚠️ " + d.message);
+        } else {
+            alert(d.message);
+            updateRegistrationArea();
+        }
+    });
+}
+
+// Add paid individual event to cart
+function addToCart(){
+    const btn = document.querySelector(".cart-btn");
+    if(btn){ btn.disabled = true; btn.textContent = "Adding…"; }
+
+    apiFetch("/api/cart/add", {method:"POST", headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({event_id: parseInt(selectedEventId)})})
+    .then(r=>r.json()).then(d=>{
+        if(d.warning){
+            // Payment pending warning — still added
+            if(btn){
+                btn.textContent = "🛒 Added to Cart";
+                btn.style.background = "#d97706";
+                btn.disabled = true;
+            }
+            alert("⚠️ " + d.warning);
+        } else if(d.message && d.message.toLowerCase().includes("already")){
+            if(btn){ btn.disabled = false; btn.textContent = "Already in Cart 🛒"; }
+            alert(d.message);
+        } else {
+            // Success
+            if(btn){
+                btn.textContent = "✅ Added to Cart";
+                btn.style.background = "#16a34a";
+                btn.disabled = true;
+            }
+        }
+        updateRegistrationArea();
+    }).catch(()=>{
+        if(btn){ btn.disabled = false; btn.textContent = "🛒 Add to Cart"; }
+    });
+}
+
+// ===== Waitlist =====
+function loadWaitlistStatus(){
+    apiFetch("/api/events/"+selectedEventId+"/waitlist-status")
+    .then(r=>r.json()).then(data=>{
+        const section = document.getElementById("waitlistSection");
+        const info    = document.getElementById("waitlistInfo");
+        const btn     = document.getElementById("waitlistBtn");
+        section.style.display = "block";
+        if(data.on_waitlist){
+            info.textContent = `You are #${data.position} on the waitlist (${data.total_waiting} waiting)`;
+            btn.textContent  = "Leave Waitlist";
+            btn.onclick      = leaveWaitlist;
+        } else {
+            info.textContent = `Event is full — ${data.total_waiting} on waitlist`;
+            btn.textContent  = "Join Waitlist";
+            btn.onclick      = joinWaitlist;
+        }
+    });
+}
+function joinWaitlist(){ apiFetch("/api/events/"+selectedEventId+"/waitlist",{method:"POST"}).then(r=>r.json()).then(d=>{ alert(d.message); loadWaitlistStatus(); }); }
+function leaveWaitlist(){ apiFetch("/api/events/"+selectedEventId+"/waitlist",{method:"DELETE"}).then(r=>r.json()).then(d=>{ alert(d.message); loadWaitlistStatus(); }); }
+
+// ===== Team Registration Modal =====
+function openTeamModal(){
+    const ev = eventData;
+    if(!ev) return;
+    const min = ev.min_members || 2;
+    const max = ev.max_members || 4;
+    document.getElementById("teamModalInfo").textContent =
+        `Team size: ${min} (required) to ${max} members. Enter register numbers.`;
+
+    // Build member fields
+    let html = "";
+    for(let i=1; i<=max; i++){
+        const required = i <= min;
+        html += `
+        <div>
+            <input class="mfield" type="text" id="memberReg${i}"
+                placeholder="Member ${i} Register No.${required?' (required)':' (optional)'}"
+                oninput="validateRegNo(${i})" ${required?'required':''}>
+            <div class="reg-validate" id="regVal${i}"></div>
+        </div>`;
+    }
+    document.getElementById("memberFields").innerHTML = html;
+    document.getElementById("teamModal").classList.add("open");
+}
+
+function closeTeamModal(){
+    document.getElementById("teamModal").classList.remove("open");
+}
+
+function validateRegNo(idx){
+    const val = document.getElementById("memberReg"+idx).value.trim();
+    const fb  = document.getElementById("regVal"+idx);
+    if(!val){ fb.textContent=""; return; }
+    apiFetch("/api/teams/validate-reg", {method:"POST", headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({reg_no: val})})
+    .then(r=>r.json()).then(d=>{
+        if(d.valid){ fb.className="reg-validate ok"; fb.textContent="✅ " + d.name; }
+        else        { fb.className="reg-validate err"; fb.textContent="❌ " + d.message; }
+    });
+}
+
+function submitTeamRegistration(){
+    const ev       = eventData;
+    const teamName = document.getElementById("teamNameInput").value.trim();
+    const min      = ev.min_members || 2;
+    const max      = ev.max_members || 4;
+
+    if(!teamName){ alert("Enter a team name."); return; }
+
+    const members = [];
+    for(let i=1; i<=max; i++){
+        const val = (document.getElementById("memberReg"+i)?.value||"").trim();
+        if(val) members.push(val);
+    }
+
+    if(members.length < min){
+        alert(`At least ${min} members required.`);
+        return;
+    }
+
+    const endpoint = ev.is_paid ? "/api/teams/create-pending" : "/api/teams/register";
+
+    apiFetch(endpoint, {method:"POST", headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({event_id: parseInt(selectedEventId), team_name: teamName, members})})
+    .then(r=>r.json()).then(d=>{
+        if(d.team_id && ev.is_paid){
+            closeTeamModal();
+            // Add to cart with team_id
+            apiFetch("/api/cart/add", {method:"POST", headers:{"Content-Type":"application/json"},
+                body:JSON.stringify({event_id: parseInt(selectedEventId), team_id: d.team_id})})
+            .then(r=>r.json()).then(c=>{
+                if(c.warning) alert("⚠️ " + c.warning + "\n\nTeam added to cart. Go to dashboard to pay.");
+                else alert("Team added to cart! Go to your dashboard to complete payment.");
+                updateRegistrationArea();
+            });
+        } else {
+            alert(d.message || "Registered!");
+            closeTeamModal();
+            updateRegistrationArea();
+        }
+    });
+}
+
+// ===== Gallery =====
+function loadGallery(){
+    apiFetch("/api/events/"+selectedEventId+"/gallery")
+    .then(r=>r.json()).then(images=>{
+        const grid  = document.getElementById("eventGalleryGrid");
+        const noMsg = document.getElementById("noGalleryMsg");
+        galleryItems = images||[];
+        grid.innerHTML = "";
+        if(!galleryItems.length){ noMsg.style.display="block"; return; }
+        noMsg.style.display="none";
+        galleryItems.forEach((img,idx)=>{
+            const url = API+"/"+img.image_url;
+            const div = document.createElement("div");
+            div.className="gallery-thumb"; div.onclick=()=>openLightbox(idx);
+            div.innerHTML=`<img src="${url}" alt="Photo ${idx+1}" loading="lazy">`;
+            grid.appendChild(div);
+        });
+    });
+}
+function openLightbox(idx){ lbIndex=idx; renderLightbox(); document.getElementById("lightbox").classList.add("open"); document.body.style.overflow="hidden"; }
+function closeLightbox(){ document.getElementById("lightbox").classList.remove("open"); document.body.style.overflow=""; }
+function lbNav(dir){ lbIndex=(lbIndex+dir+galleryItems.length)%galleryItems.length; renderLightbox(); }
+function renderLightbox(){
+    const url=API+"/"+galleryItems[lbIndex].image_url;
+    document.getElementById("lbInner").innerHTML=`<img src="${url}" alt="Photo ${lbIndex+1}">`;
+    document.getElementById("lbCounter").textContent=`${lbIndex+1} / ${galleryItems.length}`;
+}
+
+// ===== Feedback =====
+function submitFeedback(){
+    const rating  = document.getElementById("rating").value;
+    const comment = document.getElementById("feedbackComment").value;
+    if(!rating||rating==="0"){ alert("Please select a rating."); return; }
+    apiFetch("/api/events/"+selectedEventId+"/feedback",{method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({rating:parseInt(rating),comment})})
+    .then(r=>r.json()).then(d=>{ alert(d.message); loadFeedback(); });
+}
+
+function loadFeedback(){
+    apiFetch("/api/events/"+selectedEventId+"/feedback")
+    .then(r=>r.json()).then(list=>{
+        document.getElementById("feedbackList").innerHTML = list.map(f=>`
+        <div style="border-bottom:1px solid #f0f0f0;padding:10px 0;">
+            <strong>${f.name}</strong>
+            <span style="color:#f59e0b;margin-left:8px;">${"⭐".repeat(f.rating)}</span>
+            <span style="font-size:.75rem;color:#aaa;margin-left:8px;">${f.created_at||""}</span>
+            <p style="margin:4px 0 0;font-size:.85rem;color:#4b5563;">${f.comment||""}</p>
+        </div>`).join("") || "<p style='color:#999;'>No feedback yet.</p>";
+    });
+}
+
+// ===== Payment (from cart) - triggered from dashboard cart, not directly here =====
+function openPayModal(paymentId, title, amount, expiresAt){
+    activePaymentId = paymentId;
+    document.getElementById("payEventTitle").textContent = title;
+    document.getElementById("payAmount").textContent = "₹" + parseFloat(amount).toFixed(2);
+    document.getElementById("paymentModal").classList.add("open");
+    startPayTimer(expiresAt);
+}
+function closePayModal(){
+    document.getElementById("paymentModal").classList.remove("open");
+    if(payTimerInterval) clearInterval(payTimerInterval);
+}
+function startPayTimer(expiresAt){
+    if(payTimerInterval) clearInterval(payTimerInterval);
+    payTimerInterval = setInterval(()=>{
+        const remaining = new Date(expiresAt) - new Date();
+        if(remaining <= 0){
+            clearInterval(payTimerInterval);
+            document.getElementById("payTimerDisplay").textContent = "00:00";
+            closePayModal();
+            alert("Payment window expired. Please try again from your cart.");
+            return;
+        }
+        const m = Math.floor(remaining/60000);
+        const s = Math.floor((remaining%60000)/1000);
+        document.getElementById("payTimerDisplay").textContent =
+            String(m).padStart(2,"0")+":"+String(s).padStart(2,"0");
+    }, 1000);
+}
+function mockPay(method){
+    if(!activePaymentId) return;
+    apiFetch("/api/cart/payment-success",{method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({payment_id:activePaymentId, method})})
+    .then(r=>r.json()).then(d=>{
+        closePayModal();
+        alert(d.message);
+        updateRegistrationArea();
+    });
+}
+</script>
+</body>
+</html>

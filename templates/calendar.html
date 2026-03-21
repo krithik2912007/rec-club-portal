@@ -1,0 +1,269 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Event Calendar</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+
+    <!-- FullCalendar CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet">
+
+    <style>
+#calendar {
+    margin-top: 20px;
+    background: white;
+    padding: 15px;
+    border-radius: 12px;
+}
+
+.calendar-controls {
+    margin-bottom: 20px;
+}
+
+.calendar-controls button {
+    padding: 8px 14px;
+    margin-right: 10px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    background-color: #1976d2;
+    color: white;
+}
+
+.calendar-controls button.active {
+    background-color: #0d47a1;
+}
+
+.legend {
+    margin-bottom: 15px;
+}
+
+.legend span {
+    margin-right: 15px;
+    font-weight: 500;
+}
+
+.legend i {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    margin-right: 5px;
+}
+</style>
+</head>
+
+<body>
+
+    <div id="page-loader"></div>
+    
+<header>
+    <h3>Centralized Club Portal</h3>
+    <nav>
+        <a href="/home">Home</a>
+        <a href="/clubs">Clubs</a>
+        <a href="/events">Events</a>
+        <a href="/calendar" class="active">Calendar</a>
+        <div class="profile-btn-wrap" id="profileBtnWrap"></div>
+    </nav>
+</header>
+
+<div class="container">
+
+    <h2>Event Calendar</h2>
+
+    <div class="calendar-controls">
+        <button id="allBtn" onclick="loadAllEvents()">All Events</button>
+        <button id="myBtn" onclick="loadMyEvents()">My Registered Events</button>
+    </div>
+
+    <div class="legend">
+
+    <span><i style="background:#1976d2"></i>Workshop</span>
+
+    <span><i style="background:#43a047"></i>Social</span>
+
+    <span><i style="background:#8e24aa"></i>Seminar</span>
+
+    <span><i style="background:#e53935"></i>Competition</span>
+
+</div>
+
+<div id="calendar"></div>
+
+</div>
+
+<!-- FullCalendar JS -->
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+<script src="{% static 'js/script.js' %}"></script>
+
+<script>
+let calendar;
+
+document.addEventListener("DOMContentLoaded", function () {
+    initProfileDropdown();
+
+    const calendarEl = document.getElementById("calendar");
+
+    calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: "dayGridMonth",
+        height: 700,
+
+        headerToolbar: {
+            left: "prev,next today",
+            center: "title",
+            right: "dayGridMonth,timeGridWeek,timeGridDay"
+        },
+
+        eventClick: function(info) {
+
+    const eventId = info.event.id;
+
+    window.location.href = "/event/" + eventId;
+
+},
+
+      eventDidMount: function(info) {
+
+    const e = info.event.extendedProps;
+
+    const tooltip =
+        info.event.title +
+        "\nClub: " + (e.club || "N/A") +
+        "\nLocation: " + (e.location || "N/A") +
+        "\nTime: " + (e.time || "N/A") +
+        "\nSeats: " + (e.registered || 0) + "/" + (e.capacity || 0);
+
+    info.el.setAttribute("title", tooltip);
+
+}
+    });
+
+    calendar.render();
+    loadAllEvents();
+});
+
+function getEventColor(type) {
+
+    if (!type) return "#1976d2";
+
+    type = type.toLowerCase();
+
+    if (type === "workshop") return "#1976d2";
+    if (type === "social") return "#43a047";
+    if (type === "seminar") return "#8e24aa";
+    if (type === "competition") return "#e53935";
+
+    return "#546e7a";
+}
+
+function loadAllEvents() {
+
+    setActiveButton("allBtn");
+
+    apiFetch("/api/events")
+    .then(res => res.json())
+    .then(data => {
+
+        calendar.removeAllEvents();
+
+        data.forEach(e => {
+
+            const formattedDate =
+                new Date(e.date).toISOString().split("T")[0];
+
+            let titleText = e.title;
+
+            if (e.is_full) {
+                titleText = e.title + " (FULL)";
+            }
+            else if (e.seats_left !== undefined) {
+                titleText = e.title + " (" + e.seats_left + " seats left)";
+            }
+
+            calendar.addEvent({
+
+                id: e.id,
+                title: titleText,
+                start: formattedDate,
+
+                backgroundColor: getEventColor(e.type),
+                borderColor: getEventColor(e.type),
+
+                extendedProps: {
+                    club: e.club_name,
+                    location: e.location,
+                    time: e.time,
+                    registered: e.registered_count,
+                    capacity: e.capacity,
+                    type: e.type
+                }
+
+            });
+
+        });
+
+    });
+
+}
+
+
+function loadMyEvents() {
+
+    setActiveButton("myBtn");
+
+    apiFetch("/api/my-registrations")
+    .then(res => res.json())
+    .then(data => {
+
+        calendar.removeAllEvents();
+
+        data.forEach(e => {
+
+    const formattedDate =
+        new Date(e.date).toISOString().split("T")[0];
+
+    let titleText = e.title;
+
+    if (e.is_full) {
+        titleText += " (FULL)";
+    } 
+    else if (e.seats_left !== undefined) {
+        titleText += " (" + e.seats_left + " seats left)";
+    }
+
+    calendar.addEvent({
+
+        id: e.id,
+        title: titleText,
+        start: formattedDate,
+
+        backgroundColor: getEventColor(e.type),
+        borderColor: getEventColor(e.type),
+
+        extendedProps: {
+            club: e.club_name,
+            location: e.location,
+            time: e.time,
+            registered: e.registered_count,
+            capacity: e.capacity,
+            type: e.type
+        }
+
+    });
+
+});
+    });
+
+}
+
+
+function setActiveButton(id) {
+    document.getElementById("allBtn").classList.remove("active");
+    document.getElementById("myBtn").classList.remove("active");
+    document.getElementById(id).classList.add("active");
+}
+</script>
+
+</body>
+</html>

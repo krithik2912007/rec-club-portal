@@ -1,0 +1,3066 @@
+:root {
+    --primary: #4f46e5;
+    --secondary: #9333ea;
+    --bg: #f5f7fb;
+    --text: #111827;
+    --card: #ffffff;
+    --muted: #6b7280;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Segoe UI", sans-serif;
+}
+
+body {
+    background: var(--bg);
+    color: var(--text);
+}
+
+/* ================= HEADER ================= */
+/* ================= HEADER ================= */
+header {
+    background: white;
+    padding: 15px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+header h2,
+.logo {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+nav {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+}
+
+nav a {
+    text-decoration: none;
+    color: #374151;
+    font-weight: 500;
+    font-size: 15px;
+}
+
+nav a:hover {
+    color: var(--primary);
+}
+
+
+/* ================= HERO (HOME PAGE) ================= */
+.hero {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+    text-align: center;
+    padding: 90px 20px;
+}
+
+.hero h1 {
+    font-size: 42px;
+    margin-bottom: 10px;
+}
+
+.hero p {
+    margin-bottom: 25px;
+    opacity: 0.9;
+}
+
+.hero button {
+    padding: 12px 20px;
+    margin: 8px;
+    border-radius: 8px;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.primary-btn {
+    background: white;
+    color: var(--primary);
+}
+
+.secondary-btn {
+    background: transparent;
+    border: 2px solid white;
+    color: white;
+}
+
+/* ================= STATS ================= */
+.stats {
+    display: flex;
+    justify-content: center;
+    gap: 60px;
+    padding: 40px;
+}
+
+.stat {
+    text-align: center;
+}
+
+.stat h2 {
+    font-size: 28px;
+}
+
+/* ================= SECTION ================= */
+.section {
+    padding: 50px 40px;
+    text-align: center;
+}
+
+.section h2 {
+    margin-bottom: 10px;
+}
+
+.section-subtitle {
+    color: var(--muted);
+    margin-top: 5px;
+}
+
+/* ================= GRID ================= */
+.grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 25px;
+    margin-top: 30px;
+    max-width: 1000px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+@media (max-width: 900px) {
+    .grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 600px) {
+    .grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ================= SHARED CARDS ================= */
+.card,
+.event-card {
+    background: var(--card);
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    transition: 0.25s;
+}
+
+.card:hover,
+.event-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+}
+
+.card h3,
+.event-card h3 {
+    font-size: 18px;
+    margin-bottom: 6px;
+}
+
+.card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.badge,
+.domain-badge {
+    background: #eef2ff;
+    color: var(--primary);
+    padding: 4px 10px;
+    font-size: 12px;
+    border-radius: 999px;
+}
+
+.card small {
+    display: block;
+    color: var(--muted);
+    margin: 5px 0;
+}
+
+.learn-link {
+    display: inline-block;
+    margin-top: 8px;
+    color: var(--primary);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+/* ================= CLUB PAGE ================= */
+.container {
+    max-width: 1200px;
+    margin: 60px auto;
+    padding: 0 32px;
+}
+
+.club-hero {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+    padding: 36px 42px;
+    border-radius: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 30px;
+    margin-bottom: 35px;
+}
+
+/* ================= EVENTS & CLUB LIST PAGES ================= */
+.page-section,
+.events-container {
+    max-width: 1100px;
+    margin: 60px auto;
+    padding: 0 32px;
+}
+
+.page-title,
+.events-container h1 {
+    font-size: 42px;
+    margin-bottom: 8px;
+}
+
+.page-subtitle,
+.subtitle {
+    color: var(--muted);
+    margin-bottom: 25px;
+}
+
+/* ================= SEARCH BAR ================= */
+.search-bar {
+    width: 100%;
+    padding: 14px 18px;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    margin: 20px 0 20px;
+    font-size: 15px;
+    background: white;
+    transition: 0.2s;
+}
+
+.search-bar:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+}
+
+/* ================= FILTER ROW ================= */
+.event-filters,
+.filter-bar {
+    display: flex;
+    gap: 14px;
+    padding: 6px 0;
+    margin: 0 0 25px 0;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    white-space: nowrap;
+    align-items: center;
+}
+
+.event-filters::-webkit-scrollbar,
+.filter-bar::-webkit-scrollbar {
+    display: none;
+}
+
+.filter {
+    border: none;
+    background: #e5e7eb;
+    padding: 8px 18px;
+    border-radius: 999px;
+    cursor: pointer;
+    font-weight: 500;
+    color: var(--text);
+    flex: 0 0 auto;
+}
+
+.filter.active {
+    background: var(--primary);
+    color: white;
+}
+
+/* ================= COUNT TEXT ================= */
+.count-text {
+    color: var(--muted);
+    margin: 0 0 25px 0;
+    font-size: 14px;
+}
+
+/* ================= GRIDS ================= */
+.event-grid,
+.club-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 25px;
+}
+
+@media (max-width: 900px) {
+    .event-grid,
+    .club-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 600px) {
+    .event-grid,
+    .club-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ================= EVENT META ================= */
+.event-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.event-meta {
+    color: var(--muted);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+/* ================= FOOTER ================= */
+footer {
+    background: #0f172a;
+    color: white;
+    padding: 40px;
+    text-align: center;
+    margin-top: 80px;
+}
+
+/* ================= FEATURED SECTION (HOME) ================= */
+
+.featured {
+    padding-bottom: 70px;
+}
+
+.view-all {
+    margin-top: 40px;
+    text-align: center;
+}
+
+.view-all-btn {
+    display: inline-block;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+    padding: 14px 28px;
+    border-radius: 10px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: 0.25s;
+}
+
+.view-all-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 22px rgba(79, 70, 229, 0.25);
+}
+
+/* ================= FEATURED CLUBS DESIGN FIX ================= */
+
+.section {
+    padding: 60px 40px;
+}
+
+.section h2 {
+    font-size: 36px;
+    margin-bottom: 8px;
+}
+
+.section-subtitle {
+    font-size: 16px;
+    margin-bottom: 35px;
+    color: var(--muted);
+}
+
+/* Grid spacing like Figma */
+.section .grid {
+    margin-top: 30px;
+}
+
+/* View all button */
+.view-all {
+    text-align: center;
+    margin-top: 45px;
+}
+
+.view-all-btn {
+    display: inline-block;
+    padding: 14px 32px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+    font-weight: 600;
+    text-decoration: none;
+    transition: 0.25s;
+}
+
+.view-all-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 22px rgba(79, 70, 229, 0.25);
+}
+
+/* Make featured clubs use exact same layout as explore clubs */
+.section .club-grid {
+    margin-top: 30px;
+    max-width: 1100px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.section .club-grid .card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid #e5e7eb;
+    transition: 0.2s;
+}
+
+.section .club-grid .card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+}
+
+/* Make featured club cards identical to explore clubs cards */
+.section .card {
+    text-align: left;
+}
+
+.section .card small,
+.section .card p,
+.section .card .learn-link {
+    text-align: left;
+}
+
+.view-all {
+    text-align: center;
+    margin-top: 30px;
+}
+
+.view-btn {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+    padding: 14px 28px;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 600;
+    display: inline-block;
+}
+
+/* ================= CLUB DETAILS PAGE ================= */
+
+.container {
+    max-width: 1100px;
+    margin: 60px auto;
+    padding: 0 32px;
+}
+
+.back-link {
+    display: inline-block;
+    margin-bottom: 18px;
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+/* Club hero */
+.club-hero {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+    padding: 36px 42px;
+    border-radius: 14px;
+    margin-bottom: 30px;
+}
+
+.club-title-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.club-title-row h1 {
+    font-size: 34px;
+    font-weight: 700;
+}
+
+.club-hero p {
+    opacity: 0.95;
+    margin-bottom: 18px;
+}
+
+.club-hero-meta {
+    display: flex;
+    gap: 40px;
+    font-size: 14px;
+    opacity: 0.95;
+}
+
+/* Tabs */
+.tabs {
+    display: flex;
+    background: #e5e7eb;
+    border-radius: 999px;
+    margin: 25px 0 35px;
+    padding: 4px;
+}
+
+.tab {
+    flex: 1;
+    text-align: center;
+    padding: 10px;
+    border-radius: 999px;
+    cursor: pointer;
+    font-weight: 500;
+    color: var(--muted);
+}
+
+.tab.active {
+    background: white;
+    color: var(--text);
+    font-weight: 600;
+}
+
+/* Tab content card */
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.info-card {
+    background: white;
+    padding: 26px 28px;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+}
+
+.info-card h3 {
+    margin-bottom: 12px;
+}
+
+.info-card p {
+    color: var(--muted);
+    margin-bottom: 18px;
+}
+
+.info-row {
+    margin-bottom: 16px;
+}
+
+/* Hero layout fix */
+.club-hero {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+    padding: 36px 42px;
+    border-radius: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 40px;
+    margin-bottom: 30px;
+}
+
+.club-hero-left {
+    max-width: 60%;
+}
+
+.club-hero-right {
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    font-size: 14px;
+}
+
+.club-hero-meta {
+    display: flex;
+    gap: 25px;
+    margin-top: 12px;
+    font-size: 14px;
+}
+
+/* Active nav link */
+nav a.active {
+    color: var(--primary);
+    position: relative;
+}
+
+nav a.active::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: -6px;
+    width: 100%;
+    height: 2px;
+    background: var(--primary);
+    border-radius: 2px;
+}
+
+/* Event hero */
+.event-hero {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+    padding: 36px 42px;
+    border-radius: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 30px;
+    margin-bottom: 35px;
+}
+
+.event-hero h1 {
+    font-size: 34px;
+    margin-bottom: 8px;
+}
+
+.event-hero-meta {
+    display: flex;
+    gap: 20px;
+    margin-top: 12px;
+    font-size: 14px;
+}
+
+.event-hero-right {
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-size: 14px;
+}
+
+.event-card {
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+
+    min-height: 220px;   /* keeps all cards same height */
+}
+/* ================= ACTION BUTTON ================= */
+.action-btn {
+    display: inline-block;
+    background: var(--primary);
+    color: white;
+    padding: 10px 18px;
+    border-radius: 8px;
+    border: none;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: 0.2s;
+}
+
+.action-btn:hover {
+    background: #4338ca;
+    transform: translateY(-1px);
+}
+
+.event-hero-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+}
+
+.reg-status {
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+.reg-status.registered {
+    color: #4ade80; /* green */
+    font-weight: 600;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.my-events-title {
+    margin-bottom: 25px;
+}
+
+.club-img {
+    width: 100%;
+    height: 140px;
+    object-fit: cover;
+    border-radius: 10px;
+    margin-bottom: 12px;
+}
+
+/* ================= ADMIN DASHBOARD ================= */
+
+.admin-section {
+    margin-bottom: 60px;
+}
+
+.admin-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 25px;
+}
+
+.admin-input {
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    font-size: 14px;
+}
+
+.admin-label {
+    font-size: 14px;
+    color: var(--muted);
+    margin-top: 5px;
+}
+
+.admin-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+
+.admin-card {
+    text-align: left;
+}
+
+.admin-divider {
+    border: none;
+    border-top: 1px solid #e5e7eb;
+    margin: 50px 0;
+}
+
+.admin-image {
+    width: 100%;
+    height: 140px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+    .admin-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 600px) {
+    .admin-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.logout-btn {
+    background: #ff4d4d;
+    color: white;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-left: 15px;
+    font-weight: 500;
+}
+
+.logout-btn:hover {
+    background: #e60000;
+}
+
+.event-analytics {
+    margin-top: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #4f46e5;
+}
+
+#calender {
+    margin-top: 20px;
+    background: white;
+    padding: 15px;
+    border-radius: 12px;
+}
+
+/*.modal {
+    display:none;
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:rgba(0,0,0,0.5);
+    justify-content:center;
+    align-items:center;
+}
+
+.modal-content {
+    background:white;
+    padding:30px;
+    border-radius:10px;
+    width:400px;
+}*/
+
+.admin-card{
+    padding:20px;
+    border-radius:12px;
+}
+
+.admin-actions{
+    margin-top:15px;
+    display:flex;
+    gap:10px;
+}
+
+.edit-btn{
+    background:#1976d2;
+    color:white;
+    border:none;
+    padding:6px 12px;
+    border-radius:6px;
+    cursor:pointer;
+}
+
+.delete-btn{
+    background:#e53935;
+    color:white;
+    border:none;
+    padding:6px 12px;
+    border-radius:6px;
+    cursor:pointer;
+}
+
+.club-thumb{
+    width:100%;
+    height:120px;
+    object-fit:cover;
+    border-radius:8px;
+    margin-bottom:10px;
+}
+
+.progress-bar{
+    height:8px;
+    background:#eee;
+    border-radius:6px;
+    margin:10px 0;
+}
+
+.progress{
+    height:8px;
+    background:#4caf50;
+    border-radius:6px;
+}
+
+.admin-stats{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:20px;
+    margin:30px 0;
+}
+
+.stat-card{
+    background:white;
+    padding:25px;
+    border-radius:12px;
+    text-align:center;
+    box-shadow:0 4px 12px rgba(0,0,0,0.05);
+}
+
+.stat-card h2{
+    font-size:32px;
+    margin:0;
+    color:#1976d2;
+}
+
+.stat-card p{
+    margin-top:6px;
+    color:#555;
+}
+
+/* ADMIN DASHBOARD STATS */
+
+.admin-stats{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:20px;
+    margin:30px 0 40px 0;
+}
+
+.stat-card{
+    background:white;
+    padding:25px;
+    border-radius:12px;
+    text-align:center;
+    box-shadow:0 3px 12px rgba(0,0,0,0.08);
+    transition:transform 0.2s;
+}
+
+.stat-card:hover{
+    transform:translateY(-3px);
+}
+
+.stat-card h2{
+    font-size:32px;
+    margin:0;
+    color:#1976d2;
+}
+
+.stat-card p{
+    margin-top:8px;
+    font-weight:500;
+    color:#555;
+}
+
+/* ===== ADMIN DASHBOARD STATS ===== */
+
+.admin-stats{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:20px;
+    margin:30px 0 40px 0;
+}
+
+.stat-card{
+    padding:25px;
+    border-radius:14px;
+    color:white;
+    text-align:center;
+    font-weight:500;
+    box-shadow:0 5px 18px rgba(0,0,0,0.12);
+    transition:transform 0.2s;
+}
+
+.stat-card:hover{
+    transform:translateY(-4px);
+}
+
+.stat-card h2{
+    font-size:36px;
+    margin:0;
+}
+
+.stat-card p{
+    margin-top:8px;
+    font-size:15px;
+}
+
+/* Colors */
+
+.stat-clubs{
+    background:linear-gradient(135deg,#42a5f5,#1e88e5);
+}
+
+.stat-events{
+    background:linear-gradient(135deg,#66bb6a,#43a047);
+}
+
+.stat-registrations{
+    background:linear-gradient(135deg,#ffa726,#fb8c00);
+}
+
+.stat-upcoming{
+    background:linear-gradient(135deg,#ab47bc,#8e24aa);
+}
+
+.logo-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.site-logo {
+    width: 36px;
+    height: 36px;
+    object-fit: contain;
+}
+
+/* Page transition */
+
+body {
+    opacity: 0;
+    transition: opacity 0.4s ease-in-out;
+}
+
+body.page-loaded {
+    opacity: 1;
+}
+
+body:not(.login-page) {
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.35s ease, transform 0.35s ease;
+}
+
+body.page-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+body.page-leave {
+    opacity: 0;
+    transform: translateY(-10px);
+}
+
+/* Top page loading bar */
+
+#page-loader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 0%;
+    height: 3px;
+    background: linear-gradient(90deg, #4f46e5, #9333ea);
+    z-index: 9999;
+    transition: width 0.3s ease;
+}
+
+.aadhi-box{
+    display:flex;
+    align-items:center;
+    gap:15px;
+    margin-top:25px;
+
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(8px);
+
+    padding:15px 20px;
+    border-radius:12px;
+
+    max-width:600px;
+    margin-left:auto;
+    margin-right:auto;
+
+    color:white;
+    box-shadow:0 8px 25px rgba(0,0,0,0.25);
+}
+
+
+.aadhi-img{
+    width:70px;
+    height:auto;
+}
+
+.aadhi-text p{
+    margin:3px 0 0 0;
+    font-size:15px;
+    color:white;
+}
+
+.hero{
+    background: linear-gradient(135deg, #5f2c82, #a855f7);
+}
+
+.secondary-btn{
+    background: white;
+    color: #5f2c82;
+    border: none;
+    padding: 10px 22px;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.secondary-btn:hover{
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+.progress-bar{
+width:100%;
+height:8px;
+background:#e0e0e0;
+border-radius:6px;
+margin:6px 0;
+}
+
+.progress-fill{
+height:100%;
+background:#4caf50;
+border-radius:6px;
+}
+
+#upcomingEvents {
+    text-align: left;
+}
+
+#upcomingEvents .event-card {
+    text-align: left;
+}
+
+#upcomingEvents .event-header,
+#upcomingEvents .event-meta,
+#upcomingEvents .event-analytics {
+    text-align: left;
+}
+
+
+.event-countdown{
+    margin-top:8px;
+    font-size:13px;
+    font-weight:600;
+    color:#9333ea;
+}
+
+.event-card {
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+
+    min-height: 220px;   /* keeps all cards same height */
+}
+/* ===============================
+CLUB DASHBOARD
+=============================== */
+
+.dashboard-container{
+    max-width:1100px;
+    margin:auto;
+    padding:40px 20px;
+}
+
+.section-title{
+    font-size:26px;
+    font-weight:600;
+    margin:40px 0 15px;
+}
+
+
+/* CLUB CARD */
+
+.club-card{
+    background:#fff;
+    border-radius:10px;
+    padding:18px 22px;
+    box-shadow:0 3px 10px rgba(0,0,0,0.08);
+    width:260px;
+}
+
+.club-card h3{
+    margin-bottom:5px;
+}
+
+.club-role{
+    color:#777;
+    font-size:14px;
+}
+
+.manage-btn{
+    margin-top:10px;
+    padding:6px 14px;
+    border:none;
+    border-radius:6px;
+    background:#5b6df6;
+    color:#fff;
+    cursor:pointer;
+}
+
+
+/* CREATE EVENT FORM */
+
+.event-form{
+    background:#fff;
+    padding:25px;
+    border-radius:10px;
+    box-shadow:0 3px 10px rgba(0,0,0,0.08);
+    margin-top:15px;
+}
+
+.event-form input,
+.event-form textarea{
+    width:100%;
+    padding:10px;
+    margin-bottom:12px;
+    border-radius:6px;
+    border:1px solid #ddd;
+}
+
+.create-btn{
+    width:100%;
+    padding:12px;
+    border:none;
+    border-radius:6px;
+    background:#4CAF50;
+    color:white;
+    font-weight:600;
+    cursor:pointer;
+}
+
+
+/* EVENTS GRID */
+
+.event-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
+    gap:20px;
+    margin-top:20px;
+}
+
+.event-card{
+    background:#fff;
+    border-radius:10px;
+    padding:18px;
+    box-shadow:0 3px 10px rgba(0,0,0,0.08);
+}
+
+.event-card h4{
+    margin-bottom:5px;
+}
+
+.event-date{
+    color:#777;
+    font-size:14px;
+    margin-bottom:10px;
+}
+
+
+/* ACTION BUTTONS */
+
+.event-actions{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+}
+
+.event-actions button{
+    border:none;
+    border-radius:6px;
+    padding:6px 10px;
+    cursor:pointer;
+    font-size:13px;
+}
+
+.btn-edit{
+    background:#2196F3;
+    color:white;
+}
+
+.btn-reg{
+    background:#9C27B0;
+    color:white;
+}
+
+.btn-coord{
+    background:#FF9800;
+    color:white;
+}
+
+
+/* FILE INPUT */
+
+.event-card input[type="file"]{
+    margin-top:10px;
+    font-size:12px;
+}
+
+/* =============================
+DASHBOARD LAYOUT
+============================= */
+
+.container{
+    max-width:1100px;
+    margin:auto;
+    padding:40px 20px;
+}
+
+h1{
+    font-size:28px;
+    margin-bottom:15px;
+}
+
+hr{
+    margin:30px 0;
+    border:none;
+    border-top:1px solid #eee;
+}
+
+
+/* CLUB CARD */
+
+#myClubs{
+    display:flex;
+    gap:20px;
+    flex-wrap:wrap;
+}
+
+#myClubs .card{
+    background:white;
+    padding:18px;
+    border-radius:10px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.08);
+    width:260px;
+}
+
+#myClubs h3{
+    margin-bottom:6px;
+}
+
+#myClubs small{
+    color:#777;
+}
+
+.manage-btn{
+    margin-top:10px;
+    background:#4F46E5;
+    color:white;
+    border:none;
+    padding:6px 12px;
+    border-radius:6px;
+}
+
+
+/* CREATE EVENT FORM */
+
+.admin-form{
+    background:white;
+    padding:25px;
+    border-radius:10px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.08);
+    max-width:650px;
+}
+
+.admin-input{
+    width:100%;
+    padding:10px;
+    margin-bottom:12px;
+    border-radius:6px;
+    border:1px solid #ddd;
+}
+
+.primary-btn{
+    width:100%;
+    padding:12px;
+    border:none;
+    border-radius:6px;
+    background:#4F46E5;
+    color:white;
+    font-weight:600;
+}
+
+/* EVENT GRID */
+
+.admin-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
+    gap:20px;
+}
+
+/* EVENT CARD */
+
+.event-card{
+    background:white;
+    padding:18px;
+    border-radius:10px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.08);
+}
+
+.event-card h4{
+    margin-bottom:5px;
+}
+
+.event-date{
+    color:#777;
+    font-size:14px;
+    margin-bottom:12px;
+}
+
+.event-actions{
+    display:flex;
+    gap:8px;
+}
+
+.event-actions button{
+    border:none;
+    padding:6px 10px;
+    border-radius:6px;
+    font-size:12px;
+    cursor:pointer;
+}
+
+.btn-edit{ background:#3B82F6; color:white; }
+.btn-reg{ background:#8B5CF6; color:white; }
+.btn-coord{ background:#F59E0B; color:white; }
+
+
+header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:15px 30px;
+    background:white;
+    border-bottom:1px solid #eee;
+}
+
+header nav a{
+    margin-right:20px;
+    text-decoration:none;
+    color:#444;
+}
+
+header button{
+    background:#ef4444;
+    color:white;
+    border:none;
+    padding:6px 12px;
+    border-radius:6px;
+}
+
+.container{
+    max-width:1200px;
+    margin:40px auto;
+    padding:20px;
+}
+
+.page-title{
+    font-size:28px;
+    font-weight:600;
+    margin:40px 0 20px;
+}
+
+
+
+
+.admin-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+    gap:20px;
+    margin-top:20px;
+}
+
+.event-card{
+    background:#fff;
+    border-radius:12px;
+    padding:20px;
+    box-shadow:0 4px 14px rgba(0,0,0,0.08);
+    transition:0.2s;
+}
+
+.event-card:hover{
+    transform:translateY(-3px);
+}
+
+.info-card{
+    max-width:500px;
+    margin:auto;
+    background:white;
+    padding:25px;
+    border-radius:12px;
+    box-shadow:0 4px 14px rgba(0,0,0,0.08);
+}
+
+.admin-input{
+    width:100%;
+    padding:10px;
+    margin:8px 0;
+    border:1px solid #ddd;
+    border-radius:6px;
+}
+
+.section{
+    max-width:1100px;
+    margin:40px auto;
+}
+
+.page-title{
+    text-align:center;
+    font-size:28px;
+    font-weight:600;
+    margin-bottom:20px;
+}
+
+
+#myClubs{
+    display:flex;
+    gap:20px;
+    margin-bottom:30px;
+}
+
+.admin-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
+    gap:25px;
+    margin-top:20px;
+}
+
+.event-card{
+    background:#fff;
+    border-radius:10px;
+    padding:18px;
+    box-shadow:0 4px 12px rgba(0,0,0,0.08);
+}
+
+
+.info-card{
+    width:100%;
+    margin:20px 0;
+}
+
+.admin-form{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:15px;
+}
+
+.admin-form textarea{
+    grid-column:span 2;
+}
+
+.admin-form button{
+    grid-column:span 2;
+}
+
+.info-card{
+    background:#fff;
+    border-radius:12px;
+    padding:20px;
+    box-shadow:0 4px 14px rgba(0,0,0,0.08);
+}
+
+
+.page-title{
+    font-size:26px;
+    font-weight:600;
+    margin:30px 0 15px;
+}
+
+/* =============================
+   CLUB DASHBOARD FORM FULL WIDTH
+============================= */
+
+.admin-form{
+    width:100%;
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:20px;
+}
+
+.admin-form textarea{
+    grid-column:1 / -1;
+}
+
+.admin-form button{
+    grid-column:1 / -1;
+}
+
+.info-card{
+    width:100%;
+    max-width:100%;
+    margin:20px 0;
+}
+
+.admin-input{
+    width:100%;
+    padding:10px;
+    border:1px solid #ddd;
+    border-radius:6px;
+}
+
+/* =========================
+   CLUB DASHBOARD LAYOUT
+========================= */
+
+.dashboard-card{
+    width:100%;
+    background:white;
+    padding:25px;
+    border-radius:12px;
+    box-shadow:0 4px 14px rgba(0,0,0,0.08);
+    margin-bottom:30px;
+}
+
+
+/* FORM GRID */
+
+.admin-form{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:18px;
+}
+
+.admin-form textarea{
+    grid-column:1 / -1;
+    min-height:80px;
+}
+
+.admin-form button{
+    grid-column:1 / -1;
+}
+
+
+/* INPUT STYLE */
+
+.admin-input{
+    width:100%;
+    padding:12px;
+    border:1px solid #ddd;
+    border-radius:6px;
+    font-size:14px;
+}
+
+
+/* EVENTS GRID */
+
+.admin-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
+    gap:20px;
+}
+
+
+/* EVENT CARD */
+
+.event-card{
+    background:white;
+    padding:20px;
+    border-radius:10px;
+    box-shadow:0 4px 14px rgba(0,0,0,0.08);
+}
+
+
+/* PAGE TITLES */
+
+.page-title{
+    font-size:24px;
+    font-weight:600;
+    margin:30px 0 15px;
+}
+
+/* =========================
+   CREATE EVENT FULL WIDTH
+========================= */
+
+.admin-card{
+    width:100%;
+    background:#fff;
+    border-radius:12px;
+    padding:25px;
+    box-shadow:0 4px 12px rgba(0,0,0,0.08);
+    margin-bottom:30px;
+}
+
+/* Form layout */
+
+.admin-form{
+    width:100%;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:18px;
+}
+
+/* Description full row */
+
+.admin-form textarea{
+    grid-column:1 / -1;
+    min-height:80px;
+}
+
+/* Button full row */
+
+.admin-form button{
+    grid-column:1 / -1;
+}
+
+/* Inputs */
+
+.admin-input{
+    width:100%;
+    padding:12px;
+    border:1px solid #ddd;
+    border-radius:6px;
+    font-size:14px;
+}
+
+/* ===== FORCE FULL WIDTH CREATE EVENT FORM ===== */
+
+.admin-card{
+    width:100% !important;
+    max-width:100% !important;
+}
+
+.admin-form{
+    width:100% !important;
+    max-width:100% !important;
+
+    display:grid !important;
+    grid-template-columns:1fr 1fr !important;
+    gap:20px !important;
+}
+
+.admin-form textarea{
+    grid-column:1 / -1 !important;
+}
+
+.admin-form button{
+    grid-column:1 / -1 !important;
+}
+
+.admin-input{
+    width:100% !important;
+}
+
+/* ========================
+   DASHBOARD STATS
+======================== */
+
+.stats-grid{
+display:grid;
+grid-template-columns:repeat(3,1fr);
+gap:20px;
+margin:30px 0;
+}
+
+.stat-card{
+background:white;
+padding:25px;
+border-radius:10px;
+text-align:center;
+box-shadow:0 4px 14px rgba(0,0,0,0.08);
+}
+
+.stat-card h2{
+font-size:28px;
+margin-bottom:5px;
+}
+
+
+/* ========================
+   CREATE EVENT FORM
+======================== */
+
+.admin-card{
+width:100%;
+background:white;
+padding:25px;
+border-radius:12px;
+box-shadow:0 4px 14px rgba(0,0,0,0.08);
+margin-bottom:30px;
+}
+
+.admin-form{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:18px;
+width:100%;
+}
+
+.admin-form textarea{
+grid-column:1 / -1;
+min-height:90px;
+}
+
+.admin-form button{
+grid-column:1 / -1;
+}
+
+.admin-input{
+width:100%;
+padding:12px;
+border:1px solid #ddd;
+border-radius:6px;
+font-size:14px;
+}
+
+
+/* ========================
+   EVENTS GRID
+======================== */
+
+.admin-grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
+gap:20px;
+}
+
+
+/* EVENT CARD */
+
+.event-card{
+background:white;
+padding:20px;
+border-radius:10px;
+box-shadow:0 4px 12px rgba(0,0,0,0.08);
+}
+
+
+/* TITLES */
+
+.page-title{
+font-size:24px;
+font-weight:600;
+margin:30px 0 15px;
+}
+
+/* ===== PAGE HERO (Used for Events + Clubs) ===== */
+
+.page-hero{
+margin-bottom:40px;
+}
+
+.page-hero h1{
+font-size:42px;
+font-weight:700;
+color:#1f2937;
+margin-bottom:8px;
+}
+
+.page-hero p{
+font-size:16px;
+color:#6b7280;
+}
+
+/* HOME HERO BUTTONS */
+
+.hero-buttons{
+display:flex;
+flex-direction:column;
+align-items:center;
+gap:14px;
+margin-top:25px;
+}
+
+.hero-buttons a{
+display:inline-block;
+width:260px;
+padding:12px 20px;
+
+background:white;
+color:#4f46e5;
+
+text-align:center;
+font-weight:600;
+text-decoration:none;
+
+border-radius:8px;
+
+transition:all 0.25s ease;
+}
+
+.hero-buttons a:hover{
+background:#4f46e5;
+color:white;
+transform:translateY(-2px);
+}
+
+.hero-buttons #dashboardButtons {
+    display: inline-flex;
+    gap: 15px;
+}
+
+/* HERO BUTTONS LAYOUT */
+
+.hero-buttons{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:15px;
+}
+
+/* first row */
+.hero-buttons-row{
+    display:flex;
+    gap:20px;
+    justify-content:center;
+}
+
+/* dashboard row */
+#dashboardButtons{
+    display:flex;
+    gap:20px;
+    justify-content:center;
+}
+
+/* button style */
+
+.hero-buttons a,
+#dashboardButtons button{
+    padding:12px 22px;
+    min-width:180px;
+    border-radius:8px;
+    font-weight:600;
+    text-align:center;
+    text-decoration:none;
+    transition:all 0.25s ease;
+}
+
+/* white buttons */
+
+.hero-buttons a{
+    background:white;
+    color:#444;
+    box-shadow:0 3px 8px rgba(0,0,0,0.2);
+}
+
+/* blue dashboard buttons */
+
+#dashboardButtons button{
+    background:linear-gradient(135deg,#3b82f6,#2563eb);
+    color:white;
+    border:none;
+    box-shadow:0 4px 10px rgba(0,0,0,0.25);
+}
+
+/* hover effects */
+
+.hero-buttons a:hover{
+    transform:translateY(-3px);
+    box-shadow:0 6px 14px rgba(0,0,0,0.25);
+}
+
+#dashboardButtons button:hover{
+    transform:translateY(-3px);
+    background:linear-gradient(135deg,#2563eb,#1d4ed8);
+}
+
+/* ADMIN FORM GRID */
+
+.admin-form{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:16px;
+}
+
+/* Club name (left column) */
+#clubName{
+    grid-column:1;
+}
+
+/* Category (right column) */
+#clubCategory{
+    grid-column:2;
+}
+
+/* Description full width */
+#clubDesc{
+    grid-column:1 / span 2;
+}
+
+/* Label full width */
+.admin-label{
+    grid-column:1 / span 2;
+}
+
+/* File input full width */
+#clubImage{
+    grid-column:1 / span 2;
+}
+
+/* Button full width */
+.admin-form button{
+    grid-column:1 / span 2;
+}
+
+/* Input style */
+
+.admin-input{
+    width:100%;
+    padding:10px;
+    border-radius:6px;
+    border:1px solid #ddd;
+    box-sizing:border-box;
+}
+
+.admin-card{
+position:relative;
+z-index:1;
+}
+
+.admin-form button{
+position:relative;
+z-index:2;
+cursor:pointer;
+}
+
+.status-approved{
+color: #16a34a;
+font-weight:600;
+}
+
+.status-pending{
+color:#f59e0b;
+font-weight:600;
+}
+
+.status-rejected{
+color:#dc2626;
+font-weight:600;
+}
+
+.event-actions{
+margin-top:10px;
+display:flex;
+gap:10px;
+}
+
+/* ======================
+ADMIN ANALYTICS
+====================== */
+
+.admin-insights{
+
+display:grid;
+grid-template-columns:repeat(3,1fr);
+gap:20px;
+margin-bottom:25px;
+
+}
+
+.admin-insights .stat-card{
+
+text-align:center;
+padding:20px;
+
+}
+
+.admin-insights .stat-card h3{
+
+font-size:22px;
+margin-bottom:5px;
+
+}
+
+.admin-insights{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:20px;
+    margin-bottom:30px;
+}
+
+.admin-insights .stat-card{
+    background:white;
+    border-radius:10px;
+    padding:20px;
+    text-align:center;
+    box-shadow:0 2px 8px rgba(0,0,0,0.05);
+}
+
+.admin-insights .stat-card h3{
+    font-size:22px;
+    color:#111827;
+    margin-bottom:5px;
+}
+
+.admin-insights .stat-card p{
+    font-size:13px;
+    color:#6b7280;
+}
+
+.highlight{
+background:#eef6ff;
+border:1px solid #3b82f6;
+}
+
+.favorite-btn{
+border:none;
+background:none;
+font-size:20px;
+cursor:pointer;
+margin-left:10px;
+}
+
+.card-actions{
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-top:10px;
+}
+
+.event-actions{
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-top:10px;
+}
+
+.card-actions{
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-top:10px;
+}
+
+.favorite-btn{
+border:none;
+background:none;
+font-size:20px;
+cursor:pointer;
+}
+
+.favorite-btn{
+border:none;
+background:none;
+font-size:22px;
+cursor:pointer;
+transition:transform 0.2s;
+}
+
+.favorite-btn:hover{
+transform:scale(1.2);
+}
+
+.favorite-btn.favorited{
+color:gold;
+}
+.favorite-btn{
+border:none;
+background:none;
+font-size:22px;
+cursor:pointer;
+z-index:10;
+position:relative;
+}
+
+.favorite-btn:hover{
+transform:scale(1.2);
+}
+
+.favorite-btn{
+border:none;
+background:none;
+font-size:22px;
+cursor:pointer;
+transition:transform 0.2s;
+}
+
+.favorite-btn:hover{
+transform:scale(1.25);
+}
+
+.favorite-btn.favorited{
+color:red;
+}
+
+.star-rating{
+font-size:28px;
+cursor:pointer;
+margin-bottom:10px;
+}
+
+.star-rating span{
+margin-right:5px;
+transition:transform 0.1s;
+}
+
+.star-rating span:hover{
+transform:scale(1.2);
+}
+
+/* Feedback textarea */
+
+#feedbackComment{
+width:100%;
+min-height:90px;
+padding:10px;
+margin-top:10px;
+border:1px solid #ccc;
+border-radius:6px;
+font-size:14px;
+resize:vertical;
+box-sizing:border-box;
+}
+
+.feedback-form{
+margin-top:10px;
+display:flex;
+flex-direction:column;
+gap:10px;
+}
+
+/* ===== DASHBOARD LAYOUT ===== */
+
+.dashboard{
+    display:flex;
+    min-height:100vh;
+}
+
+/* ===== SIDEBAR ===== */
+
+.sidebar{
+    width:250px;
+    background:#1f2937;
+    color:white;
+    padding:24px 18px;
+    position:fixed;
+    top:0;
+    left:0;
+    height:100vh;
+    box-sizing:border-box;
+}
+/* ===== LOGO ===== */
+
+.logo {
+    color: #c084fc;
+    font-size: 26px;
+    font-weight: 700;
+    margin-bottom: 25px;
+}
+
+.logo-sub {
+    font-size: 12px;
+    color: #9CA3AF;
+    margin-top: -5px;
+}
+
+/* ===== SIDEBAR NAVIGATION ===== */
+
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.sidebar-nav a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    color: #d1d5db;
+    text-decoration: none;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: 0.2s;
+}
+
+.sidebar-nav a:hover {
+    background: #374151;
+    color: white;
+}
+
+.sidebar-nav a.active {
+    background: #7c3aed;
+    color: white;
+    box-shadow: 0 6px 16px rgba(124, 58, 237, 0.35);
+}
+
+/* ===== LOGOUT BUTTON ===== */
+
+.sidebar .logout-btn {
+    margin-top: 25px;
+    width: 100%;
+}
+
+/* ===== MAIN CONTENT ===== */
+
+.dashboard-content{
+    margin-left:250px;
+    padding:35px;
+    flex:1;
+    background:#f5f7fb;
+    min-height:100vh;
+}
+/* ===== DASHBOARD HEADER ===== */
+
+.dashboard-header {
+    margin-bottom: 25px;
+}
+
+.dashboard-header h1 {
+    font-size: 28px;
+    color: #111827;
+    margin-bottom: 5px;
+}
+
+.dashboard-header p {
+    color: #6B7280;
+}
+
+/* ===== STAT CARDS ===== */
+
+.stat-card {
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    text-align: center;
+    transition: 0.2s;
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+}
+
+.stat-card h2 {
+    font-size: 30px;
+    color: #7C3AED;
+    margin-bottom: 5px;
+}
+
+.stat-card p {
+    color: #6B7280;
+    font-size: 14px;
+}
+
+/* ===== ACTIVITY LIST ===== */
+
+.activity-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.activity-list li {
+    padding: 12px;
+    border-bottom: 1px solid #eee;
+    font-size: 14px;
+    color: #374151;
+    opacity: 0;
+    transform: translateY(10px);
+    animation: fadeActivity 0.5s ease forwards;
+}
+
+.activity-list small {
+    color: #777;
+    font-size: 12px;
+}
+
+@keyframes fadeActivity {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ===== CHART GRID ===== */
+
+.chart-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.chart-card {
+    height: 300px;
+}
+
+.chart-card canvas {
+    width: 100% !important;
+    height: 260px !important;
+}
+
+/* ===== RESPONSIVE ===== */
+
+@media (max-width: 1024px) {
+
+    .chart-grid {
+        grid-template-columns: 1fr;
+    }
+
+}
+
+.sidebar{
+    flex-shrink:0;
+}
+
+/* =========================
+ADMIN DASHBOARD IMPROVEMENTS
+========================= */
+
+.dashboard-header{
+    margin-bottom:30px;
+}
+
+.dashboard-header h1{
+    font-size:30px;
+    font-weight:600;
+    color:#1f2937;
+}
+
+.dashboard-header p{
+    color:#6b7280;
+    margin-top:5px;
+}
+
+
+/* =========================
+STATS GRID
+========================= */
+
+.admin-stats{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+    gap:20px;
+    margin-bottom:35px;
+}
+
+
+/* =========================
+STAT CARDS
+========================= */
+
+.stat-card{
+    background:white;
+    padding:22px;
+    border-radius:12px;
+    box-shadow:0 6px 18px rgba(0,0,0,0.06);
+    transition:0.25s;
+    text-align:center;
+}
+
+.stat-card:hover{
+    transform:translateY(-4px);
+    box-shadow:0 10px 24px rgba(0,0,0,0.10);
+}
+
+.stat-card h2{
+    font-size:30px;
+    color:#7c3aed;
+    margin-bottom:5px;
+}
+
+.stat-card h3{
+    font-size:20px;
+    color:#374151;
+}
+
+.stat-card p{
+    font-size:14px;
+    color:#6b7280;
+}
+
+
+/* =========================
+SECTION SPACING
+========================= */
+
+.admin-section{
+    margin-top:50px;
+}
+
+.admin-section h2{
+    margin-bottom:20px;
+    font-size:22px;
+    color:#1f2937;
+}
+
+
+/* =========================
+INSIGHT CARDS
+========================= */
+
+.admin-insights{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+    gap:18px;
+    margin-bottom:30px;
+}
+
+.highlight{
+    border:2px solid #7c3aed;
+}
+
+
+/* =========================
+CHART GRID
+========================= */
+
+.chart-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:25px;
+}
+
+.chart-card{
+    padding:20px;
+}
+
+.chart-card h3{
+    margin-bottom:10px;
+    font-size:16px;
+    color:#374151;
+}
+
+
+/* limit chart height */
+
+.chart-card canvas{
+    width:100% !important;
+    height:240px !important;
+}
+
+
+/* =========================
+ACTIVITY FEED
+========================= */
+
+.activity-list{
+    list-style:none;
+    padding:0;
+    margin:0;
+}
+
+.activity-list li{
+    padding:14px;
+    border-bottom:1px solid #eee;
+    font-size:14px;
+    color:#374151;
+}
+
+.activity-list li:last-child{
+    border-bottom:none;
+}
+
+.activity-list small{
+    display:block;
+    margin-top:4px;
+    color:#9ca3af;
+    font-size:12px;
+}
+
+
+/* =========================
+ADMIN GRID (clubs/events)
+========================= */
+
+.admin-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+    gap:20px;
+    margin-top:25px;
+}
+
+
+/* =========================
+FORM STYLING
+========================= */
+
+.admin-form{
+    width:100%;
+    margin-bottom:30px;
+}
+
+.admin-input{
+    width:100%;
+    padding:10px;
+    margin-top:10px;
+    border:1px solid #ddd;
+    border-radius:6px;
+}
+
+
+/* =========================
+RESPONSIVE
+========================= */
+
+@media (max-width:900px){
+
+.chart-grid{
+    grid-template-columns:1fr;
+}
+
+}
+
+body{
+    font-family: 'Inter', sans-serif;
+}
+
+
+.form-row-input{
+    flex:1;
+}
+
+.full-width-btn{
+    width:100%;
+    margin-top:15px;
+}
+
+select.admin-input{
+    height:40px;
+}
+
+/* EVENT FORM */
+.event-form-grid .full-width{
+    grid-column:1 / span 2;
+}
+
+.event-form-grid input,
+.event-form-grid select,
+.event-form-grid textarea{
+    width:100%;
+    box-sizing:border-box;
+}
+
+/* FORCE ADMIN FORM FULL WIDTH */
+
+.admin-section .info-card{
+    width:100%;
+}
+
+.admin-form{
+    width:100% !important;
+}
+
+/* EVENT FORM GRID */
+
+.event-form-grid input,
+.event-form-grid select,
+.event-form-grid textarea{
+    width:100%;
+    box-sizing:border-box;
+}
+
+/* DESCRIPTION FULL WIDTH */
+
+.event-form-grid textarea{
+    grid-column:1 / span 2;
+}
+
+/* BUTTON FULL WIDTH */
+
+.primary-btn{
+    width:100%;
+    margin-top:16px;
+}
+
+/* EVENT FORM GRID */
+
+.event-form-grid{
+    display:grid;
+    grid-template-columns:repeat(2, minmax(0,1fr));
+    gap:18px;
+    width:100%;
+}
+
+/* make description full width */
+
+.event-form-grid textarea{
+    grid-column:1 / span 2;
+}
+
+/* make capacity full width */
+
+#eventCapacity{
+    grid-column:1 / span 2;
+}
+
+/* inputs full width */
+
+.event-form-grid input,
+.event-form-grid select,
+.event-form-grid textarea{
+    width:100%;
+    box-sizing:border-box;
+}
+
+.info-card{
+    background:white;
+    padding:25px;
+    border-radius:12px;
+    box-shadow:0 6px 18px rgba(0,0,0,0.06);
+}
+
+/* FORCE EVENT FORM FULL WIDTH */
+
+.admin-section .info-card{
+    width:100%;
+    display:block;
+}
+
+.admin-form{
+    width:100%;
+}
+
+.event-form-grid{
+    width:100%;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:18px;
+}
+
+/* description full width */
+
+#eventDesc{
+    grid-column:1 / span 2;
+}
+
+/* capacity full width */
+
+#eventCapacity{
+    grid-column:1 / span 2;
+}
+
+/* ===============================
+ADMIN ADD EVENT FORM FIX
+(Only affects admin event form)
+=============================== */
+
+.admin-event-form{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:16px;
+    width:100%;
+    margin-top:15px;
+}
+
+/* description full width */
+
+#eventDesc{
+    grid-column:1 / span 2;
+}
+
+/* capacity full width */
+
+#eventCapacity{
+    grid-column:1 / span 2;
+}
+
+/* inputs consistent */
+
+.admin-event-input{
+    width:100%;
+    padding:10px;
+    border:1px solid #ddd;
+    border-radius:6px;
+    box-sizing:border-box;
+}
+
+/* textarea height */
+
+.admin-event-form textarea{
+    min-height:90px;
+}
+
+/* add button spacing */
+
+.primary-btn{
+    width:100%;
+    margin-top:18px;
+}
+
+/* Fix Add Event form alignment */
+
+.admin-section .admin-form{
+    display:block !important;
+}
+
+/* Modern card style */
+
+.info-card,
+.stat-card,
+.admin-card,
+.event-card{
+    background:#ffffff;
+    border-radius:14px;
+    padding:22px;
+    box-shadow:0 8px 24px rgba(0,0,0,0.06);
+    border:1px solid #f1f5f9;
+    transition:all 0.25s ease;
+}
+
+.info-card:hover,
+.stat-card:hover,
+.admin-card:hover,
+.event-card:hover{
+    transform:translateY(-4px);
+    box-shadow:0 12px 28px rgba(0,0,0,0.08);
+}
+
+/* modern stat cards */
+
+.stat-card{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+}
+
+.stat-card h2{
+    font-size:34px;
+    font-weight:700;
+    color:#4f46e5;
+}
+
+.stat-card p{
+    font-size:14px;
+    color:#64748b;
+}
+
+.primary-btn{
+    background:linear-gradient(135deg,#4f46e5,#7c3aed);
+    border:none;
+    color:white;
+    padding:12px 20px;
+    border-radius:10px;
+    font-weight:600;
+    cursor:pointer;
+    transition:all 0.25s ease;
+}
+
+.primary-btn:hover{
+    transform:translateY(-2px);
+    box-shadow:0 6px 16px rgba(79,70,229,0.35);
+}
+
+.admin-event-input,
+.admin-input{
+    border:1px solid #e2e8f0;
+    border-radius:8px;
+    padding:10px 12px;
+    font-size:14px;
+    transition:all 0.2s ease;
+}
+
+.admin-event-input:focus,
+.admin-input:focus{
+    outline:none;
+    border-color:#6366f1;
+    box-shadow:0 0 0 3px rgba(99,102,241,0.15);
+}
+
+.admin-section h2{
+    font-size:22px;
+    font-weight:600;
+    color:#1f2937;
+    margin-bottom:18px;
+}
+
+.dashboard-header h1{
+    font-size:32px;
+    font-weight:700;
+}
+
+.dashboard-header p{
+    color:#64748b;
+}
+
+
+.chart-card{
+    height:320px;
+}
+
+.chart-card canvas{
+    height:260px !important;
+}
+
+
+body{
+    animation:fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn{
+    from{
+        opacity:0;
+        transform:translateY(8px);
+    }
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
+}
+
+/* =========================
+MODAL FIX
+========================= */
+
+.modal{
+    display:none;
+    position:absolute;
+    top:50px;
+    left:50%;
+    transform:translateX(-50%);
+    z-index:999;
+
+    width:100%;
+    justify-content:center;
+}
+
+.modal-content{
+    background:white;
+    padding:30px;
+    border-radius:12px;
+    width:420px;
+    max-width:90%;
+    box-shadow:0 10px 30px rgba(0,0,0,0.2);
+}
+
+.admin-section{
+    position: relative;
+}
+
+.modal-content{
+    background:white;
+    padding:30px;
+    border-radius:12px;
+    width:420px;
+    max-width:90%;
+    box-shadow:0 10px 30px rgba(0,0,0,0.2);
+}
+
+header{
+    position: sticky;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background: white;
+    z-index: 1000;
+
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+
+/* ===== PROFILE DROPDOWN ===== */
+.profile-btn-wrap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+ 
+.profile-trigger {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    background: none;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 99px;
+    padding: 5px 14px 5px 6px;
+    cursor: pointer;
+    transition: border-color .15s, box-shadow .15s;
+    font-size: 14px;
+    font-weight: 500;
+    color: #1e1b4b;
+}
+.profile-trigger:hover {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99,102,241,.1);
+}
+.profile-trigger .p-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+.profile-trigger .p-avatar-init {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 700;
+    font-size: 12px;
+    flex-shrink: 0;
+}
+.profile-trigger .p-name {
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.profile-trigger .p-chevron {
+    font-size: 10px;
+    color: #9ca3af;
+    margin-left: 2px;
+    transition: transform .2s;
+}
+.profile-btn-wrap.open .p-chevron { transform: rotate(180deg); }
+ 
+.profile-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    width: 270px;
+    background: #fff;
+    border-radius: 14px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 12px 40px rgba(0,0,0,.13);
+    z-index: 1000;
+    overflow: hidden;
+}
+.profile-btn-wrap.open .profile-dropdown { display: block; }
+ 
+.pd-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 18px 18px 14px;
+    border-bottom: 1px solid #f1f5f9;
+}
+.pd-avatar-lg {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+.pd-avatar-init-lg {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 700;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+.pd-info { flex: 1; overflow: hidden; }
+.pd-name  { font-weight: 700; font-size: 14px; color: #1e1b4b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pd-email { font-size: 12px; color: #6b7280; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
+.pd-role  { display: inline-block; margin-top: 5px; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 99px; background: #eef2ff; color: #4338ca; }
+ 
+.pd-meta {
+    padding: 10px 18px 12px;
+    border-bottom: 1px solid #f1f5f9;
+}
+.pd-meta-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: #6b7280;
+    padding: 3px 0;
+}
+.pd-meta-row span:last-child { color: #1e1b4b; font-weight: 500; }
+ 
+.pd-actions { padding: 10px 10px; }
+.pd-action-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 9px 10px;
+    border: none;
+    background: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: left;
+    color: #374151;
+    transition: background .12s;
+    text-decoration: none;
+}
+.pd-action-btn:hover { background: #f3f4f6; }
+.pd-action-btn.signout { color: #dc2626; }
+.pd-action-btn.signout:hover { background: #fef2f2; }
+.pd-action-btn .pd-ico { font-size: 15px; width: 22px; text-align: center; }
+ 

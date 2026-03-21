@@ -1,0 +1,2372 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+<title>Admin Dashboard</title>
+<link rel="stylesheet" href="{% static 'css/styles.css' %}">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+:root { --primary:#4f46e5; --danger:#e53e3e; --success:#38a169; --warn:#d97706; }
+
+/* Sidebar layout */
+.dash-layout { display:flex; min-height:calc(100vh - 64px); }
+.dash-sidebar { width:220px; min-width:220px; background:#1e1b4b; padding:24px 0; position:sticky; top:64px; height:calc(100vh - 64px); overflow-y:auto; }
+.dash-sidebar .brand { color:#a5b4fc; font-size:.75rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; padding:0 20px 12px; }
+.sidebar-item { display:flex; align-items:center; gap:10px; padding:11px 20px; color:#c7d2fe; font-size:.88rem; cursor:pointer; border-left:3px solid transparent; transition:all .18s; text-decoration:none; }
+.sidebar-item:hover, .sidebar-item.active { background:rgba(99,102,241,.18); color:#fff; border-left-color:#6366f1; }
+.sidebar-item .ico { font-size:1.05rem; width:20px; text-align:center; }
+.sidebar-divider { border:none; border-top:1px solid rgba(255,255,255,.08); margin:10px 16px; }
+
+/* Main content */
+.dash-main { flex:1; padding:28px 32px; background:#f8faff; overflow-y:auto; }
+.dash-section { display:none; }
+.dash-section.active { display:block; }
+
+/* Stat cards */
+.stats-row { display:grid; grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); gap:16px; margin-bottom:28px; }
+.scard { background:#fff; border-radius:14px; padding:20px; box-shadow:0 1px 4px rgba(0,0,0,.07); border-left:4px solid var(--primary); }
+.scard h2 { font-size:2rem; font-weight:700; margin:0; color:#1e1b4b; }
+.scard p { margin:4px 0 0; font-size:.82rem; color:#718096; }
+.scard.green { border-left-color:var(--success); }
+.scard.red   { border-left-color:var(--danger); }
+.scard.amber { border-left-color:var(--warn); }
+
+/* Section header */
+.sec-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
+.sec-header h2 { font-size:1.25rem; font-weight:700; color:#1e1b4b; margin:0; }
+
+/* Tables */
+.dash-table { width:100%; border-collapse:collapse; background:#fff; border-radius:12px; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,.06); }
+.dash-table th { background:#f1f5f9; font-size:.8rem; color:#64748b; font-weight:600; padding:11px 16px; text-align:left; text-transform:uppercase; letter-spacing:.04em; }
+.dash-table td { padding:12px 16px; border-bottom:1px solid #f1f5f9; font-size:.87rem; color:#374151; vertical-align:middle; }
+.dash-table tr:last-child td { border-bottom:none; }
+.dash-table tr:hover td { background:#f8faff; }
+
+/* Badges */
+.pill { display:inline-block; border-radius:20px; padding:3px 10px; font-size:.73rem; font-weight:600; }
+.pill-green  { background:#d1fae5; color:#065f46; }
+.pill-amber  { background:#fef3c7; color:#92400e; }
+.pill-red    { background:#fee2e2; color:#991b1b; }
+.pill-blue   { background:#dbeafe; color:#1e40af; }
+.pill-gray   { background:#f1f5f9; color:#475569; }
+
+/* Action buttons */
+.btn-xs { border:none; border-radius:6px; padding:4px 10px; font-size:.75rem; cursor:pointer; font-weight:500; transition:opacity .15s; }
+.btn-xs:hover { opacity:.82; }
+.btn-approve { background:#d1fae5; color:#065f46; }
+.btn-reject  { background:#fee2e2; color:#991b1b; }
+.btn-edit    { background:#dbeafe; color:#1e40af; }
+.btn-delete  { background:#fee2e2; color:#991b1b; }
+.btn-export  { background:#d1fae5; color:#065f46; }
+.club-card-admin.editing { border-color:#6366f1 !important; box-shadow:0 0 0 3px rgba(99,102,241,.15) !important; }
+.event-row-admin.editing td { background:#f0f0ff !important; }
+.btn-primary { background:var(--primary); color:#fff; border:none; border-radius:8px; padding:9px 20px; font-size:.88rem; cursor:pointer; font-weight:600; }
+.btn-primary:hover { opacity:.88; }
+.btn-danger  { background:var(--danger); color:#fff; border:none; border-radius:8px; padding:9px 20px; font-size:.88rem; cursor:pointer; font-weight:600; }
+
+/* Forms */
+.dash-form { background:#fff; border-radius:14px; padding:24px; box-shadow:0 1px 4px rgba(0,0,0,.06); margin-bottom:24px; }
+.dash-form h3 { margin:0 0 16px; font-size:1rem; font-weight:700; color:#1e1b4b; }
+.form-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.form-grid .full { grid-column:1/-1; }
+.finput { width:100%; border:1.5px solid #e2e8f0; border-radius:8px; padding:9px 12px; font-size:.87rem; box-sizing:border-box; outline:none; transition:border-color .15s; font-family:inherit; }
+.finput:focus { border-color:var(--primary); }
+.flabel { font-size:.78rem; font-weight:600; color:#64748b; margin-bottom:4px; display:block; }
+
+/* Charts */
+.chart-row { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:24px; }
+.chart-box { background:#fff; border-radius:14px; padding:20px; box-shadow:0 1px 4px rgba(0,0,0,.06); }
+.chart-box h3 { font-size:.95rem; font-weight:700; color:#1e1b4b; margin:0 0 14px; }
+
+/* Modal */
+.modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:1000; align-items:center; justify-content:center; }
+.modal-overlay.open { display:flex; }
+.modal-box { background:#fff; border-radius:16px; padding:28px; width:480px; max-width:95vw; box-shadow:0 8px 32px rgba(0,0,0,.18); }
+.modal-box h3 { margin:0 0 18px; font-size:1.05rem; font-weight:700; }
+.modal-actions { display:flex; gap:10px; margin-top:18px; justify-content:flex-end; }
+
+/* Conflict warning */
+.conflict-box { background:#fffbeb; border:1.5px solid #f6ad55; border-radius:8px; padding:10px 14px; margin:8px 0; font-size:.83rem; color:#744210; display:none; }
+
+/* Members table controls */
+.member-email-lookup { display:flex; gap:8px; margin-bottom:12px; }
+.member-email-lookup input { flex:1; }
+
+/* Progress bar */
+.pbar { background:#e2e8f0; border-radius:4px; height:6px; margin:4px 0; }
+.pbar-fill { background:var(--primary); height:100%; border-radius:4px; }
+
+/* Activity log */
+.act-list { list-style:none; margin:0; padding:0; }
+.act-list li { display:flex; justify-content:space-between; align-items:flex-start; padding:10px 0; border-bottom:1px solid #f1f5f9; font-size:.85rem; color:#374151; gap:12px; }
+.act-list li:last-child { border-bottom:none; }
+.act-list .act-time { color:#a0aec0; font-size:.75rem; white-space:nowrap; }
+
+/* User search */
+.user-search-result { background:#fff; border:1.5px solid #e2e8f0; border-radius:8px; padding:8px; margin-top:6px; font-size:.84rem; }
+</style>
+</head>
+<body>
+
+<div id="page-loader"></div>
+
+<header>
+    <div class="logo-title">
+        <img src="{% static 'images/r-logo.png' %}" class="site-logo">
+        <h3>Centralized Club Portal</h3>
+    </div>
+    <nav>
+        <a href="/home">Home</a>
+        <a href="/events">Events</a>
+        <a href="/clubs">Clubs</a>
+        <span id="adminName" style="color:#a5b4fc;font-weight:600;font-size:.88rem;margin-right:8px;"></span>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+    </nav>
+</header>
+
+<div class="dash-layout">
+
+<!-- ===== SIDEBAR ===== -->
+<aside class="dash-sidebar">
+    <div class="brand">Admin Panel</div>
+
+    <a class="sidebar-item active" href="#" onclick="showSection('overview',this);return false;">
+        <span class="ico">📊</span> Overview
+    </a>
+    <a class="sidebar-item" href="#" onclick="showSection('approvals',this);return false;">
+        <span class="ico">✅</span> Pending Approvals
+        <span id="pendingBadge" style="margin-left:auto;background:#e53e3e;color:#fff;border-radius:20px;padding:1px 8px;font-size:.7rem;"></span>
+    </a>
+    <a class="sidebar-item" href="#" onclick="showSection('clubs',this);return false;">
+        <span class="ico">🏛️</span> Manage Clubs
+    </a>
+    <a class="sidebar-item" href="#" onclick="showSection('events',this);return false;">
+        <span class="ico">📅</span> Manage Events
+    </a>
+    <a class="sidebar-item" href="#" onclick="showSection('members',this);return false;">
+        <span class="ico">👥</span> Manage Members
+    </a>
+    <a class="sidebar-item" href="#" onclick="showSection('users',this);return false;">
+        <span class="ico">🎓</span> All Users
+    </a>
+    <hr class="sidebar-divider">
+    <a class="sidebar-item" href="#" onclick="showSection('analytics',this);return false;">
+        <span class="ico">📈</span> Analytics
+    </a>
+    <a class="sidebar-item" href="#" onclick="showSection('activity',this);return false;">
+        <span class="ico">🕐</span> Activity Log
+    </a>
+    <a class="sidebar-item" href="#" onclick="showSection('rejected',this);return false;">
+        <span class="ico">❌</span> Rejected Events
+    </a>
+</aside>
+
+<!-- ===== MAIN ===== -->
+<main class="dash-main">
+
+<!-- =============================== OVERVIEW =============================== -->
+<section class="dash-section active" id="sec-overview">
+
+    <div class="sec-header">
+        <h2>📊 Overview</h2>
+        <span style="font-size:.83rem;color:#718096;" id="overviewDate"></span>
+    </div>
+
+    <div class="stats-row">
+        <div class="scard"><h2 id="statClubs">0</h2><p>Total Clubs</p></div>
+        <div class="scard green"><h2 id="statEvents">0</h2><p>Total Events</p></div>
+        <div class="scard amber"><h2 id="statUpcoming">0</h2><p>Upcoming Events</p></div>
+        <div class="scard"><h2 id="statRegistrations">0</h2><p>Total Registrations</p></div>
+        <div class="scard red"><h2 id="statPending">0</h2><p>Pending Approvals</p></div>
+        <div class="scard"><h2 id="statUsers">0</h2><p>Total Users</p></div>
+    </div>
+
+    <div class="chart-row">
+        <div class="chart-box">
+            <h3>Registration Trend (Last 14 Days)</h3>
+            <canvas id="trendChart" height="180"></canvas>
+        </div>
+        <div class="chart-box">
+            <h3>Top Events by Registrations</h3>
+            <canvas id="eventChart" height="180"></canvas>
+        </div>
+    </div>
+
+    <div class="chart-row">
+        <div class="chart-box">
+            <h3>Most Active Clubs</h3>
+            <canvas id="clubChart" height="180"></canvas>
+        </div>
+        <div class="chart-box">
+            <h3>Top Favourited Clubs</h3>
+            <canvas id="favChart" height="180"></canvas>
+        </div>
+    </div>
+
+    <div class="dash-form" style="padding:16px 20px;">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;">
+            <div><div class="flabel">Most Popular Event</div><div id="insPopEvent" style="font-weight:600;font-size:.9rem;color:#1e1b4b;">—</div></div>
+            <div><div class="flabel">Least Popular Event</div><div id="insLeastEvent" style="font-weight:600;font-size:.9rem;color:#1e1b4b;">—</div></div>
+            <div><div class="flabel">Most Active Club</div><div id="insClub" style="font-weight:600;font-size:.9rem;color:#1e1b4b;">—</div></div>
+            <div><div class="flabel">Most Active Month</div><div id="insMonth" style="font-weight:600;font-size:.9rem;color:#1e1b4b;">—</div></div>
+            <div><div class="flabel">Most Active Day</div><div id="insDay" style="font-weight:600;font-size:.9rem;color:#1e1b4b;">—</div></div>
+            <div><div class="flabel">Avg Registrations / Event</div><div id="insAvg" style="font-weight:600;font-size:.9rem;color:#1e1b4b;">—</div></div>
+        </div>
+    </div>
+
+</section>
+
+<!-- =============================== APPROVALS =============================== -->
+<section class="dash-section" id="sec-approvals">
+    <div class="sec-header">
+        <h2>✅ Pending Event Approvals</h2>
+        <button class="btn-primary" onclick="loadPendingApprovals()">🔄 Refresh</button>
+    </div>
+    <p id="noApprovals" style="color:#718096;display:none;">No events pending approval.</p>
+    <table class="dash-table" id="approvalsTable">
+        <thead>
+            <tr>
+                <th>Event</th><th>Club</th><th>Date</th><th>Time</th>
+                <th>Venue</th><th>President</th><th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="approvalsTbody"></tbody>
+    </table>
+</section>
+
+<!-- =============================== CLUBS =============================== -->
+<section class="dash-section" id="sec-clubs">
+    <div class="sec-header"><h2>🏛️ Manage Clubs</h2></div>
+
+    <!-- ── ADD NEW CLUB ── -->
+    <div class="dash-form" id="addClubForm">
+        <h3>➕ Add New Club</h3>
+        <div class="form-grid">
+            <div>
+                <label class="flabel">Club Name *</label>
+                <input id="clubName" class="finput" placeholder="e.g. Dev Club">
+            </div>
+            <div>
+                <label class="flabel">Category</label>
+                <select id="clubCategory" class="finput">
+                    <option value="">Select Category</option>
+                    <option value="Technology">Technology</option>
+                    <option value="Arts">Arts</option>
+                    <option value="Sports">Sports</option>
+                    <option value="Academic">Academic</option>
+                    <option value="Cultural">Cultural</option>
+                    <option value="Social Service">Social Service</option>
+                    <option value="Business">Business</option>
+                    <option value="Lifestyle">Lifestyle</option>
+                    <option value="Health">Health</option>
+                    <option value="Sustainability">Sustainability</option>
+                </select>
+            </div>
+            <div class="full">
+                <label class="flabel">Description <span style="color:#a0aec0;font-weight:400;font-size:.78rem;">— short text shown on club cards</span></label>
+                <input id="clubDesc" class="finput" placeholder="e.g. Programming and software development community">
+            </div>
+            <div class="full">
+                <label class="flabel">About <span style="color:#a0aec0;font-weight:400;font-size:.78rem;">(optional) — full text shown in About tab</span></label>
+                <textarea id="clubAbout" class="finput" rows="3" placeholder="Detailed description shown in the club's About section…"></textarea>
+            </div>
+            <div class="full">
+                <label class="flabel">Vision <span style="color:#a0aec0;font-weight:400;">(optional)</span></label>
+                <textarea id="clubVision" class="finput" rows="2" placeholder="e.g. To be the leading tech community in the college…"></textarea>
+            </div>
+            <div class="full">
+                <label class="flabel">Mission <span style="color:#a0aec0;font-weight:400;">(optional)</span></label>
+                <textarea id="clubMission" class="finput" rows="2" placeholder="e.g. To empower students through hands-on technical experiences…"></textarea>
+            </div>
+            <div class="full">
+                <label class="flabel">Club Image</label>
+                <input id="clubImage" type="file" class="finput" accept="image/*">
+            </div>
+        </div>
+        <br>
+        <button class="btn-primary" onclick="addClub()">➕ Add Club</button>
+    </div>
+
+    <!-- ── EDIT CLUB (inline, shown when Edit is clicked) ── -->
+    <div class="dash-form" id="editClubInline" style="display:none;border:2px solid #6366f1;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <h3 style="margin:0;color:#4f46e5;">✏️ Edit Club</h3>
+            <button onclick="cancelClubEdit()"
+                style="background:#f1f5f9;border:none;border-radius:8px;padding:6px 14px;cursor:pointer;font-size:.84rem;color:#374151;">
+                ✕ Cancel
+            </button>
+        </div>
+        <div class="form-grid">
+            <div>
+                <label class="flabel">Club Name *</label>
+                <input id="editClubName" class="finput">
+            </div>
+            <div>
+                <label class="flabel">Category</label>
+                <select id="editClubCategory" class="finput">
+                    <option value="">Select Category</option>
+                    <option value="Technology">Technology</option>
+                    <option value="Arts">Arts</option>
+                    <option value="Sports">Sports</option>
+                    <option value="Academic">Academic</option>
+                    <option value="Cultural">Cultural</option>
+                    <option value="Social Service">Social Service</option>
+                    <option value="Business">Business</option>
+                    <option value="Lifestyle">Lifestyle</option>
+                    <option value="Health">Health</option>
+                    <option value="Sustainability">Sustainability</option>
+                </select>
+            </div>
+            <div class="full">
+                <label class="flabel">Description <span style="color:#a0aec0;font-weight:400;font-size:.78rem;">— short text shown on club cards</span></label>
+                <input id="editClubDesc" class="finput">
+            </div>
+            <div class="full">
+                <label class="flabel">About <span style="color:#a0aec0;font-weight:400;font-size:.78rem;">(optional) — full text shown in About tab</span></label>
+                <textarea id="editClubAbout" class="finput" rows="3"></textarea>
+            </div>
+            <div class="full">
+                <label class="flabel">Vision <span style="color:#a0aec0;font-weight:400;">(optional)</span></label>
+                <textarea id="editClubVision" class="finput" rows="2"></textarea>
+            </div>
+            <div class="full">
+                <label class="flabel">Mission <span style="color:#a0aec0;font-weight:400;">(optional)</span></label>
+                <textarea id="editClubMission" class="finput" rows="2"></textarea>
+            </div>
+            <div class="full">
+                <label class="flabel">Update Club Image <span style="color:#a0aec0;font-weight:400;">(leave empty to keep current)</span></label>
+                <input id="editClubImage" type="file" class="finput" accept="image/*">
+            </div>
+        </div>
+        <br>
+        <button class="btn-primary" onclick="saveClubEdit()">💾 Save Changes</button>
+        <button onclick="cancelClubEdit()"
+            style="margin-left:10px;background:#f1f5f9;border:none;border-radius:8px;padding:10px 20px;cursor:pointer;font-size:.88rem;color:#374151;">
+            Cancel
+        </button>
+    </div>
+
+    <!-- ── CLUBS GRID ── -->
+    <div class="sec-header" style="margin-top:24px;">
+        <span id="clubsCount" style="font-size:.88rem;color:#718096;font-weight:600;"></span>
+        <input class="finput" style="width:220px;" placeholder="🔍 Search clubs…" oninput="filterAdminClubs(this.value)">
+    </div>
+    <div id="clubList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-top:12px;"></div>
+</section>
+
+<!-- =============================== EVENTS =============================== -->
+<section class="dash-section" id="sec-events">
+    <div class="sec-header"><h2>📅 Manage Events</h2></div>
+
+    <div class="dash-form">
+        <h3>Add New Event</h3>
+        <div class="form-grid">
+            <div>
+                <label class="flabel">Title *</label>
+                <input id="eventTitle" class="finput" placeholder="Event title">
+            </div>
+            <div>
+                <label class="flabel">Club *</label>
+                <select id="eventClubId" class="finput" onchange="adminLoadManagerPicker(this.value)">
+                    <option value="">Select Club</option>
+                </select>
+            </div>
+            <div>
+                <label class="flabel">Date *</label>
+                <input id="eventDate" type="date" class="finput" onchange="adminCheckConflict()">
+            </div>
+            <div>
+                <label class="flabel">Time *</label>
+                <input id="eventTime" type="time" class="finput" onchange="adminCheckConflict()">
+            </div>
+            <div>
+                <label class="flabel">Venue</label>
+                <input id="eventLocation" class="finput" placeholder="Location" oninput="adminCheckConflict()">
+            </div>
+            <div>
+                <label class="flabel">Type</label>
+                <select id="eventType" class="finput">
+                    <option value="workshop">Workshop</option>
+                    <option value="seminar">Seminar</option>
+                    <option value="competition">Competition</option>
+                    <option value="social">Social</option>
+                    <option value="recruitment">Recruitment</option>
+                </select>
+            </div>
+            <div>
+                <label class="flabel">Capacity</label>
+                <input id="eventCapacity" type="number" class="finput" placeholder="Max attendees">
+            </div>
+            <div>
+                <label class="flabel">Event Category</label>
+                <select id="eventCategory" class="finput" onchange="adminToggleTeamFields()">
+                    <option value="individual">👤 Individual</option>
+                    <option value="team">👥 Team Event</option>
+                </select>
+            </div>
+            <div>
+                <label class="flabel">Paid / Free</label>
+                <select id="eventPaid" class="finput" onchange="adminTogglePriceField()">
+                    <option value="0">🆓 Free</option>
+                    <option value="1">💰 Paid</option>
+                </select>
+            </div>
+            <div id="adminPriceDiv" style="display:none;">
+                <label class="flabel">Price (₹)</label>
+                <input id="eventPrice" type="number" class="finput" placeholder="e.g. 150">
+            </div>
+            <div id="adminTeamDiv" style="display:none;grid-column:1/-1;">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div>
+                        <label class="flabel">Min Members</label>
+                        <input id="eventMinMembers" type="number" class="finput" placeholder="e.g. 2" min="2">
+                    </div>
+                    <div>
+                        <label class="flabel">Max Members</label>
+                        <input id="eventMaxMembers" type="number" class="finput" placeholder="e.g. 4">
+                    </div>
+                </div>
+            </div>
+            <div class="full">
+                <label class="flabel">Description</label>
+                <textarea id="eventDesc" class="finput" rows="3" placeholder="About this event…"></textarea>
+            </div>
+            <div class="full">
+                <label class="flabel">Prize Pool <span style="color:#a0aec0;font-weight:400;">(optional)</span></label>
+                <input id="eventPrizePool" class="finput" placeholder="e.g. ₹10,000 cash prize">
+            </div>
+            <div class="full">
+                <label class="flabel">What is this event about? <span style="color:#a0aec0;font-weight:400;">(optional)</span></label>
+                <textarea id="eventAbout" class="finput" rows="3" placeholder="Describe the event in detail…"></textarea>
+            </div>
+            <div class="full">
+                <label class="flabel">Rules <span style="color:#a0aec0;font-weight:400;">(optional)</span></label>
+                <textarea id="eventRules" class="finput" rows="3" placeholder="Event rules…"></textarea>
+            </div>
+            <div class="full">
+                <label class="flabel">Instructions <span style="color:#a0aec0;font-weight:400;">(optional)</span></label>
+                <textarea id="eventInstructions" class="finput" rows="2" placeholder="Instructions for participants…"></textarea>
+            </div>
+            <div class="full">
+                <label class="flabel">Appoint Event Manager(s) <span style="color:#a0aec0;font-weight:400;">(optional — select a club first)</span></label>
+                <div id="adminManagerPickerList" style="display:flex;flex-wrap:wrap;gap:8px;min-height:42px;padding:8px;border:1px solid #e2e8f0;border-radius:8px;background:#f8faff;">
+                    <span style="color:#a0aec0;font-size:.82rem;align-self:center;" id="adminManagerPlaceholder">Select a club to see members…</span>
+                </div>
+                <div id="adminManagerSelected" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;"></div>
+            </div>
+        </div>
+        <div class="conflict-box" id="adminConflictWarning">
+            ⚠️ <strong>Venue Conflict:</strong> <span id="adminConflictDetail"></span>
+        </div>
+        <br>
+        <button class="btn-primary" onclick="addEvent()">➕ Add Event</button>
+    </div>
+
+    <!-- ── INLINE EDIT EVENT FORM ── -->
+    <div class="dash-form" id="editEventInline" style="display:none;border:2px solid #6366f1;margin-bottom:8px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <h3 style="margin:0;color:#4f46e5;">✏️ Edit Event</h3>
+            <button onclick="cancelEventEdit()"
+                style="background:#f1f5f9;border:none;border-radius:8px;padding:6px 14px;cursor:pointer;font-size:.84rem;color:#374151;">
+                ✕ Cancel
+            </button>
+        </div>
+        <div class="form-grid">
+            <div class="full">
+                <label class="flabel">Title *</label>
+                <input id="editTitle" class="finput">
+            </div>
+            <div>
+                <label class="flabel">Date *</label>
+                <input id="editDate" type="date" class="finput">
+            </div>
+            <div>
+                <label class="flabel">Time *</label>
+                <input id="editTime" type="time" class="finput">
+            </div>
+            <div>
+                <label class="flabel">Venue</label>
+                <input id="editLocation" class="finput" placeholder="Location">
+            </div>
+            <div>
+                <label class="flabel">Type</label>
+                <select id="editType" class="finput">
+                    <option value="workshop">Workshop</option>
+                    <option value="seminar">Seminar</option>
+                    <option value="competition">Competition</option>
+                    <option value="social">Social</option>
+                    <option value="recruitment">Recruitment</option>
+                </select>
+            </div>
+            <div>
+                <label class="flabel">Capacity</label>
+                <input id="editCapacity" type="number" class="finput">
+            </div>
+            <div>
+                <label class="flabel">Event Category</label>
+                <select id="editCategory" class="finput" onchange="adminToggleEditTeam()">
+                    <option value="individual">👤 Individual</option>
+                    <option value="team">👥 Team</option>
+                </select>
+            </div>
+            <div>
+                <label class="flabel">Paid / Free</label>
+                <select id="editPaid" class="finput" onchange="adminToggleEditPrice()">
+                    <option value="0">🆓 Free</option>
+                    <option value="1">💰 Paid</option>
+                </select>
+            </div>
+            <div id="editPriceDiv" style="display:none;">
+                <label class="flabel">Price (₹)</label>
+                <input id="editPrice" type="number" class="finput" placeholder="e.g. 150">
+            </div>
+            <div id="editTeamDiv" style="display:none;grid-column:1/-1;">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div>
+                        <label class="flabel">Min Members</label>
+                        <input id="editMinMembers" type="number" class="finput" min="2">
+                    </div>
+                    <div>
+                        <label class="flabel">Max Members</label>
+                        <input id="editMaxMembers" type="number" class="finput">
+                    </div>
+                </div>
+            </div>
+            <div class="full">
+                <label class="flabel">Prize Pool <span style="color:#a0aec0;font-weight:400;">(optional)</span></label>
+                <input id="editPrizePool" class="finput">
+            </div>
+            <div class="full">
+                <label class="flabel">Description</label>
+                <textarea id="editDesc" class="finput" rows="2"></textarea>
+            </div>
+            <div class="full">
+                <label class="flabel">About this Event <span style="color:#a0aec0;font-weight:400;">(optional)</span></label>
+                <textarea id="editAbout" class="finput" rows="3"></textarea>
+            </div>
+            <div class="full">
+                <label class="flabel">Rules <span style="color:#a0aec0;font-weight:400;">(optional)</span></label>
+                <textarea id="editRules" class="finput" rows="2"></textarea>
+            </div>
+            <div class="full">
+                <label class="flabel">Instructions <span style="color:#a0aec0;font-weight:400;">(optional)</span></label>
+                <textarea id="editInstructions" class="finput" rows="2"></textarea>
+            </div>
+        </div>
+        <div style="margin-top:20px;">
+            <label class="flabel" style="font-size:.88rem;font-weight:700;display:block;margin-bottom:8px;">🎯 Event Coordinators</label>
+            <p style="font-size:.78rem;color:#718096;margin-bottom:10px;">Select club members to coordinate this event.</p>
+            <div id="adminEditCoordList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;"></div>
+        </div>
+        <br>
+        <button class="btn-primary" onclick="saveEventEdit()">💾 Save Changes</button>
+        <button onclick="cancelEventEdit()"
+            style="margin-left:10px;background:#f1f5f9;border:none;border-radius:8px;padding:10px 20px;cursor:pointer;font-size:.88rem;color:#374151;">
+            Cancel
+        </button>
+    </div>
+
+    <div class="sec-header" style="margin-top:8px;">
+        <span style="font-size:.85rem;color:#718096;" id="eventCountLabel"></span>
+        <input class="finput" style="width:220px;" placeholder="🔍 Search events…" oninput="filterAdminEvents(this.value)">
+    </div>
+    <table class="dash-table">
+        <thead>
+            <tr><th>Event</th><th>Club</th><th>Date</th><th>Status</th><th>Registered</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="eventsTbody"></tbody>
+    </table>
+</section>
+
+<!-- =============================== MEMBERS =============================== -->
+<section class="dash-section" id="sec-members">
+    <div class="sec-header"><h2>👥 Manage Members</h2></div>
+
+    <div class="dash-form">
+        <h3>Add Member to Club</h3>
+        <div class="form-grid">
+            <div>
+                <label class="flabel">Club</label>
+                <select id="memberClubId" class="finput" onchange="loadClubMembersTable();loadAdminClubRoles(this.value)">
+                    <option value="">Select Club</option>
+                </select>
+            </div>
+            <div>
+                <label class="flabel">Role</label>
+                <select id="memberRole" class="finput" onchange="handleAdminRoleSelect(this)">
+                    <option value="">Select a club first…</option>
+                </select>
+                <div id="newRoleInputAdmin" style="display:none;margin-top:8px;display:none;">
+                    <div style="display:flex;gap:6px;">
+                        <input id="newRoleNameAdmin" class="finput" placeholder="e.g. Media Head, Content Writer" style="flex:1;"
+                               >
+                        <button onclick="addNewRoleAdmin()" class="btn-xs btn-approve" style="white-space:nowrap;">+ Add</button>
+                    </div>
+                    <small style="color:#718096;font-size:.72rem;">Lowercase, underscores only. e.g. media_head</small>
+                </div>
+            </div>
+            <div class="full">
+                <label class="flabel">Find User by Email or Reg No</label>
+                <div class="member-email-lookup" style="display:flex;gap:6px;">
+                    <input id="memberEmail" class="finput" placeholder="Email or Reg No (e.g. CS2021001)" oninput="lookupUserByEmail()" style="flex:1;">
+                    <button onclick="lookupUserByEmail(true)" class="btn-xs btn-approve" style="white-space:nowrap;padding:0 12px;">🔍</button>
+                </div>
+                <div id="userLookupResult" class="user-search-result" style="display:none;"></div>
+                <input type="hidden" id="memberUserId">
+            </div>
+        </div>
+        <br>
+        <button class="btn-primary" onclick="addMemberToClub()">➕ Add Member</button>
+    </div>
+
+    <div class="sec-header">
+        <span id="memberClubLabel" style="font-weight:600;color:#1e1b4b;"></span>
+    </div>
+    <table class="dash-table">
+        <thead><tr><th>Name</th><th>Email</th><th>Reg No</th><th>Dept</th><th>Role</th><th>Actions</th></tr></thead>
+        <tbody id="membersTbody"></tbody>
+    </table>
+</section>
+
+<!-- =============================== USERS =============================== -->
+<section class="dash-section" id="sec-users">
+    <div class="sec-header">
+        <h2>🎓 All Users</h2>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <input id="userSearch" class="finput" style="width:180px;" placeholder="🔍 Search…" oninput="applyUserFilters()">
+            <select id="userRoleFilter" class="finput" style="width:120px;" onchange="applyUserFilters()">
+                <option value="">All Roles</option>
+                <option value="admin">Admin</option>
+                <option value="student">Student</option>
+            </select>
+            <select id="userDeptFilter" class="finput" style="width:150px;" onchange="applyUserFilters()">
+                <option value="">All Depts</option>
+            </select>
+            <select id="userYearFilter" class="finput" style="width:110px;" onchange="applyUserFilters()">
+                <option value="">All Years</option>
+                <option value="1">Year 1</option>
+                <option value="2">Year 2</option>
+                <option value="3">Year 3</option>
+                <option value="4">Year 4</option>
+            </select>
+            <button class="btn-primary" onclick="exportUsersCSV()" style="white-space:nowrap;">⬇ CSV</button>
+        </div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:8px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+            <input type="checkbox" id="selectAllUsers" onchange="toggleSelectAll(this)">
+            <label for="selectAllUsers" style="font-size:.82rem;color:#718096;">Select all visible</label>
+            <span id="selectedCount" style="font-size:.82rem;color:#6366f1;display:none;"></span>
+        </div>
+        <div id="bulkActions" style="display:none;gap:8px;display:none;">
+            <button class="btn-xs btn-delete" onclick="bulkDeleteUsers()">🗑 Delete Selected</button>
+        </div>
+    </div>
+    <div id="userCountLabel" style="font-size:.82rem;color:#718096;margin-bottom:6px;"></div>
+    <table class="dash-table">
+        <thead><tr>
+            <th style="width:32px;"></th>
+            <th>Name</th><th>Reg No</th><th>Email</th><th>Role</th>
+            <th>Department</th><th>Year</th><th>Joined</th><th>Actions</th>
+        </tr></thead>
+        <tbody id="usersTbody"></tbody>
+    </table>
+</section>
+
+<!-- =============================== ANALYTICS =============================== -->
+<section class="dash-section" id="sec-analytics">
+    <div class="sec-header">
+        <h2>📈 Analytics</h2>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <select id="analyticsRange" class="finput" style="width:150px;" onchange="loadAnalyticsSection()">
+                <option value="all">All Time</option>
+                <option value="7">Last 7 Days</option>
+                <option value="30" selected>Last 30 Days</option>
+                <option value="90">Last 90 Days</option>
+                <option value="365">This Year</option>
+            </select>
+            <button class="btn-primary" onclick="loadAnalyticsSection()">🔄 Refresh</button>
+            <button class="btn-primary" onclick="downloadPDFReport()" style="background:#1e1b4b;white-space:nowrap;">📄 Export PDF</button>
+        </div>
+    </div>
+    <div class="stats-row">
+        <div class="scard"><h2 id="aTotal">0</h2><p>Total Registrations</p></div>
+        <div class="scard green"><h2 id="aAvg">0</h2><p>Avg / Event</p></div>
+        <div class="scard amber"><h2 id="aFavClubs">—</h2><p>Most Loved Club</p></div>
+        <div class="scard"><h2 id="aFavEvent">—</h2><p>Most Loved Event</p></div>
+    </div>
+    <div class="chart-row">
+        <div class="chart-box">
+            <h3>Registrations per Event (Top 10)</h3>
+            <canvas id="aEventChart" height="200"></canvas>
+        </div>
+        <div class="chart-box">
+            <h3>Top Favourited Clubs</h3>
+            <canvas id="aFavChart" height="200"></canvas>
+        </div>
+    </div>
+    <div class="chart-row">
+        <div class="chart-box" style="grid-column:1/-1;">
+            <h3>Daily Registration Trend</h3>
+            <canvas id="aTrendChart" height="120"></canvas>
+        </div>
+    </div>
+
+    <!-- Revenue sub-section -->
+    <div class="sec-header" style="margin-top:28px;"><h2>💰 Revenue Analytics</h2></div>
+    <div class="stats-row">
+        <div class="scard green"><h2 id="rTotal">₹0</h2><p>Total Revenue Collected</p></div>
+        <div class="scard"><h2 id="rTxns">0</h2><p>Successful Payments</p></div>
+        <div class="scard amber"><h2 id="rPending">₹0</h2><p>Pending Amount</p></div>
+        <div class="scard"><h2 id="rPendingCount">0</h2><p>Pending Transactions</p></div>
+    </div>
+    <div class="chart-row">
+        <div class="chart-box">
+            <h3>Revenue by Club (Top 8)</h3>
+            <canvas id="rClubChart" height="200"></canvas>
+        </div>
+        <div class="chart-box">
+            <h3>Payment Status Breakdown</h3>
+            <canvas id="rStatusChart" height="200"></canvas>
+        </div>
+    </div>
+    <div class="chart-row">
+        <div class="chart-box" style="grid-column:1/-1;">
+            <h3>Revenue Trend (Last 30 Days)</h3>
+            <canvas id="rTrendChart" height="120"></canvas>
+        </div>
+    </div>
+    <div style="background:#fff;border-radius:14px;padding:16px 20px;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-top:16px;">
+        <h3 style="margin:0 0 12px;font-size:.95rem;color:#1e1b4b;">Top Paid Events</h3>
+        <table class="dash-table">
+            <thead><tr><th>Event</th><th>Club</th><th>Revenue</th><th>Payments</th></tr></thead>
+            <tbody id="rTopEventsTbody"></tbody>
+        </table>
+    </div>
+</section>
+
+<!-- =============================== ACTIVITY =============================== -->
+<section class="dash-section" id="sec-activity">
+    <div class="sec-header">
+        <h2>🕐 Activity Log</h2>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <input id="activitySearch" class="finput" style="width:200px;" placeholder="🔍 Search logs…" oninput="renderActivityPage(1)">
+            <select id="activityFilter" class="finput" style="width:150px;" onchange="renderActivityPage(1)">
+                <option value="all">All Actions</option>
+                <option value="event">Events</option>
+                <option value="club">Clubs</option>
+                <option value="member">Members</option>
+                <option value="user">Users</option>
+                <option value="registered">Registrations</option>
+                <option value="approved">Approvals</option>
+                <option value="rejected">Rejections</option>
+            </select>
+            <button class="btn-primary" onclick="loadActivity()">🔄 Refresh</button>
+        </div>
+    </div>
+    <div style="background:#fff;border-radius:14px;padding:16px 20px;box-shadow:0 1px 4px rgba(0,0,0,.06);">
+        <ul class="act-list" id="activityList"></ul>
+        <div id="activityPager" style="display:flex;gap:6px;justify-content:center;margin-top:14px;flex-wrap:wrap;"></div>
+    </div>
+</section>
+
+<!-- =============================== REJECTED EVENTS =============================== -->
+<section class="dash-section" id="sec-rejected">
+    <div class="sec-header">
+        <h2>❌ Rejected Events</h2>
+        <div style="display:flex;gap:8px;align-items:center;">
+            <select id="rejectedFilter" class="finput" style="width:160px;" onchange="loadAdminRejected()">
+                <option value="all">All Time</option>
+                <option value="24h" selected>Last 24 Hours</option>
+                <option value="7d">Last 7 Days</option>
+                <option value="30d">Last 30 Days</option>
+            </select>
+            <button class="btn-primary" onclick="loadAdminRejected()">🔄 Refresh</button>
+        </div>
+    </div>
+    <p id="noRejectedAdmin" style="color:#718096;display:none;">No rejected events found.</p>
+    <table class="dash-table" id="rejectedAdminTable">
+        <thead>
+            <tr><th>Event</th><th>Club</th><th>Date</th><th>Rejected By</th><th>Reason</th><th>Rejected At</th></tr>
+        </thead>
+        <tbody id="rejectedAdminTbody"></tbody>
+    </table>
+</section>
+
+</main>
+</div>
+
+<!-- ===== MODALS ===== -->
+
+<!-- Edit Event -->
+<!-- Edit Club -->
+
+
+<!-- Reject Event -->
+<div class="modal-overlay" id="rejectModal">
+<div class="modal-box">
+    <h3>❌ Reject Event</h3>
+    <label class="flabel">Reason for rejection *</label>
+    <textarea id="rejectReason" class="finput" rows="4" placeholder="Enter reason…"></textarea>
+    <div class="modal-actions">
+        <button class="btn-danger" onclick="submitReject()">Reject Event</button>
+        <button class="btn-primary" onclick="closeModal('rejectModal')">Cancel</button>
+    </div>
+</div>
+</div>
+
+<script src="{% static 'js/script.js' %}"></script>
+<script src="{% static 'js/admin.js' %}"></script>
+<script>function loadClubMembersTable(){
+    const clubId = document.getElementById("memberClubId").value;
+    if(!clubId) return;
+
+    Promise.all([
+        apiFetch("/api/clubs/"+clubId+"/roles").then(r=>r.json()),
+        apiFetch("/admin/clubs/"+clubId+"/members").then(r=>r.json())
+    ]).then(([roles, members])=>{
+        _adminClubRoles = roles || [];
+
+        // Update add-member role dropdown
+        const roleSel = document.getElementById("memberRole");
+        if(roleSel){
+            roleSel.innerHTML =
+                _adminClubRoles.map(r=>
+                    `<option value="${r.role_name}">${formatRoleLabel(r.role_name)}${r.is_standard?"":" ✦"}</option>`
+                ).join("") + `<option value="__new__">+ Add new role…</option>`;
+        }
+
+        const tbody = document.getElementById("membersTbody");
+        const label = document.getElementById("memberClubLabel");
+        label.textContent = `Members of selected club (${members.length})`;
+
+        const roleOpts = _adminClubRoles.map(r=>
+            `<option value="${r.role_name}">${formatRoleLabel(r.role_name)}${r.is_standard?"":" ✦"}</option>`
+        ).join("") + `<option value="__new__">+ Add new role…</option>`;
+
+        tbody.innerHTML = members.map(m=>`
+        <tr>
+            <td>${m.name}</td>
+            <td style="font-size:.8rem;">${m.email}</td>
+            <td style="font-size:.8rem;">${m.reg_no||"—"}</td>
+            <td style="font-size:.8rem;">${m.department||"—"}</td>
+            <td>
+                <select onchange="editMemberRoleDynamic(${clubId},${m.id},this)"
+                    style="font-size:.78rem;border:1.5px solid #e2e8f0;border-radius:6px;padding:3px 6px;max-width:180px;">
+                    ${roleOpts.replace(`value="${m.role}"`, `value="${m.role}" selected`)}
+                </select>
+            </td>
+            <td>
+                <button onclick="deleteMember(${clubId},${m.id},'${m.name}')"
+                    style="background:#fee2e2;color:#dc2626;border:none;border-radius:6px;padding:5px 10px;font-size:.78rem;cursor:pointer;">
+                    🗑️ Remove
+                </button>
+            </td>
+        </tr>`).join("");
+    });
+}
+
+function editMemberRoleDynamic(clubId, userId, selectEl){
+    const newRole = selectEl.value;
+    if(newRole === "__new__"){
+        const custom = prompt("Enter new role name. e.g. Media Head, Content Writer");
+        if(!custom){ loadClubMembersTable(); return; }
+        const cleaned = custom.trim();
+        if(!cleaned){ alert("Role name cannot be empty."); loadClubMembersTable(); return; }
+        // Add role first, then assign
+        apiFetch("/api/clubs/"+clubId+"/roles",{method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({role_name:cleaned})
+        }).then(r=>r.json()).then(()=>{
+            apiFetch("/admin/clubs/"+clubId+"/members/"+userId,{method:"PUT",
+                headers:{"Content-Type":"application/json"},
+                body:JSON.stringify({role:cleaned})
+            }).then(r=>r.json()).then(d=>{
+                alert(d.message);
+                loadClubMembersTable();
+            });
+        });
+        return;
+    }
+    if(!confirm("Change role to " + formatRoleLabel(newRole) + "?")){ loadClubMembersTable(); return; }
+    apiFetch("/admin/clubs/"+clubId+"/members/"+userId,{method:"PUT",
+        headers:{"Content-Type":"application/json"}, body:JSON.stringify({role:newRole})
+    }).then(r=>r.json()).then(d=>{ alert(d.message); loadClubMembersTable(); });
+}
+
+function addMemberToClub(){
+    const clubId = document.getElementById("memberClubId").value;
+    const userId = document.getElementById("memberUserId").value;
+    const role   = document.getElementById("memberRole").value;
+    if(!clubId||!userId){ alert("Select a club and find a valid user by email or reg no first."); return; }
+    if(!role || role === "__new__"){ alert("Select or enter a valid role."); return; }
+
+    apiFetch("/admin/clubs/"+clubId+"/members",{
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({user_id:parseInt(userId), role})
+    }).then(r=>r.json()).then(d=>{ alert(d.message); loadClubMembersTable(); });
+}
+
+
+/* ===== Role helpers ===== */
+const ROLE_LABELS = {
+    president:"President", vice_president:"Vice President",
+    secretary:"Secretary", joint_secretary:"Joint Secretary",
+    treasurer:"Treasurer", hr:"HR",
+    event_coordinator:"Event Coordinator",
+    event_management_head:"Event Management Head",
+    event_management_associate:"Event Management Associate",
+    pr_head:"PR Head", pr_associate:"PR Associate",
+    photography:"Photography"
+};
+function roleLabel(r){ return ROLE_LABELS[r] || (r||"").replace(/_/g," "); }
+
+/* ===== State ===== */
+let allAdminEvents = [];
+let allUsers = [];
+rejectingEventId = null;
+let charts = {};
+
+/* ===== Section switcher ===== */
+function showSection(name, el){
+    document.querySelectorAll(".dash-section").forEach(s => s.classList.remove("active"));
+    document.querySelectorAll(".sidebar-item").forEach(s => s.classList.remove("active"));
+    document.getElementById("sec-" + name).classList.add("active");
+    if(el) el.classList.add("active");
+
+    const loaders = {
+        overview:  () => { loadAdminStats(); loadOverviewCharts(); },
+        approvals: () => loadPendingApprovals(),
+        clubs:     () => loadClubs(),
+        events:    () => { loadEvents(); loadClubDropdown(); },
+        members:   () => { loadMemberClubDropdown(); },
+        users:     () => loadAllUsers(),
+        analytics: () => loadAnalyticsSection(),
+        activity:  () => loadActivity(),
+        rejected:  () => loadAdminRejected()
+    };
+    if(loaders[name]) loaders[name]();
+}
+
+/* ===== Init ===== */
+document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("overviewDate").textContent = new Date().toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+
+    apiFetch("/me").then(r => {
+        if(!r.ok){ window.location.href="/"; return null; }
+        return r.json();
+    }).then(data => {
+        if(!data || data.user.role !== "admin"){ window.location.href="/home"; return; }
+        document.getElementById("adminName").textContent = "👤 " + data.user.name;
+        loadAdminStats();
+        loadOverviewCharts();
+        loadPendingApprovals();  // pre-load badge
+    });
+
+    // Auto-refresh stats every 30s
+    setInterval(() => {
+        loadAdminStats();
+        loadPendingApprovals();
+    }, 30000);
+});
+
+/* ===== Admin Stats ===== */
+function loadAdminStats(){
+    apiFetch("/api/admin/stats").then(r=>r.json()).then(d => {
+        setText("statClubs",         d.clubs       || 0);
+        setText("statEvents",        d.events      || 0);
+        setText("statRegistrations", d.registrations || 0);
+        setText("statUpcoming",      d.upcoming    || 0);
+    });
+    apiFetch("/admin/pending-events",{credentials:"include"}).then(r=>r.json()).then(d => {
+        const n = d.length || 0;
+        setText("statPending", n);
+        const badge = document.getElementById("pendingBadge");
+        badge.textContent = n > 0 ? n : "";
+    }).catch(()=>{});
+    apiFetch("/admin/clubs",{credentials:"include"}).then(r=>r.json()).then(d=>{
+        setText("statUsers","—");
+    });
+    // users count from new endpoint
+    apiFetch("/api/admin/all-users").then(r=>r.json()).then(d=>{
+        setText("statUsers", Array.isArray(d) ? d.length : "—");
+    }).catch(()=>{});
+}
+
+function setText(id, val){
+    const el = document.getElementById(id);
+    if(el) el.textContent = val;
+}
+
+/* ===== Overview Charts ===== */
+function loadOverviewCharts(){
+    apiFetch("/admin/event-analytics",{credentials:"include"}).then(r=>r.json()).then(d=>{
+        setText("insPopEvent",  d.most_popular || "—");
+        setText("insLeastEvent",d.least_popular || "—");
+        setText("insClub",      d.most_active_club || "—");
+        setText("insMonth",     d.active_month || "—");
+        setText("insDay",       d.active_day || "—");
+        setText("insAvg",       d.average || 0);
+
+        buildChart("trendChart","line",
+            d.trend.map(t=>t.day),
+            [{label:"Registrations",data:d.trend.map(t=>t.total),borderColor:"#6366f1",backgroundColor:"rgba(99,102,241,.15)",fill:true,tension:.35}]);
+
+        buildChart("eventChart","bar",
+            d.events.map(e=>e.title.length>18?e.title.slice(0,18)+"…":e.title),
+            [{label:"Registrations",data:d.events.map(e=>e.registrations),backgroundColor:"#6366f1"}]);
+    });
+
+    apiFetch("/admin/favorite-analytics"+rq,{credentials:"include"}).then(r=>r.json()).then(d=>{
+        buildChart("favChart","bar",
+            d.clubs.map(c=>c.name.length>14?c.name.slice(0,14)+"…":c.name),
+            [{label:"Favourites",data:d.clubs.map(c=>c.favorites),backgroundColor:"#f43f5e"}]);
+    });
+
+    apiFetch("/api/clubs/popular").then(r=>r.json()).then(clubs=>{
+        buildChart("clubChart","bar",
+            clubs.slice(0,6).map(c=>c.name.length>14?c.name.slice(0,14)+"…":c.name),
+            [{label:"Registrations",data:clubs.slice(0,6).map(c=>c.total_registrations||0),backgroundColor:"#10b981"}]);
+    });
+}
+
+function buildChart(id, type, labels, datasets){
+    const canvas = document.getElementById(id);
+    if(!canvas) return;
+    if(charts[id]) charts[id].destroy();
+    charts[id] = new Chart(canvas,{
+        type, data:{labels,datasets},
+        options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}
+    });
+}
+
+/* ===== Approvals ===== */
+function loadPendingApprovals(){
+    fetch(API + "/admin/pending-events",{credentials:"include"}).then(r=>r.json()).then(events=>{
+        const tbody = document.getElementById("approvalsTbody");
+        const noMsg = document.getElementById("noApprovals");
+        const table = document.getElementById("approvalsTable");
+        if(!tbody) return;
+
+        if(!events.length){
+            tbody.innerHTML="";
+            noMsg.style.display="block";
+            table.style.display="none";
+            setText("statPending",0);
+            document.getElementById("pendingBadge").textContent="";
+            return;
+        }
+
+        noMsg.style.display="none";
+        table.style.display="";
+        setText("statPending", events.length);
+        document.getElementById("pendingBadge").textContent = events.length;
+
+        tbody.innerHTML = events.map(e=>`
+        <tr>
+            <td><strong>${e.title}</strong></td>
+            <td>${e.club_name}</td>
+            <td>${e.date}</td>
+            <td>${e.time}</td>
+            <td>${e.location||"—"}</td>
+            <td><span class="pill ${e.president_approved ? 'pill-green':'pill-amber'}">${e.president_approved?"✅ Done":"⏳ Pending"}</span></td>
+            <td style="display:flex;gap:6px;flex-wrap:wrap;">
+                <button class="btn-xs btn-edit"    onclick="openAdminPendingEdit(${e.id})">✏ Edit</button>
+                <button class="btn-xs btn-approve" onclick="approveEvent(${e.id})">✔ Approve</button>
+                <button class="btn-xs btn-reject"  onclick="openRejectModal(${e.id})">✖ Reject</button>
+                <button class="btn-xs btn-export"  onclick="exportEventRegistrations(${e.id})">⬇ Excel</button>
+            </td>
+        </tr>`).join("");
+    });
+}
+
+function openAdminPendingEdit(eventId){
+    fetch(API+"/api/event/"+eventId,{credentials:"include"})
+    .then(r=>r.json()).then(ev=>{
+        buildAdminEditModal(eventId, ev, true);
+    });
+}
+
+function buildAdminEditModal(eventId, ev, isPending){
+    const mode  = isPending ? "pending" : "normal";
+    const types = ["workshop","seminar","competition","social","recruitment"];
+    const typeOpts = types.map(t =>
+        `<option value="${t}" ${ev.type===t?"selected":""}>${t.charAt(0).toUpperCase()+t.slice(1)}</option>`
+    ).join("");
+
+    const isPaid = ev.is_paid ? "1" : "0";
+    const isTeam = ev.event_category === "team";
+
+    const lbl = "display:block;font-size:.72rem;font-weight:600;color:#6366f1;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;";
+    const inp = "width:100%;box-sizing:border-box;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:.88rem;color:#1e1b4b;background:#f8faff;outline:none;transition:border-color .15s;";
+    const sec = "margin-top:22px;padding-top:18px;border-top:1px solid #f1f5f9;";
+    const secH = "font-size:.75rem;font-weight:700;color:#4f46e5;text-transform:uppercase;letter-spacing:.07em;margin:0 0 12px;display:flex;align-items:center;gap:6px;";
+
+    const html = `
+    <style>
+      .ape-inp:focus{border-color:#6366f1!important;background:#fff!important;box-shadow:0 0 0 3px rgba(99,102,241,.12);}
+      .ape-inp::placeholder{color:#b0b8c8;}
+      #ape_save_btn:hover{opacity:.88;}
+    </style>
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:22px;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:1.15rem;flex-shrink:0;">
+          ${isPending ? "📝" : "✏️"}
+        </div>
+        <div>
+          <h3 style="margin:0;font-size:1.05rem;font-weight:700;color:#1e1b4b;">${isPending ? "Edit Before Approving" : "Edit Event"}</h3>
+          <p style="margin:3px 0 0;font-size:.75rem;color:#94a3b8;">Only safe fields — won't affect registered students</p>
+        </div>
+      </div>
+      <button onclick="closeAdminEditModal()" style="background:#f1f5f9;border:none;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:1rem;color:#64748b;flex-shrink:0;display:flex;align-items:center;justify-content:center;line-height:1;">✕</button>
+    </div>
+
+    <div style="background:#f8faff;border:1.5px solid #e0e7ff;border-radius:12px;padding:14px 16px;margin-bottom:18px;">
+      <label style="${lbl}">Event Title *</label>
+      <input id="ape_title" class="ape-inp" style="${inp}font-size:.95rem;font-weight:600;" value="${ev.title||""}">
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div><label style="${lbl}">Date</label><input id="ape_date" type="date" class="ape-inp" style="${inp}" value="${ev.date||""}"></div>
+      <div><label style="${lbl}">Time</label><input id="ape_time" type="time" class="ape-inp" style="${inp}" value="${ev.time||""}"></div>
+      <div><label style="${lbl}">Venue</label><input id="ape_location" class="ape-inp" style="${inp}" value="${ev.location||""}"></div>
+      <div><label style="${lbl}">Event Type</label><select id="ape_type" class="ape-inp" style="${inp}cursor:pointer;">${typeOpts}</select></div>
+      <div><label style="${lbl}">Capacity</label><input id="ape_capacity" type="number" class="ape-inp" style="${inp}" value="${ev.capacity||""}" placeholder="Max attendees"></div>
+      <div><label style="${lbl}">Prize Pool</label><input id="ape_prize_pool" class="ape-inp" style="${inp}" value="${ev.prize_pool||""}" placeholder="e.g. ₹10,000"></div>
+      <div>
+        <label style="${lbl}">Event Category</label>
+        <select id="ape_category" class="ape-inp" style="${inp}cursor:pointer;" onchange="apeToggleTeam()">
+          <option value="individual" ${!isTeam?"selected":""}>👤 Individual</option>
+          <option value="team"       ${isTeam?"selected":""}>👥 Team</option>
+        </select>
+      </div>
+      <div>
+        <label style="${lbl}">Paid / Free</label>
+        <select id="ape_paid" class="ape-inp" style="${inp}cursor:pointer;" onchange="apeTogglePrice()">
+          <option value="0" ${!ev.is_paid?"selected":""}>🆓 Free</option>
+          <option value="1" ${ev.is_paid?"selected":""}>💰 Paid</option>
+        </select>
+      </div>
+      <div id="ape_price_div" style="${ev.is_paid?'':'display:none;'}">
+        <label style="${lbl}">Price (₹)</label>
+        <input id="ape_price" type="number" class="ape-inp" style="${inp}" value="${ev.price||""}">
+      </div>
+      <div id="ape_team_div" style="grid-column:1/-1;${isTeam?'':'display:none;'}">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div><label style="${lbl}">Min Members</label><input id="ape_min_members" type="number" class="ape-inp" style="${inp}" value="${ev.min_members||""}" min="2" placeholder="e.g. 2"></div>
+          <div><label style="${lbl}">Max Members</label><input id="ape_max_members" type="number" class="ape-inp" style="${inp}" value="${ev.max_members||""}" placeholder="e.g. 5"></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="${sec}">
+      <p style="${secH}">📄 Details</p>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div><label style="${lbl}">Description</label><textarea id="ape_description" class="ape-inp" rows="2" style="${inp}resize:vertical;">${ev.description||""}</textarea></div>
+        <div><label style="${lbl}">About this Event</label><textarea id="ape_about" class="ape-inp" rows="2" style="${inp}resize:vertical;">${ev.about||""}</textarea></div>
+        <div><label style="${lbl}">Rules</label><textarea id="ape_rules" class="ape-inp" rows="2" style="${inp}resize:vertical;">${ev.rules||""}</textarea></div>
+        <div><label style="${lbl}">Instructions</label><textarea id="ape_instructions" class="ape-inp" rows="2" style="${inp}resize:vertical;">${ev.instructions||""}</textarea></div>
+      </div>
+    </div>
+
+    <div style="${sec}">
+      <p style="${secH}">📸 Gallery</p>
+      <div id="ape_gallery_grid" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;min-height:20px;"></div>
+      <label style="display:flex;align-items:center;justify-content:center;gap:8px;border:2px dashed #a5b4fc;border-radius:10px;padding:13px;text-align:center;color:#6366f1;cursor:pointer;font-size:.82rem;background:#f8f7ff;transition:all .15s;" id="ape_drop_label">
+        🖼️ Drag &amp; drop or click to add photos
+        <input id="ape_file_input" type="file" accept="image/*" multiple style="display:none">
+      </label>
+      <div id="ape_upload_status" style="font-size:.78rem;color:#38a169;margin-top:4px;min-height:16px;"></div>
+    </div>
+
+    <div style="${sec}">
+      <p style="${secH}">🎯 Event Coordinators</p>
+      <p style="font-size:.78rem;color:#94a3b8;margin:-8px 0 12px;">Click members to assign or remove as coordinator.</p>
+      <div id="ape_coord_list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:8px;"></div>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:24px;padding-top:18px;border-top:1px solid #f1f5f9;">
+      <button id="ape_save_btn" onclick="submitAdminEdit(${eventId},'${mode}')"
+        style="flex:1;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:10px;padding:12px;font-weight:700;font-size:.9rem;cursor:pointer;letter-spacing:.02em;box-shadow:0 4px 14px rgba(99,102,241,.3);transition:opacity .15s;">
+        💾 Save Changes
+      </button>
+      <button onclick="closeAdminEditModal()"
+        style="flex:0 0 110px;background:#f1f5f9;border:none;border-radius:10px;padding:12px;cursor:pointer;color:#64748b;font-size:.88rem;font-weight:600;transition:background .15s;">
+        Cancel
+      </button>
+    </div>`;
+
+    let overlay = document.getElementById("adminEditOverlay");
+    if(!overlay){
+        overlay = document.createElement("div");
+        overlay.id = "adminEditOverlay";
+        overlay.style.cssText = "display:none;position:fixed;inset:0;background:rgba(15,15,40,.55);backdrop-filter:blur(4px);z-index:2000;align-items:center;justify-content:center;";
+        const box = document.createElement("div");
+        box.id = "adminEditBox";
+        box.style.cssText = "background:#fff;border-radius:20px;padding:28px 30px;max-width:700px;width:95%;max-height:92vh;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,.2);";
+        overlay.appendChild(box);
+        overlay.onclick = e => { if(e.target===overlay) closeAdminEditModal(); };
+        document.body.appendChild(overlay);
+    }
+    document.getElementById("adminEditBox").innerHTML = html;
+    overlay.style.display = "flex";
+
+    // Wire file input after render
+    setTimeout(() => {
+        const inp = document.getElementById("ape_file_input");
+        const lbl = document.getElementById("ape_drop_label");
+        if(inp) inp.onchange = e => adminUploadGallery(Array.from(e.target.files), eventId);
+        if(lbl){
+            lbl.ondragover  = e => { e.preventDefault(); lbl.style.background="#eef2ff"; };
+            lbl.ondragleave = ()  => { lbl.style.background="#f8f7ff"; };
+            lbl.ondrop      = e => { e.preventDefault(); lbl.style.background="#f8f7ff"; adminUploadGallery(Array.from(e.dataTransfer.files).filter(f=>f.type.startsWith("image/")), eventId); };
+        }
+        loadAdminGallery(eventId);
+        loadApeCoords(eventId);
+    }, 50);
+}
+function loadApeCoords(eventId){
+    const grid = document.getElementById("ape_coord_list");
+    if(!grid) return;
+    apiFetch("/api/event/"+eventId).then(r=>r.json()).then(ev=>{
+        const clubId = ev.club_id;
+        Promise.all([
+            apiFetch("/admin/clubs/"+clubId+"/members").then(r=>r.json()),
+            apiFetch("/api/events/"+eventId+"/coordinators").then(r=>r.json())
+        ]).then(([members, assigned])=>{
+            const assignedIds = (assigned||[]).map(a=>a.id);
+            const eligible = (members||[]).filter(m=>m.role!=="president");
+            grid.innerHTML = eligible.length ? eligible.map(m=>{
+                const yes = assignedIds.includes(m.id);
+                return `<div onclick="apeToggleCoord(${eventId},${m.id},this)"
+                    style="cursor:pointer;border:2px solid ${yes?"#6366f1":"#e2e8f0"};
+                           background:${yes?"#eef2ff":"#f8faff"};border-radius:10px;
+                           padding:10px 12px;font-size:.82rem;display:flex;align-items:center;gap:8px;">
+                    <span>${yes?"✅":"⬜"}</span>
+                    <div>
+                        <div style="font-weight:${yes?"700":"400"};color:#1e1b4b;">${m.name}</div>
+                        <div style="font-size:.72rem;color:#718096;">${m.role}</div>
+                    </div>
+                </div>`;
+            }).join("") : "<p style='color:#999;font-size:.82rem;'>No members found.</p>";
+        });
+    });
+}
+
+function apeToggleCoord(eventId, userId, el){
+    const isAssigned = el.style.borderColor === "rgb(99, 102, 241)";
+    if(isAssigned){
+        apiFetch("/api/events/"+eventId+"/coordinators/"+userId,{method:"DELETE"})
+        .then(r=>r.json()).then(()=>{ loadApeCoords(eventId); });
+    } else {
+        apiFetch("/api/events/"+eventId+"/add-coordinator",{
+            method:"POST",headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({user_id:userId})
+        }).then(r=>r.json()).then(()=>{ loadApeCoords(eventId); });
+    }
+}
+
+function loadAdminGallery(eventId){
+    fetch(API+"/api/events/"+eventId+"/gallery-full",{credentials:"include"})
+    .then(r=>r.json()).then(images=>{
+        const grid = document.getElementById("ape_gallery_grid");
+        if(!grid) return;
+        grid.innerHTML = images.length
+            ? images.map(img=>`
+              <div style="position:relative;width:72px;height:72px;border-radius:8px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.1);">
+                <img src="${API}/${img.image_url}" style="width:100%;height:100%;object-fit:cover;">
+                <button onclick="adminDeleteGalleryImage(${eventId},${img.id})"
+                  style="position:absolute;top:2px;right:2px;background:rgba(220,38,38,.9);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:.65rem;cursor:pointer;">✕</button>
+              </div>`).join("")
+            : "<p style='color:#999;font-size:.8rem;margin:0;'>No photos yet.</p>";
+    });
+}
+
+function adminDeleteGalleryImage(eventId, imageId){
+    if(!confirm("Remove this photo?")) return;
+    fetch(API+"/admin/events/"+eventId+"/gallery/"+imageId,{method:"DELETE",credentials:"include"})
+    .then(r=>r.json()).then(()=> loadAdminGallery(eventId));
+}
+
+async function adminUploadGallery(files, eventId){
+    const status = document.getElementById("ape_upload_status");
+    if(!files.length) return;
+    if(status) status.textContent = "Uploading…";
+    let done = 0;
+    for(const file of files){
+        const fd = new FormData(); fd.append("image", file);
+        try {
+            await fetch(API+"/admin/events/"+eventId+"/gallery",{method:"POST",credentials:"include",body:fd});
+            done++;
+        } catch(e){}
+    }
+    if(status) status.textContent = "✅ "+done+" photo(s) uploaded.";
+    loadAdminGallery(eventId);
+    const inp = document.getElementById("ape_file_input");
+    if(inp) inp.value = "";
+}
+
+function closeAdminEditModal(){
+    const o = document.getElementById("adminEditOverlay");
+    if(o) o.style.display = "none";
+}
+
+function apeToggleTeam(){
+    const isTeam = document.getElementById("ape_category").value === "team";
+    document.getElementById("ape_team_div").style.display = isTeam ? "" : "none";
+}
+function apeTogglePrice(){
+    const isPaid = document.getElementById("ape_paid").value === "1";
+    document.getElementById("ape_price_div").style.display = isPaid ? "" : "none";
+}
+
+function submitAdminEdit(eventId, mode){
+    const btn = document.getElementById("ape_save_btn");
+    if(btn){ btn.disabled=true; btn.textContent="Saving…"; }
+    const isPaid   = document.getElementById("ape_paid").value === "1";
+    const isTeam   = document.getElementById("ape_category").value === "team";
+    const payload = {
+        title:          document.getElementById("ape_title").value,
+        date:           document.getElementById("ape_date").value,
+        time:           document.getElementById("ape_time").value,
+        location:       document.getElementById("ape_location").value,
+        type:           document.getElementById("ape_type").value,
+        capacity:       document.getElementById("ape_capacity").value || null,
+        event_category: document.getElementById("ape_category").value,
+        is_paid:        isPaid,
+        price:          isPaid ? (document.getElementById("ape_price")?.value || 0) : 0,
+        min_members:    isTeam ? (document.getElementById("ape_min_members")?.value || null) : null,
+        max_members:    isTeam ? (document.getElementById("ape_max_members")?.value || null) : null,
+        description:    document.getElementById("ape_description").value,
+        prize_pool:     document.getElementById("ape_prize_pool").value,
+        about:          document.getElementById("ape_about").value,
+        rules:          document.getElementById("ape_rules").value,
+        instructions:   document.getElementById("ape_instructions").value
+    };
+    const endpoint = mode==="pending"
+        ? API+"/admin/events/"+eventId+"/pending-edit"
+        : API+"/admin/events/"+eventId;
+    fetch(endpoint,{method:"PUT",credentials:"include",
+        headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)})
+    .then(r=>r.json()).then(d=>{
+        closeAdminEditModal();
+        alert(d.message);
+        loadPendingApprovals();
+        loadEvents();
+    }).catch(()=>{
+        if(btn){ btn.disabled=false; btn.textContent="💾 Save"; }
+        alert("Save failed. Please try again.");
+    });
+}
+
+
+function approveEvent(id){
+    fetch(API+"/admin/events/"+id+"/approve",{method:"PUT",credentials:"include"})
+    .then(r=>r.json()).then(d=>{ alert(d.message); loadPendingApprovals(); loadEvents(); loadAdminStats(); });
+}
+
+function openRejectModal(id){
+    rejectingEventId = id;
+    document.getElementById("rejectReason").value="";
+    document.getElementById("rejectModal").classList.add("open");
+}
+
+function submitReject(){
+    const reason = document.getElementById("rejectReason").value.trim();
+    if(!reason){ alert("Reason required"); return; }
+    fetch(API+"/admin/events/"+rejectingEventId+"/reject",{
+        method:"PUT",credentials:"include",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({reason})
+    }).then(r=>r.json()).then(d=>{
+        alert(d.message);
+        closeModal("rejectModal");
+        loadPendingApprovals();
+        loadEvents();
+    });
+}
+
+/* ===== Clubs ===== */
+function loadClubs(){
+    fetch(API+"/admin/clubs",{credentials:"include"}).then(r=>r.json()).then(data=>{
+        _allAdminClubs = data || [];
+        const countEl = document.getElementById("clubsCount");
+        if(countEl) countEl.textContent = _allAdminClubs.length + " clubs total";
+        renderAdminClubs(_allAdminClubs);
+    });
+}
+
+function renderAdminClubs(data){
+    const list = document.getElementById("clubList");
+    if(!list) return;
+
+    if(!data.length){
+        list.innerHTML = "<p style='color:#999;grid-column:1/-1;'>No clubs found.</p>";
+        return;
+    }
+
+    list.innerHTML = data.map(c=>`
+    <div id="club-card-${c.id}" class="club-card-admin"
+        style="background:#fff;border-radius:14px;padding:18px;box-shadow:0 1px 4px rgba(0,0,0,.07);border:2px solid transparent;transition:border-color .2s;">
+        ${c.image ? `<img src="/${c.image}" style="width:100%;height:110px;object-fit:cover;border-radius:8px;margin-bottom:10px;">` : ""}
+        <h3 style="margin:0 0 4px;font-size:.95rem;color:#1e1b4b;">${c.name}</h3>
+        <span class="pill pill-blue">${c.category||""}</span>
+        <p style="font-size:.82rem;color:#718096;margin:8px 0 0;">${(c.description||"").slice(0,80)}${c.description&&c.description.length>80?"…":""}</p>
+        ${c.vision  ? `<p style="font-size:.76rem;color:#6366f1;margin:4px 0 0;">🎯 ${c.vision.slice(0,60)}${c.vision.length>60?"…":""}</p>` : ""}
+        ${c.mission ? `<p style="font-size:.76rem;color:#0369a1;margin:4px 0 0;">🚀 ${c.mission.slice(0,60)}${c.mission.length>60?"…":""}</p>` : ""}
+        <div style="display:flex;gap:8px;margin-top:12px;">
+            <button class="btn-xs btn-edit" onclick="editClub(${c.id},\`${(c.name||"").replace(/\`/g,"'")}\`,\`${(c.category||"").replace(/\`/g,"'")}\`,\`${(c.description||"").replace(/\`/g,"'")}\`,\`${(c.about||"").replace(/\`/g,"'")}\`,\`${(c.vision||"").replace(/\`/g,"'")}\`,\`${(c.mission||"").replace(/\`/g,"'")}\`)">✏ Edit</button>
+            <button class="btn-xs btn-delete" onclick="deleteClub(${c.id})">🗑 Delete</button>
+        </div>
+    </div>`).join("");
+}
+
+function addClub(){
+    const fd = new FormData();
+    fd.append("name",        document.getElementById("clubName").value);
+    fd.append("category",    document.getElementById("clubCategory").value);
+    fd.append("description", document.getElementById("clubDesc").value);
+    const img = document.getElementById("clubImage").files[0];
+    if(img) fd.append("image", img);
+    fetch(API+"/admin/clubs",{method:"POST",credentials:"include",body:fd})
+    .then(r=>r.json()).then(d=>{ alert(d.message); loadClubs(); loadClubDropdown(); loadMemberClubDropdown(); });
+}
+
+function editClub(id, name, cat, desc, about, vision, mission){
+    editingClubId = id;
+
+    // Populate inline edit form
+    document.getElementById("editClubName").value    = name    || "";
+    document.getElementById("editClubCategory").value= cat     || "";
+    document.getElementById("editClubDesc").value    = desc    || "";
+    document.getElementById("editClubAbout").value   = about   || "";
+    document.getElementById("editClubVision").value  = vision  || "";
+    document.getElementById("editClubMission").value = mission || "";
+    document.getElementById("editClubImage").value   = "";
+
+    // Show edit form, scroll to it
+    const editForm = document.getElementById("editClubInline");
+    editForm.style.display = "block";
+    editForm.scrollIntoView({ behavior:"smooth", block:"start" });
+
+    // Highlight the card being edited
+    document.querySelectorAll(".club-card-admin").forEach(c => c.classList.remove("editing"));
+    const card = document.getElementById("club-card-"+id);
+    if(card) card.classList.add("editing");
+}
+
+function cancelClubEdit(){
+    document.getElementById("editClubInline").style.display = "none";
+    document.querySelectorAll(".club-card-admin").forEach(c => c.classList.remove("editing"));
+    editingClubId = null;
+}
+
+function saveClubEdit(){
+    if(!editingClubId){ alert("No club selected for editing."); return; }
+
+    const name = document.getElementById("editClubName").value.trim();
+    if(!name){ alert("Club name is required."); return; }
+
+    const fd = new FormData();
+    fd.append("name",        name);
+    fd.append("category",    document.getElementById("editClubCategory").value);
+    fd.append("description", document.getElementById("editClubDesc").value);
+    fd.append("about",       document.getElementById("editClubAbout").value);
+    fd.append("vision",      document.getElementById("editClubVision").value);
+    fd.append("mission",     document.getElementById("editClubMission").value);
+    const img = document.getElementById("editClubImage").files[0];
+    if(img) fd.append("image", img);
+
+    const btn = document.querySelector("#editClubInline .btn-primary");
+    if(btn){ btn.disabled = true; btn.textContent = "Saving…"; }
+
+    fetch(API+"/admin/clubs/"+editingClubId, {method:"PUT", credentials:"include", body:fd})
+    .then(r=>r.json()).then(d=>{
+        alert(d.message);
+        cancelClubEdit();
+        loadClubs();
+    }).finally(()=>{
+        if(btn){ btn.disabled = false; btn.textContent = "💾 Save Changes"; }
+    });
+}
+
+let _allAdminClubs = [];
+
+function filterAdminClubs(q){
+    const f = q.toLowerCase();
+    const filtered = _allAdminClubs.filter(c =>
+        (c.name||"").toLowerCase().includes(f) ||
+        (c.category||"").toLowerCase().includes(f)
+    );
+    renderAdminClubs(filtered);
+}
+
+
+function deleteClub(id){
+    if(!confirm("Delete this club and all its data?")) return;
+    fetch(API+"/admin/clubs/"+id,{method:"DELETE",credentials:"include"})
+    .then(r=>r.json()).then(d=>{ alert(d.message); loadClubs(); });
+}
+
+/* ===== Events ===== */
+function loadEvents(){
+    fetch(API+"/admin/events",{credentials:"include"}).then(r=>r.json()).then(data=>{
+        allAdminEvents = data;
+        renderEventsTable(data);
+        setText("eventCountLabel", data.length + " events total");
+    });
+}
+
+function renderEventsTable(data){
+    const tbody = document.getElementById("eventsTbody");
+    if(!tbody) return;
+    tbody.innerHTML = data.map(e=>{
+        const pct = e.capacity>0 ? Math.round((e.registered_count/e.capacity)*100) : 0;
+        const statusPill = {
+            approved:"pill-green",pending_president:"pill-amber",
+            pending_admin:"pill-amber",rejected:"pill-red",cancelled:"pill-red"
+        }[e.status] || "pill-gray";
+        return `<tr id="event-row-${e.id}" class="event-row-admin">
+            <td><strong>${e.title}</strong><br><small style="color:#718096;">📍 ${e.location||"—"}</small></td>
+            <td>${e.club_name}</td>
+            <td>${e.date}<br><small>${e.time}</small></td>
+            <td><span class="pill ${statusPill}">${e.status.replace("_"," ")}</span></td>
+            <td>
+                <div class="pbar"><div class="pbar-fill" style="width:${pct}%"></div></div>
+                <small>${e.registered_count||0} / ${e.capacity||0}</small>
+            </td>
+            <td style="display:flex;gap:5px;flex-wrap:wrap;">
+                ${e.status==="pending_admin"?`<button class="btn-xs btn-approve" onclick="approveEvent(${e.id})">✔</button>`:""}
+                <button class="btn-xs btn-edit" onclick="editEvent(${e.id})">✏</button>
+                <button class="btn-xs btn-delete" onclick="deleteEvent(${e.id})">🗑</button>
+                <button class="btn-xs btn-export" onclick="exportEventRegistrations(${e.id})">⬇</button>
+            </td>
+        </tr>`;
+    }).join("");
+}
+
+function filterAdminEvents(q){
+    const f = allAdminEvents.filter(e=>
+        e.title.toLowerCase().includes(q.toLowerCase()) ||
+        e.club_name.toLowerCase().includes(q.toLowerCase())
+    );
+    renderEventsTable(f);
+}
+
+function adminToggleTeamFields(){
+    const cat = document.getElementById("eventCategory").value;
+    document.getElementById("adminTeamDiv").style.display = cat === "team" ? "block" : "none";
+}
+
+function adminTogglePriceField(){
+    const paid = document.getElementById("eventPaid").value;
+    document.getElementById("adminPriceDiv").style.display = paid === "1" ? "block" : "none";
+}
+
+function addEvent(){
+    if(document.getElementById("adminConflictWarning").style.display==="block"){
+        if(!confirm("⚠️ Venue conflict detected. Continue anyway?")) return;
+    }
+    const isPaid    = document.getElementById("eventPaid").value === "1";
+    const category  = document.getElementById("eventCategory").value;
+    const minM      = document.getElementById("eventMinMembers")?.value || null;
+    const maxM      = document.getElementById("eventMaxMembers")?.value || null;
+
+    if(category === "team" && (!minM || !maxM)){
+        alert("Please enter min and max team members.");
+        return;
+    }
+
+    const payload = {
+        club_id:        document.getElementById("eventClubId").value,
+        title:          document.getElementById("eventTitle").value,
+        description:    document.getElementById("eventDesc").value,
+        date:           document.getElementById("eventDate").value,
+        time:           document.getElementById("eventTime").value,
+        location:       document.getElementById("eventLocation").value,
+        type:           document.getElementById("eventType").value,
+        capacity:       document.getElementById("eventCapacity").value,
+        event_category: category,
+        min_members:    minM ? parseInt(minM) : null,
+        max_members:    maxM ? parseInt(maxM) : null,
+        is_paid:        isPaid,
+        price:          isPaid ? (document.getElementById("eventPrice")?.value || 0) : 0,
+        prize_pool:     document.getElementById("eventPrizePool").value,
+        about:          document.getElementById("eventAbout").value,
+        rules:          document.getElementById("eventRules").value,
+        instructions:   document.getElementById("eventInstructions").value
+    };
+
+    if(!payload.club_id || !payload.title || !payload.date || !payload.time){
+        alert("Title, club, date and time are required.");
+        return;
+    }
+
+    fetch(API+"/admin/events",{
+        method:"POST", credentials:"include",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify(payload)
+    }).then(r=>r.json()).then(d=>{
+        if(d.event_id && adminSelectedManagers.size > 0){
+            const assigns = Array.from(adminSelectedManagers).map(uid=>
+                apiFetch("/api/events/"+d.event_id+"/add-coordinator",{
+                    method:"POST",
+                    headers:{"Content-Type":"application/json"},
+                    body:JSON.stringify({user_id:uid})
+                }).then(r=>r.json())
+            );
+            Promise.all(assigns).then(()=>{
+                alert(d.message + " (" + adminSelectedManagers.size + " manager(s) appointed)");
+                adminResetEventForm();
+                loadEvents();
+            });
+        } else {
+            alert(d.message);
+            if(d.message && !d.message.toLowerCase().includes("error")){
+                adminResetEventForm();
+            }
+            loadEvents();
+        }
+    });
+}
+
+function adminResetEventForm(){
+    ["eventTitle","eventDesc","eventDate","eventTime","eventLocation",
+     "eventCapacity","eventPrizePool","eventAbout","eventRules","eventInstructions"]
+    .forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
+    document.getElementById("eventCategory").value = "individual";
+    document.getElementById("eventPaid").value     = "0";
+    document.getElementById("eventType").value     = "workshop";
+    document.getElementById("adminPriceDiv").style.display = "none";
+    document.getElementById("adminTeamDiv").style.display  = "none";
+    document.getElementById("adminManagerSelected").innerHTML = "";
+    adminSelectedManagers = new Set();
+    const clubSel = document.getElementById("eventClubId");
+    if(clubSel) { clubSel.value = ""; adminLoadManagerPicker(""); }
+}
+
+function editEvent(id){
+    apiFetch("/api/event/"+id).then(r=>r.json()).then(e=>{
+        editingEventId = id;
+        const isTeam = e.event_category === "team";
+        const isPaid = !!e.is_paid;
+
+        const set = (elId, val) => { const el=document.getElementById(elId); if(el) el.value=val||""; };
+        set("editTitle",    e.title);
+        set("editDate",     e.date);
+        set("editTime",     e.time);
+        set("editLocation", e.location);
+        set("editType",     e.type||"workshop");
+        set("editCapacity", e.capacity);
+        set("editPrizePool",e.prize_pool);
+        set("editDesc",     e.description);
+        set("editAbout",    e.about);
+        set("editRules",    e.rules);
+        set("editInstructions", e.instructions);
+
+        document.getElementById("editCategory").value = isTeam ? "team" : "individual";
+        document.getElementById("editPaid").value     = isPaid ? "1" : "0";
+        document.getElementById("editPriceDiv").style.display = isPaid ? "" : "none";
+        document.getElementById("editTeamDiv").style.display  = isTeam ? "" : "none";
+        if(isPaid) set("editPrice", e.price);
+        if(isTeam){
+            set("editMinMembers", e.min_members);
+            set("editMaxMembers", e.max_members);
+        }
+
+        // Show form, scroll to it, highlight the card
+        const form = document.getElementById("editEventInline");
+        form.style.display = "block";
+        form.scrollIntoView({behavior:"smooth", block:"start"});
+
+        // Load coordinator assignment
+        loadAdminEditCoords(id);
+
+        // Highlight the row being edited
+        document.querySelectorAll(".event-row-admin").forEach(r=>r.classList.remove("editing"));
+        const row = document.getElementById("event-row-"+id);
+        if(row) row.classList.add("editing");
+    });
+}
+
+function loadAdminEditCoords(eventId){
+    const grid = document.getElementById("adminEditCoordList");
+    if(!grid) return;
+
+    // Get the club_id from the event being edited
+    apiFetch("/api/event/"+eventId).then(r=>r.json()).then(ev=>{
+        const clubId = ev.club_id;
+        Promise.all([
+            apiFetch("/admin/clubs/"+clubId+"/members").then(r=>r.json()),
+            apiFetch("/api/events/"+eventId+"/coordinators").then(r=>r.json())
+        ]).then(([members, assigned])=>{
+            const assignedIds = (assigned||[]).map(a=>a.id);
+            const eligible = (members||[]).filter(m=>m.role!=="president");
+            grid.innerHTML = eligible.length ? eligible.map(m=>{
+                const yes = assignedIds.includes(m.id);
+                return `<div id="aec-${eventId}-${m.id}"
+                    onclick="adminToggleCoord(${eventId},${m.id},${clubId},this)"
+                    style="cursor:pointer;border:2px solid ${yes?"#6366f1":"#e2e8f0"};
+                           background:${yes?"#eef2ff":"#f8faff"};
+                           border-radius:10px;padding:10px 12px;font-size:.82rem;
+                           display:flex;align-items:center;gap:8px;transition:all .15s;">
+                    <span>${yes?"✅":"⬜"}</span>
+                    <div>
+                        <div style="font-weight:${yes?"700":"400"};color:#1e1b4b;">${m.name}</div>
+                        <div style="font-size:.72rem;color:#718096;">${m.role}</div>
+                    </div>
+                </div>`;
+            }).join("") : "<p style='color:#999;font-size:.82rem;'>No members found.</p>";
+        });
+    });
+}
+
+function adminToggleCoord(eventId, userId, clubId, el){
+    const isAssigned = el.style.borderColor === "rgb(99, 102, 241)";
+    if(isAssigned){
+        apiFetch("/api/events/"+eventId+"/coordinators/"+userId,{method:"DELETE"})
+        .then(r=>r.json()).then(()=>{ loadAdminEditCoords(eventId); });
+    } else {
+        apiFetch("/api/events/"+eventId+"/add-coordinator",{
+            method:"POST",headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({user_id:userId})
+        }).then(r=>r.json()).then(()=>{ loadAdminEditCoords(eventId); });
+    }
+}
+
+function cancelEventEdit(){
+    document.getElementById("editEventInline").style.display = "none";
+    document.querySelectorAll(".event-row-admin").forEach(r=>r.classList.remove("editing"));
+    editingEventId = null;
+}
+
+function adminToggleEditTeam(){
+    const isTeam = document.getElementById("editCategory").value === "team";
+    document.getElementById("editTeamDiv").style.display = isTeam ? "" : "none";
+}
+
+function adminToggleEditPrice(){
+    const isPaid = document.getElementById("editPaid").value === "1";
+    document.getElementById("editPriceDiv").style.display = isPaid ? "" : "none";
+}
+
+function saveEventEdit(){
+    if(!editingEventId){ alert("No event selected."); return; }
+    const isPaid = document.getElementById("editPaid").value === "1";
+    const isTeam = document.getElementById("editCategory").value === "team";
+
+    const btn = document.querySelector("#editEventInline .btn-primary");
+    if(btn){ btn.disabled=true; btn.textContent="Saving…"; }
+
+    fetch(API+"/admin/events/"+editingEventId,{
+        method:"PUT", credentials:"include",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+            title:          document.getElementById("editTitle").value,
+            date:           document.getElementById("editDate").value,
+            time:           document.getElementById("editTime").value,
+            location:       document.getElementById("editLocation").value,
+            type:           document.getElementById("editType").value,
+            capacity:       document.getElementById("editCapacity").value || null,
+            event_category: document.getElementById("editCategory").value,
+            is_paid:        isPaid,
+            price:          isPaid ? (document.getElementById("editPrice")?.value || 0) : 0,
+            min_members:    isTeam ? (document.getElementById("editMinMembers")?.value || null) : null,
+            max_members:    isTeam ? (document.getElementById("editMaxMembers")?.value || null) : null,
+            prize_pool:     document.getElementById("editPrizePool").value,
+            description:    document.getElementById("editDesc").value,
+            about:          document.getElementById("editAbout").value,
+            rules:          document.getElementById("editRules").value,
+            instructions:   document.getElementById("editInstructions").value
+        })
+    }).then(r=>r.json()).then(d=>{
+        alert(d.message);
+        cancelEventEdit();
+        loadEvents();
+    }).finally(()=>{
+        if(btn){ btn.disabled=false; btn.textContent="💾 Save Changes"; }
+    });
+}
+
+function deleteEvent(id){
+    if(!confirm("Delete this event?")) return;
+    fetch(API+"/admin/events/"+id,{method:"DELETE",credentials:"include"})
+    .then(r=>r.json()).then(d=>{ alert(d.message); loadEvents(); });
+}
+
+function loadClubDropdown(){
+    apiFetch("/api/clubs").then(r=>r.json()).then(clubs=>{
+        const sel = document.getElementById("eventClubId");
+        sel.innerHTML = '<option value="">Select Club</option>' +
+            clubs.map(c=>`<option value="${c.id}">${c.name}</option>`).join("");
+    });
+}
+
+/* ===== Admin Event Manager Picker ===== */
+var adminSelectedManagers = new Set();
+
+function adminLoadManagerPicker(clubId){
+    adminSelectedManagers = new Set();
+    var list = document.getElementById("adminManagerPickerList");
+    var tags = document.getElementById("adminManagerSelected");
+    if(!list) return;
+    tags.innerHTML = "";
+    if(!clubId){
+        list.innerHTML = '<span style="color:#a0aec0;font-size:.82rem;align-self:center;">Select a club to see members…</span>';
+        return;
+    }
+    list.innerHTML = '<span style="color:#a0aec0;font-size:.82rem;align-self:center;">Loading…</span>';
+    apiFetch("/api/club/"+clubId+"/members").then(r=>r.json()).then(function(members){
+        if(!members.length){
+            list.innerHTML = '<span style="color:#a0aec0;font-size:.82rem;align-self:center;">No members found for this club.</span>';
+            return;
+        }
+        var rl = function(r){ return ({
+            president:"President",vice_president:"Vice President",secretary:"Secretary",
+            joint_secretary:"Joint Secretary",treasurer:"Treasurer",hr:"HR",
+            event_coordinator:"Event Coordinator",event_management_head:"Event Mgmt Head",
+            event_management_associate:"Event Mgmt Associate",pr_head:"PR Head",
+            pr_associate:"PR Associate",photography:"Photography"
+        }[r]||r); };
+        list.innerHTML = members.map(function(m){
+            return '<div id="adminmp-'+m.id+'"'
+                +' data-mid="'+m.id+'"'
+                +' data-name="'+(m.name||"").replace(/"/g,"&quot;")+'"'
+                +' data-role="'+rl(m.role).replace(/"/g,"&quot;")+'"'
+                +' data-sel="0"'
+                +' onclick="adminToggleManager(this)"'
+                +' style="display:flex;align-items:center;gap:6px;background:#fff;border:1.5px solid #e2e8f0;'
+                +'border-radius:8px;padding:7px 11px;cursor:pointer;transition:all .15s;font-size:.82rem;">'
+                +'<span style="font-weight:600;color:#1e1b4b;">'+m.name+'</span>'
+                +' <span style="color:#718096;">'+rl(m.role)+'</span>'
+                +'</div>';
+        }).join("");
+    });
+}
+
+function adminToggleManager(el){
+    var id   = parseInt(el.dataset.mid);
+    var name = el.dataset.name;
+    var role = el.dataset.role;
+    var tags = document.getElementById("adminManagerSelected");
+    if(adminSelectedManagers.has(id)){
+        adminSelectedManagers.delete(id);
+        el.dataset.sel = "0";
+        el.style.borderColor = "#e2e8f0";
+        el.style.background  = "#fff";
+        var oldTag = document.getElementById("admintag-"+id);
+        if(oldTag) oldTag.remove();
+    } else {
+        adminSelectedManagers.add(id);
+        el.dataset.sel = "1";
+        el.style.borderColor = "#6366f1";
+        el.style.background  = "#eef2ff";
+        var tag = document.createElement("span");
+        tag.id = "admintag-"+id;
+        tag.style.cssText = "display:inline-flex;align-items:center;gap:5px;background:#eef2ff;"
+            +"border:1.5px solid #818cf8;border-radius:20px;padding:4px 10px;font-size:.78rem;color:#3730a3;";
+        var btn = document.createElement("button");
+        btn.style.cssText = "background:none;border:none;color:#e53e3e;cursor:pointer;padding:0;font-size:.9rem;";
+        btn.textContent = "✕";
+        btn.onclick = function(){ adminToggleManager(el); };
+        tag.appendChild(document.createTextNode("👤 "+name+" "));
+        tag.appendChild(btn);
+        tags.appendChild(tag);
+    }
+}
+
+/* ===== Members ===== */
+function loadMemberClubDropdown(){
+    apiFetch("/api/clubs").then(r=>r.json()).then(clubs=>{
+        const sel = document.getElementById("memberClubId");
+        sel.innerHTML = '<option value="">Select Club</option>' +
+            clubs.map(c=>`<option value="${c.id}">${c.name}</option>`).join("");
+    });
+}
+
+let lookupTimer=null;
+function lookupUserByEmail(immediate){
+    clearTimeout(lookupTimer);
+    lookupTimer = setTimeout(function(){
+        var query = document.getElementById("memberEmail").value.trim();
+        if(!query) return;
+        var box = document.getElementById("userLookupResult");
+        box.innerHTML = '<span style="color:#718096;">Searching…</span>';
+        box.style.display = "block";
+        apiFetch("/api/admin/all-users").then(r=>r.json()).then(function(users){
+            var q = query.toLowerCase();
+            var match = users.find(function(u){
+                return u.email.toLowerCase() === q ||
+                       (u.reg_no||"").toLowerCase() === q;
+            });
+            if(match){
+                document.getElementById("memberUserId").value = match.id;
+                box.innerHTML = "✅ Found: <strong>"+match.name+"</strong>"
+                    +" <span style='color:#6366f1;font-size:.78rem;'>("+match.reg_no+")</span>"
+                    +" &mdash; "+(match.department||"")+(match.year ? " Yr "+match.year : "")
+                    +" <span style='color:#718096;font-size:.75rem;'>["+match.role+"]</span>";
+            } else {
+                document.getElementById("memberUserId").value = "";
+                box.innerHTML = "❌ No user found with that email or reg no.";
+            }
+        });
+    }, immediate ? 0 : 500);
+}
+
+// ── Dynamic roles per club ──────────────────────────────────────────
+let _adminClubRoles = [];   // cached for currently selected club
+
+function loadAdminClubRoles(clubId, callback){
+    if(!clubId){ _adminClubRoles = []; return; }
+    apiFetch("/api/clubs/"+clubId+"/roles").then(r=>r.json()).then(roles=>{
+        _adminClubRoles = roles || [];
+        const sel = document.getElementById("memberRole");
+        if(sel){
+            sel.innerHTML =
+                _adminClubRoles.map(r=>
+                    `<option value="${r.role_name}">${formatRoleLabel(r.role_name)}${r.is_standard?"":" ✦"}</option>`
+                ).join("") +
+                `<option value="__new__">+ Add new role…</option>`;
+        }
+        if(callback) callback();
+    });
+}
+
+function formatRoleLabel(r){
+    return (r||"").split("_").map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(" ");
+}
+
+function handleAdminRoleSelect(sel){
+    const newDiv = document.getElementById("newRoleInputAdmin");
+    if(sel.value === "__new__"){
+        newDiv.style.display = "block";
+        document.getElementById("newRoleNameAdmin").focus();
+    } else {
+        newDiv.style.display = "none";
+    }
+}
+
+function addNewRoleAdmin(){
+    const clubId   = document.getElementById("memberClubId").value;
+    const roleName = document.getElementById("newRoleNameAdmin").value.trim();
+    if(!clubId){ alert("Select a club first."); return; }
+    if(!roleName){ alert("Enter a role name."); return; }
+
+    apiFetch("/api/clubs/"+clubId+"/roles", {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({role_name: roleName})
+    }).then(r=>r.json()).then(d=>{
+        alert(d.message);
+        if(!d.message.toLowerCase().includes("already")){
+            document.getElementById("newRoleNameAdmin").value = "";
+            loadAdminClubRoles(clubId, ()=>{
+                // Select the newly added role
+                document.getElementById("memberRole").value = d.role_name || roleName;
+                document.getElementById("newRoleInputAdmin").style.display = "none";
+            });
+        }
+    });
+}
+
+const ALL_ROLES       = _adminClubRoles.map(r=>r.role_name);
+const ROLE_LABELS_MAP = {};
+
+
+
+function loadAllUsers(){
+    apiFetch("/api/admin/all-users").then(r=>r.json()).then(data=>{
+        allUsers = data;
+        // Populate dept filter
+        const depts = [...new Set(data.map(u=>u.department).filter(Boolean))].sort();
+        const dSel = document.getElementById("userDeptFilter");
+        if(dSel){
+            dSel.innerHTML = '<option value="">All Depts</option>'
+                + depts.map(d=>`<option value="${d}">${d}</option>`).join("");
+        }
+        applyUserFilters();
+    }).catch(()=>{
+        document.getElementById("usersTbody").innerHTML =
+            '<tr><td colspan="9" style="color:#999;text-align:center;padding:20px;">Could not load users.</td></tr>';
+    });
+}
+
+var _selectedUsers = new Set();
+
+function applyUserFilters(){
+    const q    = (document.getElementById("userSearch")||{value:""}).value.toLowerCase();
+    const role = (document.getElementById("userRoleFilter")||{value:""}).value;
+    const dept = (document.getElementById("userDeptFilter")||{value:""}).value;
+    const year = (document.getElementById("userYearFilter")||{value:""}).value;
+    const f = allUsers.filter(u=>{
+        if(q && !u.name.toLowerCase().includes(q) && !u.email.toLowerCase().includes(q) && !(u.reg_no||"").toLowerCase().includes(q)) return false;
+        if(role && u.role !== role) return false;
+        if(dept && u.department !== dept) return false;
+        if(year && String(u.year) !== year) return false;
+        return true;
+    });
+    const lbl = document.getElementById("userCountLabel");
+    if(lbl) lbl.textContent = f.length + " of " + allUsers.length + " users";
+    renderUsersTable(f);
+}
+
+function toggleSelectAll(cb){
+    const rows = document.querySelectorAll(".user-row-cb");
+    rows.forEach(r=>{ r.checked = cb.checked; if(cb.checked) _selectedUsers.add(parseInt(r.dataset.id)); else _selectedUsers.delete(parseInt(r.dataset.id)); });
+    updateBulkBar();
+}
+
+function toggleUserSelect(id, cb){
+    if(cb.checked) _selectedUsers.add(id); else _selectedUsers.delete(id);
+    updateBulkBar();
+}
+
+function updateBulkBar(){
+    const n = _selectedUsers.size;
+    const bar = document.getElementById("bulkActions");
+    const cnt = document.getElementById("selectedCount");
+    if(bar) bar.style.display = n > 0 ? "flex" : "none";
+    if(cnt){ cnt.textContent = n + " selected"; cnt.style.display = n > 0 ? "" : "none"; }
+}
+
+function bulkDeleteUsers(){
+    const ids = Array.from(_selectedUsers);
+    if(!ids.length){ alert("No users selected."); return; }
+    if(!confirm("Delete " + ids.length + " user(s)? This cannot be undone.")) return;
+    Promise.all(ids.map(id=>
+        fetch(API+"/api/admin/users/"+id,{method:"DELETE",credentials:"include"}).then(r=>r.json())
+    )).then(results=>{
+        const failed = results.filter(r=>r.message && r.message.toLowerCase().includes("cannot"));
+        alert("Deleted " + (ids.length - failed.length) + " user(s)." + (failed.length ? " " + failed.length + " skipped (admin accounts)." : ""));
+        _selectedUsers = new Set();
+        loadAllUsers();
+        loadAdminStats();
+    });
+}
+
+function renderUsersTable(data){
+    const tbody = document.getElementById("usersTbody");
+    const ghIcon = '<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>';
+    const liIcon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>';
+    const igIcon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>';
+
+    tbody.innerHTML = data.map(u=>{
+        const avatar = u.profile_pic
+            ? `<img src="${API}/${u.profile_pic}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:8px;">`
+            : `<span style="display:inline-flex;width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:.85rem;margin-right:8px;vertical-align:middle;">${(u.name||"?").charAt(0).toUpperCase()}</span>`;
+        const socials = [
+            u.github    ? `<a href="${u.github}"    target="_blank" title="GitHub"    style="color:#24292e;margin-right:8px;display:inline-flex;align-items:center;vertical-align:middle;">${ghIcon}</a>` : "",
+            u.linkedin  ? `<a href="${u.linkedin}"  target="_blank" title="LinkedIn"  style="color:#0077b5;margin-right:8px;display:inline-flex;align-items:center;vertical-align:middle;">${liIcon}</a>` : "",
+            u.instagram ? `<a href="${u.instagram}" target="_blank" title="Instagram" style="color:#e1306c;display:inline-flex;align-items:center;vertical-align:middle;">${igIcon}</a>` : ""
+        ].filter(Boolean).join("");
+        const canDelete = u.role !== "admin";
+        const isSelected = _selectedUsers.has(u.id);
+
+        return `<tr id="urow-${u.id}">
+            <td><input type="checkbox" class="user-row-cb" data-id="${u.id}" ${isSelected?"checked":""} onchange="toggleUserSelect(${u.id},this)"></td>
+            <td style="white-space:nowrap;">
+                ${avatar}<strong>${u.name}</strong>
+                ${u.bio ? `<div style="font-size:.74rem;color:#718096;margin-top:2px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${u.bio}</div>` : ""}
+                ${socials ? `<div style="margin-top:4px;">${socials}</div>` : ""}
+            </td>
+            <td style="font-size:.8rem;color:#4b5563;font-family:monospace;">${u.reg_no||"—"}</td>
+            <td>${u.email}</td>
+            <td>
+                <span class="pill ${u.role==='admin'?'pill-red':'pill-blue'}">${u.role}</span>
+                ${canDelete ? `<button onclick="openEditUserModal(${u.id})" class="btn-xs" style="background:#eef2ff;color:#4f46e5;border:none;border-radius:6px;padding:2px 7px;cursor:pointer;font-size:.72rem;margin-left:4px;">✏ Edit</button>` : ""}
+                ${canDelete ? `<button onclick="promoteToAdmin(${u.id},'${u.name.replace(/'/g,"")}')" class="btn-xs" style="background:#fef3c7;color:#92400e;border:none;border-radius:6px;padding:2px 7px;cursor:pointer;font-size:.72rem;margin-left:2px;">⬆ Admin</button>` : ""}
+            </td>
+            <td>${u.department||"—"}</td>
+            <td>${u.year||"—"}</td>
+            <td style="font-size:.78rem;color:#718096;">${u.created_at ? new Date(u.created_at).toLocaleDateString() : "—"}</td>
+            <td>${canDelete ? '<button class="btn-xs btn-delete" onclick="deleteUser('+u.id+',\''+u.name.replace(/'/g,"")+'\')")>🗑</button>' : '<span style="color:#a0aec0;font-size:.75rem;">Admin</span>'}</td>
+        </tr>`;
+    }).join("");
+}
+
+function openEditUserModal(id){
+    const u = allUsers.find(x=>x.id===id);
+    if(!u) return;
+    const html = `
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+        <div style="width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:1.1rem;flex-shrink:0;">${(u.name||"?").charAt(0).toUpperCase()}</div>
+        <div><h3 style="margin:0;font-size:1rem;font-weight:700;color:#1e1b4b;">Edit Profile</h3><p style="margin:2px 0 0;font-size:.75rem;color:#94a3b8;">${u.email}</p></div>
+        <button onclick="closeAdminEditModal()" style="margin-left:auto;background:#f1f5f9;border:none;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:1rem;color:#64748b;">✕</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div><label style="display:block;font-size:.72rem;font-weight:600;color:#6366f1;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;">Full Name</label><input id="eu_name" class="ape-inp" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:.88rem;color:#1e1b4b;background:#f8faff;" value="${u.name||""}"></div>
+        <div><label style="display:block;font-size:.72rem;font-weight:600;color:#6366f1;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;">Department</label><input id="eu_dept" class="ape-inp" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:.88rem;color:#1e1b4b;background:#f8faff;" value="${u.department||""}"></div>
+        <div><label style="display:block;font-size:.72rem;font-weight:600;color:#6366f1;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;">Year</label>
+            <select id="eu_year" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:.88rem;color:#1e1b4b;background:#f8faff;cursor:pointer;">
+                <option value="">—</option>
+                <option value="1" ${u.year==1?"selected":""}>Year 1</option>
+                <option value="2" ${u.year==2?"selected":""}>Year 2</option>
+                <option value="3" ${u.year==3?"selected":""}>Year 3</option>
+                <option value="4" ${u.year==4?"selected":""}>Year 4</option>
+            </select>
+        </div>
+        <div><label style="display:block;font-size:.72rem;font-weight:600;color:#6366f1;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;">Phone</label><input id="eu_phone" class="ape-inp" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:.88rem;color:#1e1b4b;background:#f8faff;" value="${u.phone||""}"></div>
+        <div style="grid-column:1/-1;"><label style="display:block;font-size:.72rem;font-weight:600;color:#6366f1;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;">Bio</label><textarea id="eu_bio" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:.88rem;color:#1e1b4b;background:#f8faff;resize:vertical;" rows="2">${u.bio||""}</textarea></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:20px;padding-top:16px;border-top:1px solid #f1f5f9;">
+        <button onclick="submitEditUser(${id})" style="flex:1;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:10px;padding:12px;font-weight:700;font-size:.9rem;cursor:pointer;box-shadow:0 4px 14px rgba(99,102,241,.3);">💾 Save Changes</button>
+        <button onclick="closeAdminEditModal()" style="flex:0 0 100px;background:#f1f5f9;border:none;border-radius:10px;padding:12px;cursor:pointer;color:#64748b;font-size:.88rem;font-weight:600;">Cancel</button>
+    </div>`;
+    let overlay = document.getElementById("adminEditOverlay");
+    if(!overlay){
+        overlay = document.createElement("div");
+        overlay.id = "adminEditOverlay";
+        overlay.style.cssText = "display:none;position:fixed;inset:0;background:rgba(15,15,40,.55);backdrop-filter:blur(4px);z-index:2000;align-items:center;justify-content:center;";
+        const box = document.createElement("div");
+        box.id = "adminEditBox";
+        box.style.cssText = "background:#fff;border-radius:20px;padding:28px 30px;max-width:540px;width:95%;max-height:92vh;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,.2);";
+        overlay.appendChild(box);
+        overlay.onclick = e=>{ if(e.target===overlay) closeAdminEditModal(); };
+        document.body.appendChild(overlay);
+    }
+    document.getElementById("adminEditBox").innerHTML = html;
+    overlay.style.display = "flex";
+}
+
+function submitEditUser(id){
+    const fd = new FormData();
+    fd.append("name",       document.getElementById("eu_name").value);
+    fd.append("department", document.getElementById("eu_dept").value);
+    fd.append("year",       document.getElementById("eu_year").value);
+    fd.append("phone",      document.getElementById("eu_phone").value);
+    fd.append("bio",        document.getElementById("eu_bio").value);
+    fetch(API+"/api/admin/users/"+id, {method:"PUT", credentials:"include", body:fd})
+    .then(r=>r.json()).then(d=>{
+        closeAdminEditModal();
+        alert(d.message);
+        loadAllUsers();
+    });
+}
+
+function promoteToAdmin(id, name){
+    if(!confirm("Promote \""+name+"\" to admin?\n\nThey will have full admin access. This cannot be undone easily.")) return;
+    fetch(API+"/api/admin/users/"+id+"/promote", {method:"PUT", credentials:"include"})
+    .then(r=>r.json()).then(d=>{ alert(d.message); loadAllUsers(); });
+}
+
+function exportUsersCSV(){
+    const rows = [["Name","Reg No","Email","Role","Department","Year","Joined"]];
+    const q    = (document.getElementById("userSearch")||{value:""}).value.toLowerCase();
+    const role = (document.getElementById("userRoleFilter")||{value:""}).value;
+    const dept = (document.getElementById("userDeptFilter")||{value:""}).value;
+    const year = (document.getElementById("userYearFilter")||{value:""}).value;
+    const filtered = allUsers.filter(u=>{
+        if(q && !u.name.toLowerCase().includes(q) && !u.email.toLowerCase().includes(q)) return false;
+        if(role && u.role !== role) return false;
+        if(dept && u.department !== dept) return false;
+        if(year && String(u.year) !== year) return false;
+        return true;
+    });
+    filtered.forEach(u=> rows.push([u.name,u.reg_no||"",u.email,u.role,u.department||"",u.year||"",u.created_at||""]));
+    const csv = rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(",")).join("\n");
+    const blob = new Blob([csv], {type:"text/csv"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "users_export.csv";
+    a.click();
+}
+
+function filterUsers(q){ applyUserFilters(); }
+
+function deleteUser(id, name){
+    if(!confirm("Are you sure you want to delete user \""+name+"\"?\n\nThis will remove all their registrations and club memberships.")) return;
+    fetch(API+"/api/admin/users/"+id,{method:"DELETE",credentials:"include"})
+    .then(r=>r.json()).then(d=>{ alert(d.message); loadAllUsers(); loadAdminStats(); });
+}
+/* ===== Analytics section ===== */
+function loadAnalyticsSection(){
+    const range = (document.getElementById("analyticsRange")||{value:"all"}).value;
+    const rq = range !== "all" ? "?days="+range : "";
+    apiFetch("/admin/event-analytics"+rq,{credentials:"include"}).then(r=>r.json()).then(d=>{
+        const total = d.events.reduce((s,e)=>s+e.registrations,0);
+        setText("aTotal", total);
+        setText("aAvg",   d.average||0);
+        buildChart("aEventChart","bar",
+            d.events.map(e=>e.title.length>18?e.title.slice(0,18)+"…":e.title),
+            [{label:"Registrations",data:d.events.map(e=>e.registrations),backgroundColor:"#6366f1"}]);
+        buildChart("aTrendChart","line",
+            d.trend.map(t=>t.day),
+            [{label:"Registrations",data:d.trend.map(t=>t.total),borderColor:"#6366f1",backgroundColor:"rgba(99,102,241,.15)",fill:true,tension:.35}]);
+    });
+    apiFetch("/admin/favorite-analytics"+rq,{credentials:"include"}).then(r=>r.json()).then(d=>{
+        if(d.clubs.length) setText("aFavClubs",  d.clubs[0].name);
+        if(d.events.length) setText("aFavEvent", d.events[0].title);
+        buildChart("aFavChart","bar",
+            d.clubs.map(c=>c.name.length>14?c.name.slice(0,14)+"…":c.name),
+            [{label:"Favourites",data:d.clubs.map(c=>c.favorites),backgroundColor:"#f43f5e"}]);
+    });
+    apiFetch("/admin/revenue-analytics"+rq,{credentials:"include"}).then(r=>r.json()).then(d=>{
+        setText("rTotal",        "₹" + d.total_revenue.toLocaleString("en-IN", {minimumFractionDigits:2}));
+        setText("rTxns",         d.total_transactions);
+        setText("rPending",      "₹" + d.pending_amount.toLocaleString("en-IN", {minimumFractionDigits:2}));
+        setText("rPendingCount", d.pending_count);
+
+        if(d.by_club.length){
+            buildChart("rClubChart","bar",
+                d.by_club.map(c=>c.club_name.length>14?c.club_name.slice(0,14)+"…":c.club_name),
+                [{label:"Revenue (INR)",data:d.by_club.map(c=>parseFloat(c.revenue)),backgroundColor:"#10b981"}]);
+        }
+
+        if(d.status_breakdown.length){
+            const statusColors = {success:"#10b981",pending:"#f59e0b",failed:"#ef4444",expired:"#6b7280"};
+            buildChart("rStatusChart","doughnut",
+                d.status_breakdown.map(s=>s.status),
+                [{data:d.status_breakdown.map(s=>s.count),
+                  backgroundColor:d.status_breakdown.map(s=>statusColors[s.status]||"#94a3b8")}]);
+        }
+
+        if(d.trend.length){
+            buildChart("rTrendChart","line",
+                d.trend.map(t=>t.day),
+                [{label:"Revenue (INR)",data:d.trend.map(t=>parseFloat(t.revenue)),
+                  borderColor:"#10b981",backgroundColor:"rgba(16,185,129,.12)",fill:true,tension:.35}]);
+        }
+
+        const tbody = document.getElementById("rTopEventsTbody");
+        if(tbody){
+            tbody.innerHTML = d.top_events.length
+                ? d.top_events.map(e=>`<tr>
+                    <td><strong>${e.title}</strong></td>
+                    <td style="font-size:.82rem;color:#718096;">${e.club_name}</td>
+                    <td style="color:#10b981;font-weight:600;">₹${parseFloat(e.revenue).toLocaleString("en-IN",{minimumFractionDigits:2})}</td>
+                    <td>${e.registrations}</td>
+                  </tr>`).join("")
+                : '<tr><td colspan="4" style="text-align:center;color:#999;padding:16px;">No paid events yet.</td></tr>';
+        }
+    });
+}
+
+function downloadPDFReport(){
+    const range = (document.getElementById("analyticsRange")||{value:"all"}).value;
+    const url = API + "/admin/report/pdf" + (range !== "all" ? "?days="+range : "");
+    window.open(url, "_blank");
+}
+
+/* ===== Activity ===== */
+var _allActivity = [];
+var _actPage = 1;
+var ACT_PER_PAGE = 25;
+
+function loadActivity(){
+    fetch("/api/admin/activity",{credentials:"include"}).then(r=>r.json()).then(data=>{
+        _allActivity = data;
+        renderActivityPage(1);
+    });
+}
+
+function renderActivityPage(page){
+    _actPage = page;
+    var q      = (document.getElementById("activitySearch")||{value:""}).value.toLowerCase();
+    var filter = (document.getElementById("activityFilter")||{value:"all"}).value;
+
+    var filtered = _allActivity.filter(function(a){
+        var msg = (a.message||"").toLowerCase();
+        var matchQ = !q || msg.includes(q);
+        var matchF = filter === "all" || msg.includes(filter);
+        return matchQ && matchF;
+    });
+
+    var total = filtered.length;
+    var pages = Math.max(1, Math.ceil(total / ACT_PER_PAGE));
+    if(page > pages) page = pages;
+    var slice = filtered.slice((page-1)*ACT_PER_PAGE, page*ACT_PER_PAGE);
+
+    var iconMap = {
+        "created":"🟢","approved":"✅","rejected":"❌","deleted":"🗑",
+        "updated":"✏️","removed":"➖","added":"➕","registered":"🎟","changed":"🔄"
+    };
+    function pickIcon(msg){
+        var m = msg.toLowerCase();
+        for(var k in iconMap){ if(m.includes(k)) return iconMap[k]; }
+        return "📌";
+    }
+
+    var list = document.getElementById("activityList");
+    if(!list) return;
+    list.innerHTML = slice.length
+        ? slice.map(function(a){
+            return '<li><span>'+pickIcon(a.message)+' '+a.message+'</span>'
+              +'<span class="act-time">'+new Date(a.created_at).toLocaleString()+'</span></li>';
+          }).join("")
+        : "<li style='color:#999;padding:12px 0;'>No matching activity.</li>";
+
+    var pager = document.getElementById("activityPager");
+    if(!pager) return;
+    if(pages <= 1){ pager.innerHTML=""; return; }
+    var btns = "";
+    for(var i=1;i<=pages;i++){
+        btns += '<button onclick="renderActivityPage('+i+')" style="padding:4px 10px;border-radius:6px;border:1px solid '+(i===page?'#6366f1':'#e2e8f0')+';background:'+(i===page?'#6366f1':'#fff')+';color:'+(i===page?'#fff':'#374151')+';cursor:pointer;font-size:.8rem;">'+i+'</button>';
+    }
+    pager.innerHTML = '<span style="font-size:.8rem;color:#718096;align-self:center;">'+total+' entries</span> '+btns;
+}
+
+/* ===== Modal helpers ===== */
+function closeModal(id){ document.getElementById(id).classList.remove("open"); }
+function closeEditModal(){ cancelEventEdit(); }
+function closeClubModal(){ cancelClubEdit(); }
+function closeRejectModal(){ closeModal("rejectModal"); }
+
+/* ===== Conflict check ===== */
+let adminConflictTimer=null;
+function adminCheckConflict(){
+    clearTimeout(adminConflictTimer);
+    adminConflictTimer=setTimeout(()=>{
+        const loc  = document.getElementById("eventLocation").value.trim();
+        const date = document.getElementById("eventDate").value;
+        const time = document.getElementById("eventTime").value;
+        if(!loc||!date||!time) return;
+        fetch(API+"/api/events/check-conflict",{
+            method:"POST",credentials:"include",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({location:loc,date,time})
+        }).then(r=>r.json()).then(d=>{
+            const box=document.getElementById("adminConflictWarning");
+            if(d.conflict){
+                document.getElementById("adminConflictDetail").textContent=
+                    `"${d.conflicts[0].title}" is at this venue at ${d.conflicts[0].time}`;
+                box.style.display="block";
+            } else { box.style.display="none"; }
+        });
+    },600);
+}
+
+/* ===== Export ===== */
+function exportEventRegistrations(id){ window.open(API+"/api/events/"+id+"/export-registrations","_blank"); }
+
+/* ===== Rejected Events ===== */
+function loadAdminRejected(){
+    const period = document.getElementById("rejectedFilter")?.value || "24h";
+    fetch(API+"/api/admin/rejected-events?period="+period,{credentials:"include"})
+    .then(r=>r.json()).then(events=>{
+        const tbody = document.getElementById("rejectedAdminTbody");
+        const noMsg = document.getElementById("noRejectedAdmin");
+        const table = document.getElementById("rejectedAdminTable");
+        if(!events.length){
+            noMsg.style.display="block"; table.style.display="none"; return;
+        }
+        noMsg.style.display="none"; table.style.display="";
+        tbody.innerHTML = events.map(e=>{
+            const by     = e.president_rejection_reason ? "President" : "Admin";
+            const reason = e.president_rejection_reason || e.admin_rejection_reason || "—";
+            return `<tr>
+                <td><strong>${e.title}</strong></td>
+                <td>${e.club_name}</td>
+                <td>${e.date}</td>
+                <td><span class="pill ${by==='Admin'?'pill-red':'pill-amber'}">${by}</span></td>
+                <td style="max-width:220px;font-size:.82rem;color:#4b5563;">${reason}</td>
+                <td style="font-size:.78rem;color:#718096;">${e.created_at||"—"}</td>
+            </tr>`;
+        }).join("");
+    });
+}
+
+/* ===== All users endpoint (add to admin_routes if missing) ===== */
+
+</script>
+</body>
+</html>
