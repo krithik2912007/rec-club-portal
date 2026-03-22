@@ -59,6 +59,8 @@ def login_view(request):
     data     = _json(request)
     email    = data.get("email")
     password = data.get("password")
+    # Note: 'role' field from frontend is intentionally ignored —
+    # the actual role is always read from the database.
 
     if not email or not password:
         return JsonResponse({"message": "Missing credentials"}, status=400)
@@ -89,6 +91,9 @@ def login_view(request):
     else:
         request.session["active_club"] = None
         request.session["club_role"]   = None
+
+    # Force session save so cookie is set before redirect
+    request.session.modified = True
 
     close_connection(cursor, conn)
     return JsonResponse({
@@ -129,6 +134,7 @@ def switch_club(request):
         return JsonResponse({"message": "Access denied"}, status=403)
     request.session["active_club"] = club_id
     request.session["club_role"]   = membership["role"]
+    request.session.modified = True
     return JsonResponse({"message": "Active club switched"})
 
 
@@ -179,8 +185,6 @@ def update_profile(request):
         return JsonResponse({"message": "Method not allowed"}, status=405)
 
     # Django does not parse multipart/form-data for PUT requests automatically.
-    # Trick: temporarily switch method to POST so Django parses it, then switch back.
-    from django.conf import settings as djsettings
     content_type = request.META.get("CONTENT_TYPE", "")
     if "multipart/form-data" in content_type:
         request.method = "POST"
@@ -191,10 +195,12 @@ def update_profile(request):
     files   = request.FILES
     user_id = request.session["user_id"]
     cursor, conn = get_cursor()
+
     profile_pic_path = None
     if "profile_pic" in files:
         pic = files["profile_pic"]
         if pic:
+            from django.conf import settings as djsettings
             filename = str(uuid.uuid4()) + "_" + pic.name
             path = os.path.join(djsettings.MEDIA_ROOT, "uploads", filename)
             os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -202,6 +208,7 @@ def update_profile(request):
                 for chunk in pic.chunks():
                     f.write(chunk)
             profile_pic_path = "uploads/" + filename
+
     if profile_pic_path:
         cursor.execute("""
             UPDATE users SET name=%s, department=%s, year=%s, phone=%s, bio=%s,
@@ -263,7 +270,6 @@ def reset_password(request, token):
     new_password = request.POST.get("password") or _json(request).get("password")
     if not new_password:
         return JsonResponse({"message": "Password required"}, status=400)
-    from werkzeug.security import generate_password_hash
     hashed = generate_password_hash(new_password)
     cursor, conn = get_cursor()
     cursor.execute("UPDATE users SET password=%s WHERE email=%s", (hashed, email))
@@ -279,10 +285,11 @@ def user_lookup(request):
     if not query:
         return JsonResponse([], safe=False)
     cursor, conn = get_cursor()
+    # FIX: Use LIKE for partial matching so autocomplete/live-search works
     cursor.execute("""
         SELECT id, reg_no, name, email, role, department, year
-        FROM users WHERE email=%s OR reg_no=%s LIMIT 5
-    """, (query, query.upper()))
+        FROM users WHERE email LIKE %s OR reg_no LIKE %s LIMIT 5
+    """, (f"%{query}%", f"%{query.upper()}%"))
     users = cursor.fetchall()
     close_connection(cursor, conn)
     return JsonResponse(users, safe=False)

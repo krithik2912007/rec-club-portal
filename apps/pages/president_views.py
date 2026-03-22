@@ -1,6 +1,7 @@
 """
-club_president_routes.py → Django views
-All president/VP actions: pending changes, member management, notifications.
+president_views.py — President/VP actions: pending changes, member management, notifications.
+FIX: approve_pending_change now handles ALL change types:
+     event_edit, member_role, event_delete, club_details
 """
 import json
 from django.http import JsonResponse
@@ -43,22 +44,72 @@ def approve_pending_change(request, club_id, change_id):
     if not member or member["role"] != "president":
         close_connection(cursor, conn)
         return JsonResponse({"message": "Only president can approve changes"}, status=403)
+
     cursor.execute("SELECT * FROM pending_changes WHERE id=%s AND club_id=%s AND status='pending'",
                    (change_id, club_id))
     change = cursor.fetchone()
     if not change:
         close_connection(cursor, conn)
         return JsonResponse({"message": "Change not found"}, status=404)
-    if change["change_type"] == "event_edit":
-        payload = json.loads(change["payload"])
+
+    try:
+        payload = json.loads(change["payload"] or "{}")
+    except Exception:
+        payload = {}
+
+    # FIX: Handle ALL change types, not just event_edit
+    change_type = change["change_type"]
+
+    if change_type == "event_edit":
+        d = payload
         cursor.execute("""
             UPDATE events SET title=%s, description=%s, date=%s, time=%s,
-                location=%s, type=%s, capacity=%s WHERE id=%s
-        """, (payload.get("title"), payload.get("description"), payload.get("date"),
-              payload.get("time"), payload.get("location"), payload.get("type"),
-              payload.get("capacity"), change["target_id"]))
-    cursor.execute("UPDATE pending_changes SET status='approved' WHERE id=%s", (change_id,))
-    log_activity(cursor, f"President {request.session['user_id']} approved pending change {change_id}")
+                location=%s, type=%s, capacity=%s, event_category=%s,
+                min_members=%s, max_members=%s, is_paid=%s, price=%s,
+                prize_pool=%s, about=%s, rules=%s, instructions=%s, agenda=%s
+            WHERE id=%s
+        """, (d.get("title"), d.get("description"), d.get("date"), d.get("time"),
+              d.get("location"), d.get("type"), d.get("capacity"),
+              d.get("event_category", "individual"),
+              d.get("min_members") or None, d.get("max_members") or None,
+              bool(d.get("is_paid", False)), d.get("price") or 0,
+              d.get("prize_pool"), d.get("about"), d.get("rules"),
+              d.get("instructions"), d.get("agenda"),
+              change["target_id"]))
+
+    elif change_type == "member_role":
+        if payload.get("action") == "remove":
+            cursor.execute("DELETE FROM club_memberships WHERE user_id=%s AND club_id=%s",
+                           (change["target_id"], club_id))
+        else:
+            cursor.execute("UPDATE club_memberships SET role=%s WHERE user_id=%s AND club_id=%s",
+                           (payload["new_role"], change["target_id"], club_id))
+
+    elif change_type == "event_delete":
+        cursor.execute("DELETE FROM events WHERE id=%s AND club_id=%s",
+                       (change["target_id"], club_id))
+
+    elif change_type == "club_details":
+        d = payload
+        if d.get("image"):
+            cursor.execute("""
+                UPDATE clubs SET name=%s, category=%s, description=%s,
+                    about=%s, vision=%s, mission=%s, image=%s WHERE id=%s
+            """, (d.get("name"), d.get("category"), d.get("description"),
+                  d.get("about"), d.get("vision"), d.get("mission"),
+                  d.get("image"), club_id))
+        else:
+            cursor.execute("""
+                UPDATE clubs SET name=%s, category=%s, description=%s,
+                    about=%s, vision=%s, mission=%s WHERE id=%s
+            """, (d.get("name"), d.get("category"), d.get("description"),
+                  d.get("about"), d.get("vision"), d.get("mission"), club_id))
+
+    cursor.execute(
+        "UPDATE pending_changes SET status='approved', reviewed_by=%s, reviewed_at=NOW() WHERE id=%s",
+        (request.session["user_id"], change_id)
+    )
+    log_activity(cursor, f"President {request.session['user_id']} approved pending change {change_id} ({change_type})")
     conn.commit()
     close_connection(cursor, conn)
     return JsonResponse({"message": "Change approved and applied"})
@@ -69,6 +120,8 @@ def approve_pending_change(request, club_id, change_id):
 def reject_pending_change(request, club_id, change_id):
     if request.method != "PUT":
         return JsonResponse({"message": "Method not allowed"}, status=405)
+    data = _json(request)
+    note = data.get("note", "")
     cursor, conn = get_cursor()
     cursor.execute("SELECT role FROM club_memberships WHERE user_id=%s AND club_id=%s",
                    (request.session["user_id"], club_id))
@@ -76,8 +129,10 @@ def reject_pending_change(request, club_id, change_id):
     if not member or member["role"] != "president":
         close_connection(cursor, conn)
         return JsonResponse({"message": "Only president can reject changes"}, status=403)
-    cursor.execute("UPDATE pending_changes SET status='rejected' WHERE id=%s AND club_id=%s",
-                   (change_id, club_id))
+    cursor.execute(
+        "UPDATE pending_changes SET status='rejected', reviewed_by=%s, review_note=%s, reviewed_at=NOW() WHERE id=%s AND club_id=%s",
+        (request.session["user_id"], note, change_id, club_id)
+    )
     conn.commit()
     close_connection(cursor, conn)
     return JsonResponse({"message": "Change rejected"})
@@ -99,11 +154,16 @@ def president_approve_event(request, event_id):
     if not role or role["role"] != "president":
         close_connection(cursor, conn)
         return JsonResponse({"message": "Only president can approve"}, status=403)
-    cursor.execute("UPDATE events SET president_approved=TRUE, status='pending_admin' WHERE id=%s AND status='pending_president'", (event_id,))
+    cursor.execute(
+        "UPDATE events SET president_approved=TRUE, status='pending_admin' WHERE id=%s AND status='pending_president'",
+        (event_id,)
+    )
     log_activity(cursor, f"Event {event_id} approved by president {request.session['user_id']}")
     conn.commit()
-    cursor.execute("SELECT e.title, u.name, u.email, p.name AS president_name FROM events e JOIN users u ON e.created_by=u.id JOIN users p ON p.id=%s WHERE e.id=%s",
-                   (request.session["user_id"], event_id))
+    cursor.execute("""
+        SELECT e.title, u.name, u.email, p.name AS president_name
+        FROM events e JOIN users u ON e.created_by=u.id JOIN users p ON p.id=%s WHERE e.id=%s
+    """, (request.session["user_id"], event_id))
     info = cursor.fetchone()
     close_connection(cursor, conn)
     if info:
@@ -133,11 +193,16 @@ def president_reject_event(request, event_id):
     if not role or role["role"] != "president":
         close_connection(cursor, conn)
         return JsonResponse({"message": "Only president can reject"}, status=403)
-    cursor.execute("UPDATE events SET status='rejected', president_rejection_reason=%s WHERE id=%s", (reason, event_id))
+    cursor.execute(
+        "UPDATE events SET status='rejected', president_rejection_reason=%s WHERE id=%s",
+        (reason, event_id)
+    )
     log_activity(cursor, f"Event {event_id} rejected by president {request.session['user_id']}: {reason}")
     conn.commit()
-    cursor.execute("SELECT e.title, u.name, u.email, p.name AS president_name FROM events e JOIN users u ON e.created_by=u.id JOIN users p ON p.id=%s WHERE e.id=%s",
-                   (request.session["user_id"], event_id))
+    cursor.execute("""
+        SELECT e.title, u.name, u.email, p.name AS president_name
+        FROM events e JOIN users u ON e.created_by=u.id JOIN users p ON p.id=%s WHERE e.id=%s
+    """, (request.session["user_id"], event_id))
     info = cursor.fetchone()
     close_connection(cursor, conn)
     if info:
@@ -198,7 +263,8 @@ def mark_all_notifications_read(request):
     if request.method != "PUT":
         return JsonResponse({"message": "Method not allowed"}, status=405)
     cursor, conn = get_cursor()
-    cursor.execute("UPDATE notifications SET is_read=TRUE WHERE user_id=%s", (request.session["user_id"],))
+    cursor.execute("UPDATE notifications SET is_read=TRUE WHERE user_id=%s",
+                   (request.session["user_id"],))
     conn.commit()
     close_connection(cursor, conn)
     return JsonResponse({"message": "All notifications marked as read"})

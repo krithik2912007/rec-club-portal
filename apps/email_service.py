@@ -1,7 +1,7 @@
 """
 email_service.py — Django email sending.
-Identical behaviour to Flask version.
-Uses Django's built-in send_mail.
+FIX: email_logs INSERT now uses correct column names from schema:
+     (recipient, subject, sent_at)  NOT (email, subject, status)
 """
 import ssl
 from django.core.mail import send_mail as django_send_mail, get_connection
@@ -37,21 +37,25 @@ def send_email(to, subject, body, html=None):
             fail_silently=False,
             connection=connection,
         )
-        status = "sent"
+        success = True
     except Exception as e:
         print(f"Email send error: {e}")
-        status = "failed"
+        success = False
 
+    # FIX: Schema is (id, recipient, subject, sent_at) — NOT (email, subject, status)
+    # sent_at is auto-filled by DEFAULT CURRENT_TIMESTAMP so we only insert recipient+subject
     try:
         cursor, conn = get_cursor()
         cursor.execute(
-            "INSERT INTO email_logs(email, subject, status) VALUES(%s, %s, %s)",
-            (to, subject, status)
+            "INSERT INTO email_logs(recipient, subject) VALUES(%s, %s)",
+            (to, subject)
         )
         conn.commit()
         close_connection(cursor, conn)
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"[email_logs] Failed to log: {e}")
+
+    return success
 
 
 def send_event_approval_email(to, user_name, event_title, approved_by):

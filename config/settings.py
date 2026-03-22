@@ -6,7 +6,7 @@ load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.environ.get('SECRET_KEY', 'change-this-in-production')
-DEBUG = os.environ.get('DJANGO_ENV', 'production') == 'development'
+DEBUG = os.environ.get('DJANGO_ENV', 'development') == 'development'
 ALLOWED_HOSTS = ['*']
 
 INSTALLED_APPS = [
@@ -59,11 +59,14 @@ DATABASES = {
 }
 
 # ── Sessions ──
-SESSION_ENGINE       = 'django.contrib.sessions.backends.db'
-SESSION_COOKIE_AGE   = 28800
+# db backend — stores session server-side in django_session table (no size limit).
+# Run: python manage.py migrate   to create the django_session table.
+SESSION_ENGINE          = 'django.contrib.sessions.backends.db'
+SESSION_COOKIE_AGE      = 28800       # 8 hours
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = 'Lax'
-SESSION_COOKIE_SECURE   = os.environ.get('DJANGO_ENV') == 'production'
+SESSION_COOKIE_SECURE   = not DEBUG   # True on Render/Railway (HTTPS), False locally
+SESSION_COOKIE_NAME     = 'clubportal_session'
 
 # ── Static & Media ──
 STATIC_URL  = '/static/'

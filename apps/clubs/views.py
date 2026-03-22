@@ -222,28 +222,29 @@ def get_rejected_events(request, club_id):
     """, (club_id, cutoff))
     events = serialize_rows(cursor.fetchall())
     for e in events:
-        rejected_time = datetime.strptime(e["created_at"], "%Y-%m-%d %H:%M")
-        expires_at    = rejected_time + timedelta(hours=24)
-        remaining     = expires_at - datetime.now()
-        hours_left    = max(0, int(remaining.total_seconds() // 3600))
-        mins_left     = max(0, int((remaining.total_seconds() % 3600) // 60))
-        e["expires_in"] = f"{hours_left}h {mins_left}m"
+        # FIX: guard against None created_at before strptime
+        if not e.get("created_at"):
+            e["expires_in"] = "0h 0m"
+            continue
+        try:
+            rejected_time = datetime.strptime(e["created_at"], "%Y-%m-%d %H:%M")
+            expires_at    = rejected_time + timedelta(hours=24)
+            remaining     = expires_at - datetime.now()
+            hours_left    = max(0, int(remaining.total_seconds() // 3600))
+            mins_left     = max(0, int((remaining.total_seconds() % 3600) // 60))
+            e["expires_in"] = f"{hours_left}h {mins_left}m"
+        except Exception:
+            e["expires_in"] = "0h 0m"
     close_connection(cursor, conn)
     return JsonResponse(events, safe=False)
-import json
+
+
+# ── PRESIDENT / VP MEMBER MANAGEMENT ──
 import uuid
 import os
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings as djsettings
-from apps.db import get_cursor, close_connection, serialize_rows, log_activity
-from apps.decorators import login_required
 
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "webp"}
-
-def _json(request):
-    try: return json.loads(request.body)
-    except: return {}
 
 def _get_role(user_id, club_id, cursor):
     cursor.execute("SELECT role FROM club_memberships WHERE user_id=%s AND club_id=%s", (user_id, club_id))
@@ -269,7 +270,7 @@ def president_get_members(request, club_id):
                        'event_management_associate','pr_head','pr_associate','photography'),
                  u.name ASC
     """, (club_id,))
-    members = cursor.fetchall()
+    members = serialize_rows(cursor.fetchall())
     close_connection(cursor, conn)
     return JsonResponse(members, safe=False)
 
@@ -342,12 +343,25 @@ def president_update_club(request, club_id):
     if my_role not in ("president", "vice_president"):
         close_connection(cursor, conn)
         return JsonResponse({"message": "President/VP access required"}, status=403)
-    name        = request.POST.get("name")
-    category    = request.POST.get("category")
-    description = request.POST.get("description")
-    about       = request.POST.get("about")
-    vision      = request.POST.get("vision")
-    mission     = request.POST.get("mission")
+
+    # FIX: Django does not parse multipart/form-data for PUT requests automatically.
+    content_type = request.META.get("CONTENT_TYPE", "")
+    if "multipart/form-data" in content_type:
+        request.method = "POST"
+        request._load_post_and_files()
+        request.method = "PUT"
+
+    name        = request.POST.get("name", "").strip()
+    category    = request.POST.get("category", "").strip()
+    description = request.POST.get("description", "").strip()
+    about       = request.POST.get("about", "").strip()
+    vision      = request.POST.get("vision", "").strip()
+    mission     = request.POST.get("mission", "").strip()
+
+    if not name:
+        close_connection(cursor, conn)
+        return JsonResponse({"message": "Club name is required"}, status=400)
+
     payload     = {"name": name, "category": category, "description": description,
                    "about": about, "vision": vision, "mission": mission}
     image      = request.FILES.get("image")
@@ -393,11 +407,9 @@ def get_pending_changes(request, club_id):
         JOIN users u ON pc.changed_by=u.id
         WHERE pc.club_id=%s AND pc.status='pending' ORDER BY pc.created_at DESC
     """, (club_id,))
-    changes = cursor.fetchall()
+    changes = serialize_rows(cursor.fetchall())
     enriched = []
     for ch in changes:
-        if ch.get("created_at"):
-            ch["created_at"] = ch["created_at"].strftime("%Y-%m-%d %H:%M")
         try:
             ch["payload_parsed"] = json.loads(ch.get("payload") or "{}")
         except Exception:
@@ -433,8 +445,13 @@ def approve_pending_change(request, club_id, change_id):
     if not change:
         close_connection(cursor, conn)
         return JsonResponse({"message": "Change not found"}, status=404)
-    payload = json.loads(change["payload"])
-    if change["change_type"] == "event_edit":
+    try:
+        payload = json.loads(change["payload"] or "{}")
+    except Exception:
+        payload = {}
+
+    change_type = change["change_type"]
+    if change_type == "event_edit":
         d = payload
         cursor.execute("""
             UPDATE events SET title=%s, description=%s, date=%s, time=%s, location=%s, type=%s,
@@ -446,14 +463,14 @@ def approve_pending_change(request, club_id, change_id):
               bool(d.get("is_paid",False)), d.get("price") or 0,
               d.get("prize_pool"), d.get("about"), d.get("rules"), d.get("instructions"), d.get("agenda"),
               change["target_id"]))
-    elif change["change_type"] == "member_role":
+    elif change_type == "member_role":
         if payload.get("action") == "remove":
             cursor.execute("DELETE FROM club_memberships WHERE user_id=%s AND club_id=%s", (change["target_id"], club_id))
         else:
             cursor.execute("UPDATE club_memberships SET role=%s WHERE user_id=%s AND club_id=%s", (payload["new_role"], change["target_id"], club_id))
-    elif change["change_type"] == "event_delete":
+    elif change_type == "event_delete":
         cursor.execute("DELETE FROM events WHERE id=%s AND club_id=%s", (change["target_id"], club_id))
-    elif change["change_type"] == "club_details":
+    elif change_type == "club_details":
         d = payload
         if d.get("image"):
             cursor.execute("UPDATE clubs SET name=%s, category=%s, description=%s, about=%s, vision=%s, mission=%s, image=%s WHERE id=%s",
@@ -461,6 +478,7 @@ def approve_pending_change(request, club_id, change_id):
         else:
             cursor.execute("UPDATE clubs SET name=%s, category=%s, description=%s, about=%s, vision=%s, mission=%s WHERE id=%s",
                            (d.get("name"), d.get("category"), d.get("description"), d.get("about"), d.get("vision"), d.get("mission"), club_id))
+
     cursor.execute("UPDATE pending_changes SET status='approved', reviewed_by=%s, reviewed_at=NOW() WHERE id=%s", (user_id, change_id))
     conn.commit()
     close_connection(cursor, conn)
@@ -480,8 +498,10 @@ def reject_pending_change(request, club_id, change_id):
     if role != "president":
         close_connection(cursor, conn)
         return JsonResponse({"message": "Only president can reject changes"}, status=403)
-    cursor.execute("UPDATE pending_changes SET status='rejected', reviewed_by=%s, review_note=%s, reviewed_at=NOW() WHERE id=%s AND club_id=%s",
-                   (user_id, note, change_id, club_id))
+    cursor.execute(
+        "UPDATE pending_changes SET status='rejected', reviewed_by=%s, review_note=%s, reviewed_at=NOW() WHERE id=%s AND club_id=%s",
+        (user_id, note, change_id, club_id)
+    )
     conn.commit()
     close_connection(cursor, conn)
     return JsonResponse({"message": "Change rejected"})
@@ -497,13 +517,13 @@ def my_submitted_changes(request, club_id):
         FROM pending_changes pc LEFT JOIN users reviewer ON pc.reviewed_by=reviewer.id
         WHERE pc.club_id=%s AND pc.changed_by=%s ORDER BY pc.created_at DESC LIMIT 50
     """, (club_id, user_id))
-    changes = cursor.fetchall()
+    changes = serialize_rows(cursor.fetchall())
     enriched = []
     for ch in changes:
-        if ch.get("created_at"):  ch["created_at"]  = ch["created_at"].strftime("%Y-%m-%d %H:%M")
-        if ch.get("reviewed_at"): ch["reviewed_at"] = ch["reviewed_at"].strftime("%Y-%m-%d %H:%M")
-        try: ch["payload_parsed"] = json.loads(ch.get("payload") or "{}")
-        except: ch["payload_parsed"] = {}
+        try:
+            ch["payload_parsed"] = json.loads(ch.get("payload") or "{}")
+        except Exception:
+            ch["payload_parsed"] = {}
         if ch["change_type"] == "event_edit":
             cursor.execute("SELECT title FROM events WHERE id=%s", (ch["target_id"],))
             ev = cursor.fetchone()

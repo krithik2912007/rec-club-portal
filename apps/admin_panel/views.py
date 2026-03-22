@@ -40,7 +40,8 @@ def admin_clubs(request):
     if request.method == "GET":
         cursor, conn = get_cursor()
         cursor.execute("SELECT id,name,category,description,about,vision,mission,image FROM clubs ORDER BY name ASC")
-        clubs = cursor.fetchall()
+        # FIX: use serialize_rows so DATE/Decimal fields don't crash JSON serialization
+        clubs = serialize_rows(cursor.fetchall())
         close_connection(cursor, conn)
         return JsonResponse(clubs, safe=False)
 
@@ -155,7 +156,8 @@ def admin_club_members(request, club_id):
                            'event_management_associate','pr_head','pr_associate','photography'),
                      u.name ASC
         """, (club_id,))
-        members = cursor.fetchall()
+        # FIX: serialize so dict rows are proper JSON-safe dicts
+        members = serialize_rows(cursor.fetchall())
         close_connection(cursor, conn)
         return JsonResponse(members, safe=False)
 
@@ -423,22 +425,20 @@ def admin_event_analytics(request):
         " GROUP BY e.id, e.title, e.capacity ORDER BY registrations DESC LIMIT 10",
         (days,) if days else ()
     )
-    events = cursor.fetchall()
+    # FIX: serialize_rows to handle Decimal/DATE fields properly
+    events = serialize_rows(cursor.fetchall())
     for ev in events:
-        cap  = ev["capacity"] or 0
-        regs = ev["registrations"] or 0
+        cap  = ev.get("capacity") or 0
+        regs = ev.get("registrations") or 0
         ev["fill_rate"] = round((regs / cap * 100), 1) if cap > 0 else None
 
-    # Most active club
     cursor.execute("SELECT c.name, COUNT(r.id) AS total FROM clubs c JOIN events e ON e.club_id=c.id LEFT JOIN registrations r ON r.event_id=e.id GROUP BY c.id ORDER BY total DESC LIMIT 1")
     club = cursor.fetchone()
 
-    # BUG FIX 1: Serialize DATE objects to strings for trend chart
     cursor.execute("SELECT DATE(created_at) AS day, COUNT(*) AS total FROM registrations GROUP BY day ORDER BY day ASC LIMIT 14")
     raw_trend = cursor.fetchall()
     trend = [{"day": str(t["day"]), "total": t["total"]} for t in raw_trend]
 
-    # BUG FIX 2: active_month and active_day — template expects these exact keys
     cursor.execute("""
         SELECT MONTHNAME(created_at) AS active_month, COUNT(*) AS total
         FROM registrations GROUP BY active_month ORDER BY total DESC LIMIT 1
@@ -451,7 +451,7 @@ def admin_event_analytics(request):
     """)
     day_row = cursor.fetchone()
 
-    total_regs = sum(e["registrations"] for e in events)
+    total_regs = sum((e.get("registrations") or 0) for e in events)
     avg_regs   = round(total_regs / len(events)) if events else 0
     close_connection(cursor, conn)
     return JsonResponse({
@@ -461,7 +461,6 @@ def admin_event_analytics(request):
         "average":          avg_regs,
         "most_active_club": club["name"] if club else "N/A",
         "trend":            trend,
-        # BUG FIX 2: use the exact key names the template expects
         "active_month":     month_row["active_month"] if month_row else "N/A",
         "active_day":       day_row["active_day"] if day_row else "N/A",
     })
@@ -471,11 +470,11 @@ def admin_event_analytics(request):
 def admin_favorite_analytics(request):
     cursor, conn = get_cursor()
     cursor.execute("SELECT c.name, COUNT(fc.id) AS favorites FROM favorite_clubs fc JOIN clubs c ON fc.club_id=c.id GROUP BY c.id ORDER BY favorites DESC LIMIT 5")
-    clubs = cursor.fetchall()
+    # FIX: serialize_rows so MySQL DictRow objects become proper JSON-safe dicts
+    clubs = serialize_rows(cursor.fetchall())
     cursor.execute("SELECT e.title, COUNT(fe.id) AS favorites FROM favorite_events fe JOIN events e ON fe.event_id=e.id GROUP BY e.id ORDER BY favorites DESC LIMIT 5")
-    events = cursor.fetchall()
+    events = serialize_rows(cursor.fetchall())
     close_connection(cursor, conn)
-    # Return empty lists (not null) so JS .map() doesn't crash
     return JsonResponse({"clubs": clubs or [], "events": events or []})
 
 
@@ -491,19 +490,17 @@ def admin_revenue_analytics(request):
     totals = cursor.fetchone()
 
     cursor.execute("SELECT c.name AS club_name, COALESCE(SUM(p.amount),0) AS revenue, COUNT(p.id) AS transactions FROM payments p JOIN events e ON p.event_id=e.id JOIN clubs c ON e.club_id=c.id WHERE p.status='success' GROUP BY c.id ORDER BY revenue DESC LIMIT 8")
-    by_club = cursor.fetchall()
+    # FIX: serialize so Decimal revenue values are JSON-serializable
+    by_club = [{"club_name": r["club_name"], "revenue": float(r["revenue"]), "transactions": r["transactions"]} for r in cursor.fetchall()]
 
-    # BUG FIX 3: Serialize DATE objects in revenue trend
     cursor.execute("SELECT DATE(completed_at) AS day, COALESCE(SUM(amount),0) AS revenue FROM payments WHERE status='success' AND completed_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) GROUP BY DATE(completed_at) ORDER BY day ASC")
     raw_trend = cursor.fetchall()
     trend = [{"day": str(t["day"]), "revenue": float(t["revenue"])} for t in raw_trend]
 
-    # BUG FIX 4: status_breakdown — use alias `cnt` to avoid reserved word clash
     cursor.execute("SELECT status, COUNT(*) AS cnt, COALESCE(SUM(amount),0) AS amount FROM payments GROUP BY status")
     raw_status = cursor.fetchall()
     status_breakdown = [{"status": s["status"], "count": s["cnt"], "amount": float(s["amount"])} for s in raw_status]
 
-    # BUG FIX 5: top_events — include registrations count
     cursor.execute("""
         SELECT e.title, c.name AS club_name,
                COALESCE(SUM(p.amount),0) AS revenue,
@@ -568,7 +565,12 @@ def admin_user_detail(request, user_id):
         return JsonResponse({"message": "User deleted successfully"})
 
     if request.method == "PUT":
-        data = request.POST
+        # FIX: support both JSON body and form data for PUT
+        content_type = request.content_type or ""
+        if "application/json" in content_type:
+            data = _json(request)
+        else:
+            data = request.POST
         cursor, conn = get_cursor()
         cursor.execute("SELECT role FROM users WHERE id=%s", (user_id,))
         user = cursor.fetchone()
@@ -681,7 +683,8 @@ def club_roles(request, club_id):
     if request.method == "GET":
         cursor, conn = get_cursor()
         cursor.execute("SELECT id, role_name, is_standard FROM club_roles WHERE club_id=%s ORDER BY is_standard DESC, role_name ASC", (club_id,))
-        roles = cursor.fetchall()
+        # FIX: serialize_rows
+        roles = serialize_rows(cursor.fetchall())
         close_connection(cursor, conn)
         return JsonResponse(roles, safe=False)
 

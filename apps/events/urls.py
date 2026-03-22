@@ -9,7 +9,7 @@ urlpatterns = [
     path('events/check-conflict',                               views.check_event_conflict,     name='check_event_conflict'),
     path('events/create',                                       views.create_event,             name='create_event'),
 
-    # Single event — plural prefix (matches frontend JS calls)
+    # Single event — plural prefix
     path('events/<int:event_id>',                               views.get_event_detail,             name='get_event_detail_p'),
     path('events/<int:event_id>/favorite',                      views.toggle_favourite_event,       name='toggle_favourite_event'),
     path('events/<int:event_id>/favourite',                     views.toggle_favourite_event,       name='toggle_favourite_event2'),
@@ -30,8 +30,9 @@ urlpatterns = [
     path('events/<int:event_id>/add-coordinator',               views.assign_coordinator,           name='assign_coordinator_p'),
     path('events/<int:event_id>/coordinators/<int:user_id>',    views.remove_coordinator,           name='remove_coordinator'),
     path('events/<int:event_id>/registrations',                 views.event_registrations_list,     name='event_registrations_list'),
-    path('events/<int:event_id>/president-approve',             views.president_approve_event,      name='president_approve_event'),
-    path('events/<int:event_id>/reject',                        views.president_reject_event,       name='president_reject_event'),
+    # FIX: unique names to avoid conflict with pages/urls.py president_views
+    path('events/<int:event_id>/president-approve',             views.president_approve_event,      name='events_president_approve_event'),
+    path('events/<int:event_id>/reject',                        views.president_reject_event,       name='events_president_reject_event'),
 
     # Singular prefix aliases
     path('event/<int:event_id>',                                views.get_event_detail,             name='get_event_detail'),
@@ -54,18 +55,18 @@ urlpatterns = [
     path('club-events/<int:club_id>',                           views.club_events,                  name='club_events_alt'),
     path('club/<int:club_id>/stats',                            views.club_stats,                   name='club_stats'),
     path('club/<int:club_id>/add-member',                       views.add_member,                   name='add_member'),
-    path('club/<int:club_id>/manage-events',                    views.my_manageable_events,       name='manage_events'),
-    path('club/<int:club_id>/event/<int:event_id>/edit',        views.member_edit_event,          name='member_edit_event'),
+    path('club/<int:club_id>/manage-events',                    views.my_manageable_events,         name='manage_events'),
+    path('club/<int:club_id>/event/<int:event_id>/edit',        views.member_edit_event,            name='member_edit_event'),
     path('club/<int:club_id>/events/<int:event_id>/request-delete', views.vp_request_event_delete, name='vp_request_delete'),
 
-    # Pending / registration helpers
-    path('pending-events/<int:club_id>',                        views.get_pending_events,           name='get_pending_events'),
+    # FIX: unique names to avoid conflict with pages/urls.py president_views
+    path('pending-events/<int:club_id>',                        views.get_pending_events,           name='events_get_pending_events'),
     path('event-registrations/<int:event_id>',                  views.event_registrations_list,     name='event_registrations_alt'),
-    path('my-coordinator-events',                               views.my_coordinator_events,        name='my_coordinator_events'),
+    path('my-coordinator-events',                               views.my_coordinator_events,        name='events_my_coordinator_events'),
 
     # QR Attendance
-    path('events/<int:event_id>/qr/generate',    views.generate_qr_session, name='generate_qr_session'),
-    path('events/<int:event_id>/qr/token',        views.get_qr_token,        name='get_qr_token'),
-    path('events/<int:event_id>/qr/scan',         views.mark_attendance,     name='mark_attendance'),
-    path('events/<int:event_id>/attendance',      views.get_attendance_list, name='get_attendance_list'),
+    path('events/<int:event_id>/qr/generate',   views.generate_qr_session, name='generate_qr_session'),
+    path('events/<int:event_id>/qr/token',       views.get_qr_token,        name='get_qr_token'),
+    path('events/<int:event_id>/qr/scan',        views.mark_attendance,     name='mark_attendance'),
+    path('events/<int:event_id>/attendance',     views.get_attendance_list, name='get_attendance_list'),
 ]

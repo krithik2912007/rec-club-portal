@@ -21,13 +21,13 @@ urlpatterns = [
     path('user/favourite-clubs',                            views.user_favourite_clubs,         name='user_favourite_clubs'),
 
     # President / VP member management
-    path('club/<int:club_id>/president/members',            views.president_get_members,      name='president_get_members'),
-    path('club/<int:club_id>/president/members/<int:user_id>', views.president_member_detail, name='president_member_detail'),
-    path('club/<int:club_id>/president/details',            views.president_update_club,      name='president_update_club'),
-    path('club/<int:club_id>/my-changes',                   views.my_submitted_changes,       name='my_submitted_changes'),
+    path('club/<int:club_id>/president/members',            views.president_get_members,        name='president_get_members'),
+    path('club/<int:club_id>/president/members/<int:user_id>', views.president_member_detail,  name='president_member_detail'),
+    path('club/<int:club_id>/president/details',            views.president_update_club,        name='president_update_club'),
+    path('club/<int:club_id>/my-changes',                   views.my_submitted_changes,         name='my_submitted_changes'),
 
-    # Pending changes
-    path('club/<int:club_id>/pending-changes',              views.get_pending_changes,        name='get_pending_changes'),
-    path('club/<int:club_id>/pending-changes/<int:change_id>/approve', views.approve_pending_change, name='approve_pending_change'),
-    path('club/<int:club_id>/pending-changes/<int:change_id>/reject',  views.reject_pending_change,  name='reject_pending_change'),
+    # FIX: Pending changes — use unique names to avoid conflicts with pages/urls.py
+    path('club/<int:club_id>/pending-changes',                                  views.get_pending_changes,        name='clubs_get_pending_changes'),
+    path('club/<int:club_id>/pending-changes/<int:change_id>/approve',          views.approve_pending_change,     name='clubs_approve_pending_change'),
+    path('club/<int:club_id>/pending-changes/<int:change_id>/reject',           views.reject_pending_change,      name='clubs_reject_pending_change'),
 ]

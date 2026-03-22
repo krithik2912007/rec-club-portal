@@ -1020,7 +1020,7 @@ function loadOverviewCharts(){
             [{label:"Registrations",data:d.events.map(e=>e.registrations),backgroundColor:"#6366f1"}]);
     });
 
-    apiFetch("/admin/favorite-analytics"+rq,{credentials:"include"}).then(r=>r.json()).then(d=>{
+    apiFetch("/admin/favorite-analytics",{credentials:"include"}).then(r=>r.json()).then(d=>{
         buildChart("favChart","bar",
             d.clubs.map(c=>c.name.length>14?c.name.slice(0,14)+"…":c.name),
             [{label:"Favourites",data:d.clubs.map(c=>c.favorites),backgroundColor:"#f43f5e"}]);

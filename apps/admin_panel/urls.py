@@ -29,9 +29,11 @@ urlpatterns = [
     path('api/admin/rejected-events',                   views.admin_rejected_events,    name='admin_rejected_events'),
     path('api/admin/pending-changes',                   views.admin_pending_changes,    name='admin_pending_changes'),
     path('admin/test-email',                            views.admin_test_email,         name='admin_test_email'),
-    # Club roles
-    path('api/clubs/<int:club_id>/roles',               views.club_roles,               name='club_roles'),
-    path('api/clubs/<int:club_id>/roles/<str:role_name>', views.club_role_detail,       name='club_role_detail'),
+    # Club roles — both plural (clubs) and singular (club) to match frontend calls
+    path('api/clubs/<int:club_id>/roles',                 views.club_roles,               name='club_roles'),
+    path('api/clubs/<int:club_id>/roles/<str:role_name>', views.club_role_detail,         name='club_role_detail'),
+    path('api/club/<int:club_id>/roles',                  views.club_roles,               name='club_roles_singular'),
+    path('api/club/<int:club_id>/roles/<str:role_name>',  views.club_role_detail,         name='club_role_detail_singular'),
     # Media serving
     path('uploads/<str:filename>',                      views.serve_upload,             name='serve_upload'),
 ]
