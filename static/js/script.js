@@ -38,26 +38,160 @@ function showSignUp() {
   if (tabUp)  tabUp.classList.add("active");
 }
 
+// Track OTP email for verification step
+var _otpEmail = "";
+
 function signup() {
-  const name   = document.getElementById("signupName").value.trim();
-  const regNo  = document.getElementById("signupRegNo").value.trim();
-  const email  = document.getElementById("signupEmail").value.trim();
-  const pass   = document.getElementById("pass").value;
-  const repass = document.getElementById("repass").value;
+  var name   = document.getElementById("signupName").value.trim();
+  var regNo  = (document.getElementById("signupRegNo").value || "").trim().toUpperCase();
+  var email  = (document.getElementById("signupEmail").value || "").trim().toLowerCase();
+  var dept   = document.getElementById("signupDept") ? document.getElementById("signupDept").value : "";
+  var year   = document.getElementById("signupYear") ? document.getElementById("signupYear").value : "";
+  var pass   = document.getElementById("pass").value;
+  var repass = document.getElementById("repass").value;
 
-  if (!regNo) { alert("Register number is required."); return; }
+  if (!name || !regNo || !email || !pass) { alert("All fields are required."); return; }
 
-  let regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[\W_]).{6,}$/;
+  // Email format check
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { alert("Please enter a valid email address."); return; }
+
+  var regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[\W_]).{6,}$/;
   if (!regex.test(pass)) { alert("Password must have uppercase, lowercase, special character and be at least 6 chars."); return; }
   if (pass !== repass)   { alert("Passwords do not match."); return; }
+
+  // Disable button during request
+  var btn = document.querySelector("#fSignup .submit-btn") || document.querySelector(".mform .submit-btn");
+  if (btn) { btn.textContent = "Sending OTP..."; btn.disabled = true; }
 
   apiFetch("/signup", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name, reg_no: regNo, email, password: pass })
+    body: JSON.stringify({ name: name, reg_no: regNo, email: email, password: pass, department: dept, year: year })
   })
   .then(res => res.json())
-  .then(data => { alert(data.message); if (data.message === "Account created successfully") showSignIn(); });
+  .then(data => {
+    if (btn) { btn.textContent = "Create Account →"; btn.disabled = false; }
+    if (data.step === "verify_otp") {
+      _otpEmail = email;
+      showOtpModal(email);
+    } else {
+      alert(data.message);
+    }
+  })
+  .catch(() => {
+    if (btn) { btn.textContent = "Create Account →"; btn.disabled = false; }
+    alert("Network error. Please try again.");
+  });
+}
+
+function showOtpModal(email) {
+  var existing = document.getElementById("otpModal");
+  if (existing) existing.remove();
+
+  var modal = document.createElement("div");
+  modal.id = "otpModal";
+  modal.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:99999;display:flex;align-items:center;justify-content:center;";
+
+  var box = document.createElement("div");
+  box.style.cssText = "background:#fff;border-radius:20px;padding:36px 32px;width:360px;max-width:92vw;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.25);";
+  box.innerHTML = [
+    "<div style='font-size:2.5rem;margin-bottom:8px;'>📧</div>",
+    "<h3 style='margin:0 0 6px;font-size:1.2rem;color:#1e1b4b;font-weight:700;'>Verify Your Email</h3>",
+    "<p style='color:#6b7280;font-size:.85rem;margin:0 0 20px;'>We sent a 6-digit OTP to<br><strong style='color:#1e1b4b;'>" + email + "</strong></p>",
+    "<input id='otpInput' type='text' inputmode='numeric' maxlength='6' placeholder='Enter 6-digit OTP'",
+    "  style='width:100%;padding:14px;font-size:1.4rem;text-align:center;letter-spacing:.3em;border:2px solid #e5e7eb;border-radius:12px;outline:none;box-sizing:border-box;font-family:monospace;'>",
+    "<div id='otpMsg' style='font-size:.82rem;margin:8px 0 0;min-height:20px;color:#ef4444;'></div>",
+    "<button onclick='verifyOtp()'",
+    "  style='width:100%;margin-top:14px;padding:14px;background:#4f46e5;color:#fff;border:none;border-radius:12px;font-size:1rem;font-weight:700;cursor:pointer;'>Verify &amp; Create Account</button>",
+    "<div style='margin-top:16px;font-size:.82rem;color:#9ca3af;'>Did not receive it?",
+    "  <button onclick='resendOtp()' style='background:none;border:none;color:#4f46e5;cursor:pointer;font-weight:600;font-size:.82rem;padding:0;'>Resend OTP</button></div>",
+    "<div id='otpTimer' style='font-size:.76rem;color:#9ca3af;margin-top:6px;'></div>"
+  ].join("\n");
+
+  modal.appendChild(box);
+  document.body.appendChild(modal);
+
+  // Numbers only — attach via JS not inline oninput to avoid quoting issues
+  var inp = document.getElementById("otpInput");
+  if (inp) {
+    inp.addEventListener("input", function(){ this.value = this.value.replace(/[^0-9]/g, ""); });
+    inp.focus();
+  }
+  startOtpTimer(600);
+}
+
+var _otpTimerInterval = null;
+function startOtpTimer(seconds) {
+  clearInterval(_otpTimerInterval);
+  function tick() {
+    var el = document.getElementById("otpTimer");
+    if (!el) { clearInterval(_otpTimerInterval); return; }
+    if (seconds <= 0) {
+      el.textContent = "OTP expired. Please sign up again.";
+      el.style.color = "#ef4444";
+      clearInterval(_otpTimerInterval);
+      return;
+    }
+    var m = Math.floor(seconds / 60);
+    var s = seconds % 60;
+    el.textContent = "Expires in " + m + ":" + (s < 10 ? "0" : "") + s;
+    seconds--;
+  }
+  tick();
+  _otpTimerInterval = setInterval(tick, 1000);
+}
+
+function verifyOtp() {
+  var otp   = (document.getElementById("otpInput").value || "").trim();
+  var msgEl = document.getElementById("otpMsg");
+  if (otp.length !== 6) {
+    if (msgEl) { msgEl.style.color = "#ef4444"; msgEl.textContent = "Please enter the 6-digit OTP."; }
+    return;
+  }
+  var verifyBtn = document.querySelector("#otpModal button");
+  if (verifyBtn) { verifyBtn.textContent = "Verifying..."; verifyBtn.disabled = true; }
+
+  apiFetch("/verify-otp", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email: _otpEmail, otp: otp })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (verifyBtn) { verifyBtn.textContent = "✅ Verify & Create Account"; verifyBtn.disabled = false; }
+    if (data.success) {
+      clearInterval(_otpTimerInterval);
+      var modal = document.getElementById("otpModal");
+      if (modal) modal.remove();
+      alert("✅ Email verified! Your account is ready. Please sign in.");
+      showSignIn();
+    } else {
+      if (msgEl) { msgEl.style.color = "#ef4444"; msgEl.textContent = data.message || "Invalid OTP. Try again."; }
+    }
+  })
+  .catch(() => {
+    if (verifyBtn) { verifyBtn.textContent = "✅ Verify & Create Account"; verifyBtn.disabled = false; }
+    if (msgEl) { msgEl.style.color = "#ef4444"; msgEl.textContent = "Network error. Try again."; }
+  });
+}
+
+function resendOtp() {
+  var msgEl = document.getElementById("otpMsg");
+  apiFetch("/resend-otp", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email: _otpEmail })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (msgEl) {
+      msgEl.style.color = data.message.includes("sent") ? "#10b981" : "#ef4444";
+      msgEl.textContent = data.message;
+      if (data.message.includes("sent")) startOtpTimer(600);
+      setTimeout(function(){ if (msgEl) msgEl.textContent = ""; }, 4000);
+    }
+  })
+  .catch(() => { if (msgEl) { msgEl.style.color = "#ef4444"; msgEl.textContent = "Failed to resend."; } });
 }
 
 function login() {
@@ -144,6 +278,9 @@ function renderClubs(containerId, list) {
   const container = document.getElementById(containerId);
   if (!container) return;
   container.innerHTML = "";
+  // Update count label
+  const countEl = document.getElementById("clubCount");
+  if (countEl) countEl.textContent = "Showing " + list.length + " club" + (list.length !== 1 ? "s" : "");
   list.forEach(club => {
     const isFav = club.is_favorited ? "favorited" : "";
     const heart = club.is_favorited ? "❤️" : "🤍";
@@ -204,6 +341,9 @@ function renderEvents(containerId, events) {
   const container = document.getElementById(containerId);
   if (!container) return;
   container.innerHTML = "";
+  // Update count label
+  const countEl = document.getElementById("eventCount");
+  if (countEl) countEl.textContent = "Showing " + events.length + " event" + (events.length !== 1 ? "s" : "");
   events.forEach(e => {
     const isFav = e.is_favorited ? "favorited" : "";
     const heart = e.is_favorited ? "❤️" : "🤍";
@@ -254,19 +394,33 @@ function startCountdown(eventId, date, time) {
   setInterval(update, 60000);
 }
 
-function searchEvents() {
-  const search = document.getElementById("eventSearch");
-  if (!search) return;
-  const value    = search.value.toLowerCase();
-  const filtered = allEvents.filter(e => e.title.toLowerCase().includes(value));
+// Track active event filter state
+var _evTypeFilter = "all";
+
+function applyEventFilters() {
+  const searchEl = document.getElementById("eventSearch");
+  const q = searchEl ? searchEl.value.toLowerCase() : "";
+  let filtered = allEvents;
+  // Apply type filter
+  if (_evTypeFilter !== "all") {
+    filtered = filtered.filter(e => e.type === _evTypeFilter);
+  }
+  // Apply search
+  if (q) {
+    filtered = filtered.filter(e => e.title.toLowerCase().includes(q));
+  }
   renderEvents("eventGrid", filtered);
 }
 
+function searchEvents() {
+  applyEventFilters();
+}
+
 function filterEvents(type, element) {
+  _evTypeFilter = type;
   document.querySelectorAll("#filters .filter").forEach(f => f.classList.remove("active"));
   element.classList.add("active");
-  if (type === "all") { renderEvents("eventGrid", allEvents); return; }
-  renderEvents("eventGrid", allEvents.filter(e => e.type === type));
+  applyEventFilters();
 }
 
 function registerForEvent(eventId) {

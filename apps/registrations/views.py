@@ -7,6 +7,47 @@ from apps.decorators import login_required
 from apps.email_service import send_email
 
 
+def _promote_from_waitlist(cursor, conn, event_id):
+    """When a seat opens up, auto-register the next person on the waitlist."""
+    cursor.execute("""
+        SELECT ew.user_id, u.name, u.email
+        FROM event_waitlist ew
+        JOIN users u ON ew.user_id = u.id
+        WHERE ew.event_id = %s
+        ORDER BY ew.created_at ASC
+        LIMIT 1
+    """, (event_id,))
+    next_user = cursor.fetchone()
+    if not next_user:
+        return  # Nobody on waitlist
+    try:
+        cursor.execute(
+            "INSERT INTO registrations(user_id, event_id, status) VALUES(%s, %s, 'registered')",
+            (next_user["user_id"], event_id)
+        )
+        cursor.execute(
+            "DELETE FROM event_waitlist WHERE event_id=%s AND user_id=%s",
+            (event_id, next_user["user_id"])
+        )
+        # Notify the promoted user
+        cursor.execute("SELECT title FROM events WHERE id=%s", (event_id,))
+        ev = cursor.fetchone()
+        if ev:
+            log_activity(cursor, f"Waitlist: {next_user['name']} auto-registered for '{ev['title']}'")
+            from apps.email_service import send_email
+            try:
+                send_email(
+                    next_user["email"],
+                    f"🎉 You're registered! — {ev['title']}",
+                    f"Hello {next_user['name']},\n\nGreat news! A spot opened up and you have been automatically registered for {ev['title']} from the waitlist.\n\n— Centralized Club Portal"
+                )
+            except Exception:
+                pass
+    except Exception:
+        pass  # Already registered or other error
+
+
+
 def _json(request):
     try:
         return json.loads(request.body)
@@ -121,6 +162,7 @@ def cancel_registration(request):
         cursor.execute("DELETE FROM registrations WHERE team_id=%s AND event_id=%s", (team_id, event_id))
         cursor.execute("DELETE FROM teams WHERE id=%s", (team_id,))
         log_activity(cursor, f"Team '{team_name}' cancelled registration for '{event_info['title']}' ({len(team_members)} members removed)")
+        _promote_from_waitlist(cursor, conn, event_id)
         conn.commit()
         close_connection(cursor, conn)
         for member in team_members:
@@ -131,8 +173,9 @@ def cancel_registration(request):
                 pass
         return JsonResponse({"message": f"Team '{team_name}' registration cancelled and removed."})
     else:
-        cursor.execute("UPDATE registrations SET status='cancelled' WHERE user_id=%s AND event_id=%s", (user_id, event_id))
+        cursor.execute("DELETE FROM registrations WHERE user_id=%s AND event_id=%s", (user_id, event_id))
         log_activity(cursor, f"User {current_user['name']} cancelled registration for '{event_info['title']}'")
+        _promote_from_waitlist(cursor, conn, event_id)
         conn.commit()
         close_connection(cursor, conn)
         if current_user:
@@ -502,6 +545,7 @@ def cancel_registration_by_id(request, event_id):
     else:
         cursor.execute("DELETE FROM registrations WHERE user_id=%s AND event_id=%s", (user_id, event_id))
         log_activity(cursor, f"User {user_id} cancelled registration for event {event_id}")
+        _promote_from_waitlist(cursor, conn, event_id)
         conn.commit()
         close_connection(cursor, conn)
         return JsonResponse({"message": "Registration cancelled successfully"})

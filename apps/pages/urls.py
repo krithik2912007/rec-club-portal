@@ -12,7 +12,6 @@ urlpatterns = [
     path('dashboard',               views.dashboard,        name='dashboard'),
     path('club-dashboard',          views.club_dashboard,   name='club_dashboard'),
     path('admin',                   views.admin_dashboard,  name='admin_dashboard'),
-    path('reset-password/<str:token>', views.reset_password_page, name='reset_password_page'),
     path('attendance/<int:event_id>/scan', views.attendance_scan_page, name='attendance_scan'),
     path('api/stats',               views.get_stats,        name='get_stats'),
     path('api/upcoming-events',     views.upcoming_events,  name='upcoming_events_page'),

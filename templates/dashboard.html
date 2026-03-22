@@ -81,7 +81,25 @@
 @media (max-width: 480px) {
   .stats-row { grid-template-columns:1fr; }
 }
-</style>
+
+        /* Notification Bell */
+        .notif-wrap { position:relative; display:inline-flex; align-items:center; }
+        .notif-bell { background:none; border:none; cursor:pointer; font-size:1.2rem; padding:6px; border-radius:50%; transition:background .2s; position:relative; }
+        .notif-bell:hover { background:rgba(99,102,241,.1); }
+        .notif-badge { position:absolute; top:2px; right:2px; background:#ef4444; color:#fff; border-radius:50%; width:16px; height:16px; font-size:.6rem; font-weight:700; display:none; align-items:center; justify-content:center; }
+        .notif-badge.show { display:flex; }
+        .notif-dropdown { position:absolute; right:0; top:calc(100% + 8px); width:320px; background:#fff; border:1px solid #e5e7eb; border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,.12); z-index:999; display:none; max-height:380px; overflow-y:auto; }
+        .notif-dropdown.open { display:block; }
+        .notif-header { padding:12px 16px; border-bottom:1px solid #f3f4f6; display:flex; justify-content:space-between; align-items:center; }
+        .notif-header span { font-weight:700; font-size:.9rem; color:#1e1b4b; }
+        .notif-header button { background:none; border:none; color:#6366f1; font-size:.75rem; cursor:pointer; font-weight:600; }
+        .notif-item { padding:10px 16px; border-bottom:1px solid #f9fafb; font-size:.82rem; color:#374151; cursor:pointer; transition:background .15s; }
+        .notif-item:hover { background:#f9fafb; }
+        .notif-item.unread { background:#eff6ff; font-weight:600; }
+        .notif-item .notif-time { font-size:.72rem; color:#9ca3af; margin-top:2px; }
+        .notif-empty { padding:24px 16px; text-align:center; color:#9ca3af; font-size:.85rem; }
+
+    </style>
 </head>
 <body>
 
@@ -648,5 +666,71 @@ function saveProfile(){
 .finput { width:100%; border:1.5px solid #e2e8f0; border-radius:8px; padding:8px 11px; font-size:.85rem; box-sizing:border-box; outline:none; font-family:inherit; transition:border-color .15s; }
 .finput:focus { border-color:#4f46e5; }
 </style>
+
+<script>
+// ── Notification Bell ──
+function loadNotifications() {
+    apiFetch("/api/notifications").then(r => {
+        if (!r.ok) return null;
+        return r.json();
+    }).then(data => {
+        if (!data) return;
+        const badge = document.getElementById("notifBadge");
+        const list  = document.getElementById("notifList");
+        if (!badge || !list) return;
+        const unread = data.filter(n => !n.is_read);
+        if (unread.length > 0) {
+            badge.textContent = unread.length > 9 ? "9+" : unread.length;
+            badge.classList.add("show");
+        } else {
+            badge.classList.remove("show");
+        }
+        if (data.length === 0) {
+            list.innerHTML = '<div class="notif-empty">No notifications yet</div>';
+            return;
+        }
+        list.innerHTML = data.map(n =>
+            '<div class="notif-item ' + (n.is_read ? "" : "unread") + '" onclick="markNotifRead(' + n.id + ', this)">' +
+            '<div>' + n.message + '</div>' +
+            '<div class="notif-time">' + new Date(n.created_at).toLocaleString() + '</div>' +
+            '</div>'
+        ).join("");
+    }).catch(() => {});
+}
+
+function toggleNotifDropdown(e) {
+    e.stopPropagation();
+    document.getElementById("notifDropdown").classList.toggle("open");
+    loadNotifications();
+}
+
+function markNotifRead(id, el) {
+    apiFetch("/api/notifications/" + id + "/read", { method: "PUT" }).then(() => {
+        el.classList.remove("unread");
+        loadNotifications();
+    }).catch(() => {});
+}
+
+function markAllNotifsRead() {
+    apiFetch("/api/notifications/read-all", { method: "PUT" }).then(() => {
+        loadNotifications();
+        document.getElementById("notifDropdown").classList.remove("open");
+    }).catch(() => {});
+}
+
+document.addEventListener("click", function(e) {
+    var wrap = document.getElementById("notifWrap");
+    if (wrap && !wrap.contains(e.target)) {
+        document.getElementById("notifDropdown").classList.remove("open");
+    }
+});
+
+// Load notifications on page load and refresh every 60s
+document.addEventListener("DOMContentLoaded", function() {
+    loadNotifications();
+    setInterval(loadNotifications, 60000);
+});
+</script>
+
 </body>
 </html>

@@ -22,17 +22,27 @@ def _json(request):
 @csrf_exempt
 @require_http_methods(["POST"])
 def signup(request):
-    data     = _json(request)
-    name     = data.get("name", "").strip()
-    email    = data.get("email", "").strip()
-    password = data.get("password", "")
-    reg_no   = data.get("reg_no", "").strip()
+    """
+    Step 1: Validate form data, send OTP to email.
+    Does NOT create the user yet — waits for OTP verification.
+    """
+    import random
+    from datetime import datetime, timedelta
+
+    data       = _json(request)
+    name       = data.get("name", "").strip()
+    email      = data.get("email", "").strip().lower()
+    password   = data.get("password", "")
+    reg_no     = data.get("reg_no", "").strip().upper()
+    department = data.get("department", "").strip()
+    year       = data.get("year", None)
 
     if not all([name, email, password, reg_no]):
         return JsonResponse({"message": "Name, email, password and register number are required"}, status=400)
 
     cursor, conn = get_cursor()
 
+    # Check duplicates before sending OTP
     cursor.execute("SELECT id FROM users WHERE email=%s", (email,))
     if cursor.fetchone():
         close_connection(cursor, conn)
@@ -43,15 +53,161 @@ def signup(request):
         close_connection(cursor, conn)
         return JsonResponse({"message": "Register number already in use"}, status=400)
 
-    hashed = generate_password_hash(password)
-    cursor.execute(
-        "INSERT INTO users (reg_no, name, email, password, role) VALUES (%s,%s,%s,%s,'student')",
-        (reg_no, name, email, hashed)
-    )
-    log_activity(cursor, f"New user signed up: {name} ({email}) | Reg No: {reg_no}")
+    # Generate 6-digit OTP
+    otp        = str(random.randint(100000, 999999))
+    expires_at = datetime.now() + timedelta(minutes=10)
+    hashed_pw  = generate_password_hash(password)
+
+    # Delete any previous OTP for this email
+    cursor.execute("DELETE FROM email_otps WHERE email=%s", (email,))
+
+    # Store OTP with all signup data (user created only after verification)
+    cursor.execute("""
+        INSERT INTO email_otps (email, otp, name, reg_no, password, department, year, expires_at)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+    """, (email, otp, name, reg_no, hashed_pw, department, year or None, expires_at))
     conn.commit()
     close_connection(cursor, conn)
-    return JsonResponse({"message": "Account created successfully"})
+
+    # Send OTP email
+    try:
+        send_email(
+            email,
+            "Your OTP — Centralized Club Portal",
+            f"""Hello {name},
+
+Your One-Time Password (OTP) for account verification is:
+
+  {otp}
+
+This OTP is valid for 10 minutes. Do not share it with anyone.
+
+If you did not request this, please ignore this email.
+
+— Centralized Club Portal"""
+        )
+    except Exception as e:
+        print(f"OTP email failed: {e}")
+        return JsonResponse({"message": "Failed to send OTP email. Please check your email address."}, status=500)
+
+    return JsonResponse({"message": "OTP sent to your email. Please verify to complete signup.", "step": "verify_otp"})
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def verify_otp(request):
+    """
+    Step 2: Verify OTP and create the user account.
+    """
+    from datetime import datetime
+
+    data  = _json(request)
+    email = data.get("email", "").strip().lower()
+    otp   = data.get("otp", "").strip()
+
+    if not email or not otp:
+        return JsonResponse({"message": "Email and OTP are required"}, status=400)
+
+    cursor, conn = get_cursor()
+
+    cursor.execute("""
+        SELECT * FROM email_otps
+        WHERE email=%s AND used=FALSE AND expires_at > NOW()
+        ORDER BY created_at DESC LIMIT 1
+    """, (email,))
+    record = cursor.fetchone()
+
+    if not record:
+        close_connection(cursor, conn)
+        return JsonResponse({"message": "OTP expired or not found. Please sign up again."}, status=400)
+
+    if record["otp"] != otp:
+        close_connection(cursor, conn)
+        return JsonResponse({"message": "Incorrect OTP. Please try again."}, status=400)
+
+    # Check again for duplicates (race condition safety)
+    cursor.execute("SELECT id FROM users WHERE email=%s", (email,))
+    if cursor.fetchone():
+        close_connection(cursor, conn)
+        return JsonResponse({"message": "Email already registered"}, status=400)
+
+    cursor.execute("SELECT id FROM users WHERE reg_no=%s", (record["reg_no"],))
+    if cursor.fetchone():
+        close_connection(cursor, conn)
+        return JsonResponse({"message": "Register number already in use"}, status=400)
+
+    # Mark OTP as used
+    cursor.execute("UPDATE email_otps SET used=TRUE WHERE id=%s", (record["id"],))
+
+    # Create the user
+    cursor.execute("""
+        INSERT INTO users (reg_no, name, email, password, role, department, year)
+        VALUES (%s, %s, %s, %s, 'student', %s, %s)
+    """, (record["reg_no"], record["name"], email, record["password"],
+          record["department"], record["year"]))
+
+    log_activity(cursor, f"New user verified & signed up: {record['name']} ({email}) | Reg No: {record['reg_no']}")
+    conn.commit()
+    close_connection(cursor, conn)
+
+    return JsonResponse({"message": "Account created successfully! You can now log in.", "success": True})
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def resend_otp(request):
+    """Resend OTP for the same email."""
+    import random
+    from datetime import datetime, timedelta
+
+    data  = _json(request)
+    email = data.get("email", "").strip().lower()
+
+    if not email:
+        return JsonResponse({"message": "Email required"}, status=400)
+
+    cursor, conn = get_cursor()
+
+    # Get previous OTP record to reuse signup data
+    cursor.execute("""
+        SELECT * FROM email_otps WHERE email=%s AND used=FALSE
+        ORDER BY created_at DESC LIMIT 1
+    """, (email,))
+    record = cursor.fetchone()
+
+    if not record:
+        close_connection(cursor, conn)
+        return JsonResponse({"message": "No pending signup found. Please sign up again."}, status=400)
+
+    # Generate new OTP
+    otp        = str(random.randint(100000, 999999))
+    expires_at = datetime.now() + timedelta(minutes=10)
+
+    cursor.execute("""
+        UPDATE email_otps SET otp=%s, expires_at=%s, created_at=NOW()
+        WHERE id=%s
+    """, (otp, expires_at, record["id"]))
+    conn.commit()
+    close_connection(cursor, conn)
+
+    try:
+        send_email(
+            email,
+            "New OTP — Centralized Club Portal",
+            f"""Hello {record["name"]},
+
+Your new One-Time Password (OTP) is:
+
+  {otp}
+
+Valid for 10 minutes.
+
+— Centralized Club Portal"""
+        )
+    except Exception:
+        return JsonResponse({"message": "Failed to resend OTP."}, status=500)
+
+    return JsonResponse({"message": "New OTP sent to your email."})
 
 
 @csrf_exempt
