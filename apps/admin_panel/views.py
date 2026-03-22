@@ -82,13 +82,37 @@ def admin_clubs(request):
 @admin_required
 def admin_club_detail(request, club_id):
     if request.method == "PUT":
-        name        = request.POST.get("name")
-        category    = request.POST.get("category")
-        description = request.POST.get("description")
-        about       = request.POST.get("about")
-        vision      = request.POST.get("vision")
-        mission     = request.POST.get("mission")
-        image       = request.FILES.get("image")
+        name = category = description = about = vision = mission = None
+        image = None
+
+        content_type = request.content_type or ""
+
+        if "multipart" in content_type:
+            from django.http.multipartparser import MultiPartParser
+            parser = MultiPartParser(request.META, request, request.upload_handlers)
+            post_data, file_data = parser.parse()
+            name        = post_data.get("name")
+            category    = post_data.get("category")
+            description = post_data.get("description")
+            about       = post_data.get("about")
+            vision      = post_data.get("vision")
+            mission     = post_data.get("mission")
+            image       = file_data.get("image")
+        else:
+            try:
+                data        = json.loads(request.body)
+                name        = data.get("name")
+                category    = data.get("category")
+                description = data.get("description")
+                about       = data.get("about")
+                vision      = data.get("vision")
+                mission     = data.get("mission")
+            except Exception:
+                pass
+
+        if not name:
+            return JsonResponse({"message": "Club name is required"}, status=400)
+
         cursor, conn = get_cursor()
         if image and _allowed(image.name):
             image_path = _save_upload(image)
@@ -101,6 +125,7 @@ def admin_club_detail(request, club_id):
                 UPDATE clubs SET name=%s, category=%s, description=%s, about=%s,
                                  vision=%s, mission=%s WHERE id=%s
             """, (name, category, description, about, vision, mission, club_id))
+
         log_activity(cursor, f"Admin {request.session['user_id']} updated club {club_id}")
         conn.commit()
         close_connection(cursor, conn)
@@ -115,7 +140,6 @@ def admin_club_detail(request, club_id):
         return JsonResponse({"message": "Club deleted"})
 
     return JsonResponse({"message": "Method not allowed"}, status=405)
-
 
 @csrf_exempt
 @admin_required
