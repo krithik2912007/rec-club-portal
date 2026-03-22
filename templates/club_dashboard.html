@@ -1040,7 +1040,7 @@ function createClubEvent(){
   };
   if(!payload.title||!payload.date||!payload.time){ alert("Title, date and time are required."); return; }
 
-  apiFetch("/api/events",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)})
+  apiFetch("/api/events/create",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)})
   .then(r=>r.json()).then(d=>{
     if(!d.event_id && !d.event_code){ alert(d.message||"Failed to create event."); return; }
     cdCreatedEventId = d.event_id;

@@ -294,6 +294,9 @@ def admin_approve_event(request, event_id):
     conn.commit()
     cursor.execute("SELECT e.title, u.name, u.email FROM events e JOIN users u ON e.created_by=u.id WHERE e.id=%s", (event_id,))
     info = cursor.fetchone()
+    if info:
+        log_activity(cursor, f"Admin approved event: '{info['title']}' (notified {info['name']})")
+        conn.commit()
     close_connection(cursor, conn)
     if info:
         try:
@@ -317,6 +320,9 @@ def admin_reject_event(request, event_id):
     conn.commit()
     cursor.execute("SELECT e.title, u.name, u.email FROM events e JOIN users u ON e.created_by=u.id WHERE e.id=%s", (event_id,))
     info = cursor.fetchone()
+    if info:
+        log_activity(cursor, f"Admin rejected event: '{info['title']}' — Reason: {reason}")
+        conn.commit()
     close_connection(cursor, conn)
     if info:
         try:

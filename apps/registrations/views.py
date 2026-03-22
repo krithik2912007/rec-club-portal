@@ -2,7 +2,7 @@ import json
 from datetime import datetime, date, timedelta
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from apps.db import get_cursor, close_connection, serialize_row, serialize_rows
+from apps.db import get_cursor, close_connection, serialize_row, serialize_rows, log_activity
 from apps.decorators import login_required
 from apps.email_service import send_email
 
@@ -61,8 +61,7 @@ def register(request):
     user_info = cursor.fetchone()
     cursor.execute("SELECT title FROM events WHERE id=%s", (event_id,))
     event_info = cursor.fetchone()
-    cursor.execute("INSERT INTO activity_logs(message) VALUES(%s)",
-                   (f"User {user_info['name']} registered for {event_info['title']}",))
+    log_activity(cursor, f"User {user_info['name']} ({user_info['email']}) registered for '{event_info['title']}'")
     conn.commit()
     close_connection(cursor, conn)
     try:
@@ -114,10 +113,14 @@ def cancel_registration(request):
             WHERE r.team_id=%s AND r.event_id=%s AND r.status='registered'
         """, (team_id, event_id))
         team_members = cursor.fetchall()
-        cursor.execute("UPDATE registrations SET status='cancelled' WHERE team_id=%s AND event_id=%s AND status='registered'", (team_id, event_id))
         cursor.execute("SELECT team_name FROM teams WHERE id=%s", (team_id,))
         team_row  = cursor.fetchone()
         team_name = team_row["team_name"] if team_row else "Your team"
+        # FIX: DELETE registrations and the team record entirely instead of just marking cancelled
+        # This frees up capacity slots and keeps DB clean
+        cursor.execute("DELETE FROM registrations WHERE team_id=%s AND event_id=%s", (team_id, event_id))
+        cursor.execute("DELETE FROM teams WHERE id=%s", (team_id,))
+        log_activity(cursor, f"Team '{team_name}' cancelled registration for '{event_info['title']}' ({len(team_members)} members removed)")
         conn.commit()
         close_connection(cursor, conn)
         for member in team_members:
@@ -126,9 +129,10 @@ def cancel_registration(request):
                            f"Hello {member['name']},\n\nTeam '{team_name}' registration for {event_info['title']} was cancelled.\n\n— REC Club Portal")
             except Exception:
                 pass
-        return JsonResponse({"message": f"Team '{team_name}' registration cancelled."})
+        return JsonResponse({"message": f"Team '{team_name}' registration cancelled and removed."})
     else:
         cursor.execute("UPDATE registrations SET status='cancelled' WHERE user_id=%s AND event_id=%s", (user_id, event_id))
+        log_activity(cursor, f"User {current_user['name']} cancelled registration for '{event_info['title']}'")
         conn.commit()
         close_connection(cursor, conn)
         if current_user:
@@ -300,11 +304,13 @@ def checkout(request):
         cursor.execute("INSERT INTO registrations(user_id, event_id, status) VALUES(%s,%s,'registered') ON DUPLICATE KEY UPDATE status='registered'",
                        (user_id, event_id))
     cursor.execute("DELETE FROM cart WHERE user_id=%s AND event_id=%s", (user_id, event_id))
-    conn.commit()
     cursor.execute("SELECT name, email FROM users WHERE id=%s", (user_id,))
     user = cursor.fetchone()
     cursor.execute("SELECT title FROM events WHERE id=%s", (event_id,))
     event = cursor.fetchone()
+    if user and event:
+        log_activity(cursor, f"Payment successful: {user['name']} paid for '{event['title']}' (Txn: {txn_ref})")
+    conn.commit()
     close_connection(cursor, conn)
     if user and event:
         try:
@@ -389,6 +395,7 @@ def create_team(request):
         except Exception:
             pass
     conn.commit()
+    log_activity(cursor, f"Team '{team_name}' registered for '{event['title']}' by user {user_id} ({len(members)} members)")
     if not event["is_paid"]:
         for m in members:
             try:
@@ -479,10 +486,25 @@ def cancel_registration_by_id(request, event_id):
     if not existing:
         close_connection(cursor, conn)
         return JsonResponse({"message": "You are not registered for this event"}, status=400)
-    cursor.execute("UPDATE registrations SET status='cancelled' WHERE user_id=%s AND event_id=%s", (user_id, event_id))
-    conn.commit()
-    close_connection(cursor, conn)
-    return JsonResponse({"message": "Registration cancelled successfully"})
+    team_id = existing["team_id"]
+    is_team = event_info["event_category"] == "team" and team_id is not None
+    if is_team:
+        # DELETE all team registrations and the team record
+        cursor.execute("SELECT team_name FROM teams WHERE id=%s", (team_id,))
+        team_row  = cursor.fetchone()
+        team_name = team_row["team_name"] if team_row else "Your team"
+        cursor.execute("DELETE FROM registrations WHERE team_id=%s AND event_id=%s", (team_id, event_id))
+        cursor.execute("DELETE FROM teams WHERE id=%s", (team_id,))
+        log_activity(cursor, f"Team '{team_name}' cancelled registration for event {event_id}")
+        conn.commit()
+        close_connection(cursor, conn)
+        return JsonResponse({"message": f"Team '{team_name}' registration cancelled and removed."})
+    else:
+        cursor.execute("DELETE FROM registrations WHERE user_id=%s AND event_id=%s", (user_id, event_id))
+        log_activity(cursor, f"User {user_id} cancelled registration for event {event_id}")
+        conn.commit()
+        close_connection(cursor, conn)
+        return JsonResponse({"message": "Registration cancelled successfully"})
 
 
 # ── CONFIRM PAYMENT ──
@@ -560,11 +582,13 @@ def payment_success(request):
         cursor.execute("INSERT INTO registrations(user_id, event_id, status) VALUES(%s,%s,'registered') ON DUPLICATE KEY UPDATE status='registered'",
                        (user_id, event_id))
     cursor.execute("DELETE FROM cart WHERE user_id=%s AND event_id=%s", (user_id, event_id))
-    conn.commit()
     cursor.execute("SELECT name, email FROM users WHERE id=%s", (user_id,))
     user = cursor.fetchone()
     cursor.execute("SELECT title FROM events WHERE id=%s", (event_id,))
     event = cursor.fetchone()
+    if user and event:
+        log_activity(cursor, f"Payment successful: {user['name']} paid for '{event['title']}' (Txn: {txn_ref})")
+    conn.commit()
     close_connection(cursor, conn)
     if user and event:
         try:

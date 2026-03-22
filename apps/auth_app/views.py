@@ -6,7 +6,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.shortcuts import render
 from werkzeug.security import generate_password_hash, check_password_hash
-from apps.db import get_cursor, close_connection, serialize_row
+from apps.db import get_cursor, close_connection, serialize_row, log_activity
 from apps.decorators import login_required
 from apps.email_service import send_email
 from apps.token_services import generate_reset_token, verify_reset_token
@@ -48,6 +48,7 @@ def signup(request):
         "INSERT INTO users (reg_no, name, email, password, role) VALUES (%s,%s,%s,%s,'student')",
         (reg_no, name, email, hashed)
     )
+    log_activity(cursor, f"New user signed up: {name} ({email}) | Reg No: {reg_no}")
     conn.commit()
     close_connection(cursor, conn)
     return JsonResponse({"message": "Account created successfully"})
@@ -95,6 +96,7 @@ def login_view(request):
     # Force session save so cookie is set before redirect
     request.session.modified = True
 
+    log_activity(cursor, f"User logged in: {user['name']} ({user['email']}) | Role: {user['role']}")
     close_connection(cursor, conn)
     return JsonResponse({
         "message": "Login success",

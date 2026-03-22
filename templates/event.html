@@ -560,20 +560,38 @@ function openTeamModal(){
     document.getElementById("teamModalInfo").textContent =
         `Team size: ${min} (required) to ${max} members. Enter register numbers.`;
 
-    // Build member fields
-    let html = "";
-    for(let i=1; i<=max; i++){
-        const required = i <= min;
-        html += `
-        <div>
-            <input class="mfield" type="text" id="memberReg${i}"
-                placeholder="Member ${i} Register No.${required?' (required)':' (optional)'}"
-                oninput="validateRegNo(${i})" ${required?'required':''}>
-            <div class="reg-validate" id="regVal${i}"></div>
-        </div>`;
-    }
-    document.getElementById("memberFields").innerHTML = html;
-    document.getElementById("teamModal").classList.add("open");
+    // Get current user reg_no from /me so Member 1 is pre-filled
+    apiFetch("/me").then(r=>r.json()).then(function(data){
+        const myRegNo = data && data.user ? data.user.reg_no : "";
+        const myName  = data && data.user ? data.user.name  : "";
+
+        let html = "";
+        for(let i=1; i<=max; i++){
+            const required = i <= min;
+            if(i === 1){
+                // Member 1 = current user, pre-filled and locked
+                html += `
+                <div>
+                    <input class="mfield" type="text" id="memberReg1"
+                        value="${myRegNo}"
+                        readonly
+                        style="background:#f0f4ff;color:#4f46e5;font-weight:600;cursor:not-allowed;"
+                        placeholder="Your Register No.">
+                    <div class="reg-validate ok" id="regVal1">${myRegNo ? '✅ ' + myName + ' (You)' : ''}</div>
+                </div>`;
+            } else {
+                html += `
+                <div>
+                    <input class="mfield" type="text" id="memberReg${i}"
+                        placeholder="Member ${i} Register No.${required?' (required)':' (optional)'}"
+                        oninput="validateRegNo(${i})" ${required?'required':''}>
+                    <div class="reg-validate" id="regVal${i}"></div>
+                </div>`;
+            }
+        }
+        document.getElementById("memberFields").innerHTML = html;
+        document.getElementById("teamModal").classList.add("open");
+    });
 }
 
 function closeTeamModal(){

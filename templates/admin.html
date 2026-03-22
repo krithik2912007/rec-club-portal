@@ -1614,10 +1614,12 @@ function addEvent(){
         instructions:   document.getElementById("eventInstructions").value
     };
 
-    if(!payload.club_id || !payload.title || !payload.date || !payload.time){
-        alert("Title, club, date and time are required.");
+    if(!payload.club_id || payload.club_id === '' || !payload.title || !payload.date || !payload.time){
+        alert("Please select a club, and fill in title, date and time.");
         return;
     }
+    // Convert club_id to integer
+    payload.club_id = parseInt(payload.club_id);
 
     fetch(API+"/admin/events",{
         method:"POST", credentials:"include",
