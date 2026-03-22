@@ -3,7 +3,7 @@ services:
     name: rec-club-portal-django
     env: python
     plan: free
-    buildCommand: pip install -r requirements.txt
+    buildCommand: pip install -r requirements.txt && python manage.py migrate
     startCommand: gunicorn config.wsgi:application --config gunicorn.conf.py
     envVars:
       - key: DJANGO_ENV
