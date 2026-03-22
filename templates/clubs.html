@@ -4,6 +4,7 @@
 <head>
     <title>Clubs</title>
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <link rel="stylesheet" href="{% static 'css/mobile.css' %}">
     <style>
         .sort-row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
         .sort-label { font-weight:600; font-size:.88rem; color:#555; }
@@ -62,7 +63,7 @@
 </section>
 
 <footer><p>© 2026 Centralized Club Portal</p></footer>
-
+<script src="{% static 'js/mobile_nav.js' %}"></script>
 <script src="{% static 'js/script.js' %}"></script>
 <script>
 document.addEventListener("DOMContentLoaded", () => {
