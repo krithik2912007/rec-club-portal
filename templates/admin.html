@@ -1470,27 +1470,41 @@ function saveClubEdit(){
     const name = document.getElementById("editClubName").value.trim();
     if(!name){ alert("Club name is required."); return; }
 
-    const fd = new FormData();
-    fd.append("name",        name);
-    fd.append("category",    document.getElementById("editClubCategory").value);
-    fd.append("description", document.getElementById("editClubDesc").value);
-    fd.append("about",       document.getElementById("editClubAbout").value);
-    fd.append("vision",      document.getElementById("editClubVision").value);
-    fd.append("mission",     document.getElementById("editClubMission").value);
     const img = document.getElementById("editClubImage").files[0];
-    if(img) fd.append("image", img);
-
     const btn = document.querySelector("#editClubInline .btn-primary");
     if(btn){ btn.disabled = true; btn.textContent = "Saving…"; }
 
-    fetch(API+"/admin/clubs/"+editingClubId, {method:"PUT", credentials:"include", body:fd})
-    .then(r=>r.json()).then(d=>{
-        alert(d.message);
-        cancelClubEdit();
-        loadClubs();
-    }).finally(()=>{
-        if(btn){ btn.disabled = false; btn.textContent = "💾 Save Changes"; }
-    });
+    if(img){
+        // Use FormData when image is present
+        const fd = new FormData();
+        fd.append("name",        name);
+        fd.append("category",    document.getElementById("editClubCategory").value);
+        fd.append("description", document.getElementById("editClubDesc").value);
+        fd.append("about",       document.getElementById("editClubAbout").value);
+        fd.append("vision",      document.getElementById("editClubVision").value);
+        fd.append("mission",     document.getElementById("editClubMission").value);
+        fd.append("image",       img);
+        fetch(API+"/admin/clubs/"+editingClubId, {method:"PUT", credentials:"include", body:fd})
+        .then(r=>r.json()).then(d=>{
+            alert(d.message); cancelClubEdit(); loadClubs();
+        }).finally(()=>{ if(btn){ btn.disabled=false; btn.textContent="💾 Save Changes"; } });
+    } else {
+        // Send JSON when no image
+        fetch(API+"/admin/clubs/"+editingClubId, {
+            method:"PUT", credentials:"include",
+            headers:{"Content-Type":"application/json"},
+            body: JSON.stringify({
+                name,
+                category:    document.getElementById("editClubCategory").value,
+                description: document.getElementById("editClubDesc").value,
+                about:       document.getElementById("editClubAbout").value,
+                vision:      document.getElementById("editClubVision").value,
+                mission:     document.getElementById("editClubMission").value
+            })
+        }).then(r=>r.json()).then(d=>{
+            alert(d.message); cancelClubEdit(); loadClubs();
+        }).finally(()=>{ if(btn){ btn.disabled=false; btn.textContent="💾 Save Changes"; } });
+    }
 }
 
 let _allAdminClubs = [];
