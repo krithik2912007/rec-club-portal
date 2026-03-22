@@ -1,6 +1,6 @@
-/*const API = "http://127.0.0.1:8000"; */
+const API = ""; 
 
-const isLoginPage = window.location.pathname === "/";
+var isLoginPage = window.location.pathname === "/";
 
 /* Global fetch helper (keeps session active) */
 function apiFetch(url, options = {}) {
