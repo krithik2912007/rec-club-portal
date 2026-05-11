@@ -1,13 +1,30 @@
 const API = "";
+// Fix blank page on browser back button (bfcache restore)
+window.addEventListener('pageshow', function(event) {
+    if (event.persisted) {
+        window.location.reload();
+    }
+});
 
 var isLoginPage = window.location.pathname === "/";
 
 /* Global fetch helper (keeps session active) */
+function getCookie(name) {
+  const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+  return match ? decodeURIComponent(match[2]) : null;
+}
+
 function apiFetch(url, options = {}) {
-    return fetch(API + url, {
-        credentials: "include",
-        ...options
-    });
+  const headers = options.headers || {};
+  const method = (options.method || 'GET').toUpperCase();
+  if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(method)) {
+    headers['X-CSRFToken'] = getCookie('csrftoken');
+  }
+  return fetch(API + url, {
+    credentials: 'include',
+    ...options,
+    headers,
+  });
 }
 
 /* =========================

@@ -435,24 +435,47 @@ function updateRegistrationArea(){
 
         if(data.registered){
             const ev = eventData;
-            // Show cancel button only for free events
             const cancelBtn = (ev && ev.is_paid)
                 ? `<p style="font-size:.78rem;color:#e53e3e;margin-top:6px;">
                        ⚠️ Paid event — cancellation not allowed.<br>
                        Contact the event organiser if needed.
                    </p>`
-                : `<button class="action-btn" onclick="cancelRegistration()" style="background:#e53e3e;">Cancel Registration</button>`;
-
-            // For team events, add team cancel note
+                : `<button class="action-btn" onclick="cancelRegistration()"
+                      style="background:#e53e3e;width:100%;margin-top:6px;">
+                      ❌ Cancel Registration
+                   </button>`;
             const teamNote = (ev && ev.event_category === "team")
                 ? `<p style="font-size:.75rem;color:#718096;margin-top:4px;">⚠️ Cancelling will remove your entire team.</p>`
                 : "";
 
-            area.innerHTML = `
-                <p class="reg-status">Status: Registered ✅</p>
-                ${cancelBtn}
-                ${teamNote}`;
-            document.getElementById("waitlistSection").style.display = "none";
+            apiFetch("/api/events/" + selectedEventId + "/my-attendance")
+            .then(r=>r.json()).then(att => {
+                const scanBtn = att.attended
+                    ? `<div style="margin-top:8px;padding:10px;background:rgba(52,211,153,.15);
+                                  border:1.5px solid #34d399;border-radius:8px;text-align:center;">
+                           <span style="font-size:.9rem;font-weight:600;color:#34d399;">
+                               ✅ Attendance Marked
+                           </span>
+                           <p style="font-size:.75rem;color:#94a3b8;margin-top:2px;">
+                               at ${att.marked_at}
+                           </p>
+                       </div>`
+                    : `<a href="/attendance/${selectedEventId}/scan"
+                          style="display:block;margin-top:8px;padding:10px;background:#6366f1;
+                                 color:#fff;border-radius:8px;text-align:center;
+                                 font-weight:600;font-size:.88rem;text-decoration:none;">
+                          📷 Scan QR to Mark Attendance
+                       </a>`;
+
+                area.innerHTML = `
+                    <p class="reg-status">Status: Registered ✅</p>
+                    <div style="display:flex;flex-direction:column;gap:0;margin-top:4px;">
+                        ${scanBtn}
+                        ${cancelBtn}
+                        ${teamNote}
+                    </div>`;
+                document.getElementById("waitlistSection").style.display = "none";
+            });
         } else if(data.status === "pending_payment"){
             area.innerHTML = `<p class="reg-status" style="color:#d97706;">⏳ Payment Pending</p>
                 <button class="cart-btn" onclick="window.location.href='/dashboard'">Go to Cart →</button>`;

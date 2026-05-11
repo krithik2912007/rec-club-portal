@@ -261,7 +261,7 @@
         .reveal-delay-3{ transition-delay:.3s; }
 
         /* ── MY EVENTS ── */
-        .my-events-section { padding:60px 40px 20px; max-width:1200px; margin:0 auto; }
+        .my-events-section { padding:60px 40px 20px; max-width:1200px; margin:0 auto; position:relative; z-index:1; }
         .my-events-title { font-size:22px; font-weight:800; color:var(--c-gold2); margin-bottom:20px; }
 
         /* ── WAVE ── */
@@ -270,22 +270,22 @@
 
         /* ── STATS ── */
         .stats {
-            background: var(--c-surface) !important;
-            border-top: 1px solid var(--c-border) !important;
-            border-bottom: 1px solid var(--c-border) !important;
+            background: var(--c-bg) !important;
+            border-top: 1px solid rgba(245,158,11,.1) !important;
+            border-bottom: 1px solid rgba(245,158,11,.1) !important;
             padding: 60px 40px !important;
             position: relative;
         }
         .stats::before {
             content:''; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
-            width:600px; height:200px;
-            background:radial-gradient(ellipse, rgba(124,58,237,.1), transparent 70%);
+            width:700px; height:300px;
+            background:radial-gradient(ellipse, rgba(124,58,237,.12), transparent 70%);
             pointer-events:none;
         }
         .stat { position:relative; }
         .stat::after {
             content:''; position:absolute; right:-30px; top:10%; height:80%;
-            width:1px; background:var(--c-border);
+            width:1px; background:rgba(245,158,11,.18);
         }
         .stat:last-child::after { display:none; }
         .stat h2 {
@@ -300,7 +300,7 @@
         }
 
         /* ── PAGE SECTIONS ── */
-        .page-section { background:var(--c-bg) !important; }
+        .page-section { background:var(--c-bg) !important; position:relative; overflow:hidden; }
 
         .section-tag {
             background: rgba(245,158,11,.12) !important;
@@ -513,7 +513,7 @@
 </section>
 
 
-<!-- ═══ SCROLL VIDEO ═══ -->
+<!-- ═══ SCROLL VIDEO ═══ ->
 <section id="scroll-video-section">
     <div id="scroll-video-sticky">
         <video
@@ -522,9 +522,9 @@
             playsinline
             preload="auto"
         >
-            <!-- WebM first — Chrome decodes this fastest -->
+            <!-- WebM first — Chrome decodes this fastest ->
             <source src="{% static 'aadhivideo/aadhi_scrub.webm' %}" type="video/webm">
-            <!-- mp4 fallback — all keyframes, faststart for instant seeking -->
+            <!-- mp4 fallback — all keyframes, faststart for instant seeking ->
             <source src="{% static 'aadhivideo/aadhi_scrub.mp4' %}" type="video/mp4">
         </video>
         <div id="scroll-video-label">✦ &nbsp; Aadhi &nbsp; ✦</div>
@@ -591,7 +591,7 @@
 <!-- Wave divider -->
 <div class="wave-divider">
     <svg viewBox="0 0 1440 40" xmlns="http://www.w3.org/2000/svg">
-        <path d="M0,20 C360,40 1080,0 1440,20 L1440,40 L0,40 Z" fill="#100d1e"/>
+        <path d="M0,20 C360,40 1080,0 1440,20 L1440,40 L0,40 Z" fill="#08060f"/>
     </svg>
 </div>
 
@@ -615,6 +615,7 @@
 
 <!-- ═══ UPCOMING EVENTS ═══ -->
 <section class="section page-section">
+    <div style="position:absolute;top:0;left:50%;transform:translateX(-50%);width:800px;height:400px;background:radial-gradient(ellipse at top,rgba(124,58,237,.1),transparent 70%);pointer-events:none;z-index:0;"></div>
     <div class="section-heading-wrap reveal">
         <span class="section-tag">On Campus</span>
         <h2>Upcoming Events</h2>
@@ -628,7 +629,8 @@
 
 
 <!-- ═══ FEATURED CLUBS ═══ -->
-<section class="section page-section" style="background: #100d1e !important;">
+<section class="section page-section">
+    <div style="position:absolute;top:0;left:50%;transform:translateX(-50%);width:800px;height:400px;background:radial-gradient(ellipse at top,rgba(245,158,11,.06),transparent 70%);pointer-events:none;z-index:0;"></div>
     <div class="section-heading-wrap reveal">
         <span class="section-tag">Student Organizations</span>
         <h2>Featured Clubs</h2>

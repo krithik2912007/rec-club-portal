@@ -1232,3 +1232,21 @@ def get_attendance_list(request, event_id):
         "attended":         len(attendance),
         "total_registered": total_registered,
     })
+
+@login_required
+def my_attendance_status(request, event_id):
+    """Check if the current user has marked attendance for this event."""
+    user_id = request.session["user_id"]
+    cursor, conn = get_cursor()
+    cursor.execute(
+        "SELECT marked_at FROM event_attendance WHERE event_id=%s AND user_id=%s",
+        (event_id, user_id)
+    )
+    row = cursor.fetchone()
+    close_connection(cursor, conn)
+    if row:
+        marked_at = row["marked_at"]
+        if hasattr(marked_at, "strftime"):
+            marked_at = marked_at.strftime("%Y-%m-%d %H:%M")
+        return JsonResponse({"attended": True, "marked_at": marked_at})
+    return JsonResponse({"attended": False})

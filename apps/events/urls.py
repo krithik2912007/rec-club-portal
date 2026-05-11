@@ -69,4 +69,5 @@ urlpatterns = [
     path('events/<int:event_id>/qr/token',       views.get_qr_token,        name='get_qr_token'),
     path('events/<int:event_id>/qr/scan',        views.mark_attendance,     name='mark_attendance'),
     path('events/<int:event_id>/attendance',     views.get_attendance_list, name='get_attendance_list'),
+    path('events/<int:event_id>/my-attendance',  views.my_attendance_status, name='my_attendance_status'),
 ]
